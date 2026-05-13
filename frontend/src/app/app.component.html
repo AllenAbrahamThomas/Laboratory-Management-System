@@ -1,0 +1,112 @@
+<main class="app-shell" *ngIf="!activeSession; else dashboard">
+  <section class="login-window" aria-label="User login">
+    <header class="window-title">User login..</header>
+
+    <div class="login-body">
+      <aside class="module-panel">
+        <div class="module-title">
+          <span class="selected-dot"></span>
+          Lab management system
+        </div>
+
+        <div class="logo-placeholder" aria-label="Logo placeholder">
+          <div class="logo-icon"></div>
+          <div>
+            <div class="brand-name">Lab Logo</div>
+            <p>Place your logo here</p>
+          </div>
+        </div>
+      </aside>
+
+      <section class="credential-panel">
+        <div class="visual-strip" aria-hidden="true">
+          <div class="people-icon">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="care-logo">
+            <div class="care-mark">i</div>
+            <strong>CARE</strong>
+          </div>
+          <div class="key-icon"></div>
+        </div>
+
+        <form class="login-form" (ngSubmit)="login()">
+          <div class="date-line">
+            <span>{{ currentTime | date:'EEEE, dd MMMM, yyyy' }}</span>
+            <strong>{{ currentTime | date:'hh:mm:ss a' }}</strong>
+          </div>
+
+          <label>
+            <span>User Name</span>
+            <input class="username-input" name="username" [(ngModel)]="username" autocomplete="username" autofocus>
+          </label>
+
+          <label>
+            <span>Password</span>
+            <input name="password" [(ngModel)]="password" type="password" autocomplete="current-password">
+          </label>
+
+          <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+          <footer class="button-bar">
+            <button type="submit" [disabled]="isSubmitting">
+              <span class="button-icon">IN</span>
+              {{ isSubmitting ? 'Saving...' : 'Login' }}
+            </button>
+            <button type="button" (click)="username=''; password=''; errorMessage=''">
+              <span class="button-icon">X</span>
+              Exit
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  </section>
+</main>
+
+<ng-template #dashboard>
+  <main class="dashboard-shell">
+    <header class="top-menu">
+      <div class="app-title">Neethi Clinical Lab</div>
+      <nav>
+        <span>Entries</span>
+        <span>Accounts</span>
+        <span>Master Settings</span>
+        <span>Reports</span>
+        <span>Help</span>
+      </nav>
+    </header>
+
+    <section class="date-band">
+      {{ currentTime | date:'EEEE, dd MMMM, yyyy' }} , {{ currentTime | date:'hh:mm:ss a' }}
+    </section>
+
+    <section class="home-layout">
+      <aside class="side-menu">
+        <button *ngFor="let item of menuItems" (click)="item === 'Log off' ? logout() : null">
+          <span>{{ item.charAt(0) }}</span>{{ item.slice(1) }}
+        </button>
+
+        <div class="side-logo">
+          <div class="care-mark">i</div>
+          <strong>CARE</strong>
+        </div>
+      </aside>
+
+      <div class="hero-panel">
+        <div class="pulse-line"></div>
+        <div class="lab-figure"></div>
+        <div class="tagline">Simplify your needs..</div>
+      </div>
+    </section>
+
+    <footer class="status-bar">
+      <span>Work Station : LOCALHOST</span>
+      <span>Login time : {{ activeSession.login_at | date:'hh:mm:ss a' }}</span>
+      <span>USER : {{ activeSession.username }}</span>
+      <span>{{ currentTime | date:'dd-MMM-yy' }}</span>
+      <span>{{ currentTime | date:'h:mm a' }}</span>
+    </footer>
+  </main>
+</ng-template>
