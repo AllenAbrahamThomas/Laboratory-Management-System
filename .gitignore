@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.env
+
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/ng-serve.*.log
+
+backend/staticfiles/
