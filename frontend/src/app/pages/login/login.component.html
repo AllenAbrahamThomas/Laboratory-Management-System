@@ -1,0 +1,66 @@
+<main class="app-shell">
+  <section class="login-window" aria-label="User login">
+    <header class="window-title">User login..</header>
+
+    <div class="login-body">
+      <aside class="module-panel">
+        <div class="module-title">
+          <span class="selected-dot"></span>
+          Lab management system
+        </div>
+
+        <div class="logo-placeholder" aria-label="Logo placeholder">
+          <div class="logo-icon"></div>
+          <div>
+            <div class="brand-name">Lab Logo</div>
+            <p>Place your logo here</p>
+          </div>
+        </div>
+      </aside>
+
+      <section class="credential-panel">
+        <div class="visual-strip" aria-hidden="true">
+          <div class="people-icon">
+            <span></span>
+            <span></span>
+          </div>
+          <div class="care-logo">
+            <div class="care-mark">i</div>
+            <strong>CARE</strong>
+          </div>
+          <div class="key-icon"></div>
+        </div>
+
+        <form class="login-form" (ngSubmit)="login()" *ngIf="currentTime$ | async as currentTime">
+          <div class="date-line">
+            <span>{{ currentTime | date:'EEEE, dd MMMM, yyyy' }}</span>
+            <strong>{{ currentTime | date:'hh:mm:ss a' }}</strong>
+          </div>
+
+          <label>
+            <span>User Name</span>
+            <input class="username-input" name="username" [(ngModel)]="username" autocomplete="username" autofocus>
+          </label>
+
+          <label>
+            <span>Password</span>
+            <input name="password" [(ngModel)]="password" type="password" autocomplete="current-password">
+          </label>
+
+          <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+          <footer class="button-bar">
+            <button type="submit" [disabled]="isSubmitting">
+              <span class="button-icon">IN</span>
+              {{ isSubmitting ? 'Saving...' : 'Login' }}
+            </button>
+            <button type="button" (click)="reset()">
+              <span class="button-icon">X</span>
+              Exit
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
+  </section>
+</main>
