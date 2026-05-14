@@ -35,11 +35,8 @@ export class AppComponent implements OnInit, OnDestroy {
     'Result entry',
     'Pending Collection',
     'Patient Adv. Search',
-    'Envelope',
-    'Calculator',
     'Log off',
     'About us',
-    'Exit'
   ];
 
   ngOnInit(): void {
