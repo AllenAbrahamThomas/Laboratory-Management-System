@@ -31,6 +31,17 @@
         <div class="pulse-line"></div>
         <div class="lab-figure"></div>
         <div class="tagline">Simplify your needs..</div>
+
+        <app-patient-list
+          *ngIf="activeRegistrationView === 'patients'"
+          (newRegistration)="openNewRegistration()"
+          (closed)="closeRegistration()"
+        ></app-patient-list>
+
+        <app-bill-registration
+          *ngIf="activeRegistrationView === 'new-registration'"
+          (closed)="closeRegistration()"
+        ></app-bill-registration>
       </div>
     </section>
 

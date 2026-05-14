@@ -1,0 +1,71 @@
+<section class="registration-window" aria-label="Patients view - patient registration">
+  <header class="window-title">
+    <span class="app-icon">A</span>
+    Patients view - patient registration
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <div class="search-strip">
+    <label>
+      Lab No#
+      <input name="labNoSearch" [(ngModel)]="labNoSearch">
+    </label>
+
+    <label>
+      Name
+      <input name="patientSearch" [(ngModel)]="patientSearch">
+    </label>
+
+    <span class="spacer"></span>
+
+    <label>
+      From
+      <input type="date" name="fromDate" [(ngModel)]="fromDate">
+    </label>
+
+    <label>
+      To
+      <input type="date" name="toDate" [(ngModel)]="toDate">
+    </label>
+  </div>
+
+  <div class="patient-grid">
+    <table>
+      <thead>
+        <tr>
+          <th>Lab No</th>
+          <th>Date</th>
+          <th>Patient</th>
+          <th>Phone</th>
+          <th>Doctor</th>
+          <th>Pay. Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let patient of filteredPatients">
+          <td>{{ patient.labNo }}</td>
+          <td>{{ patient.date }}</td>
+          <td>{{ patient.patient }}</td>
+          <td>{{ patient.phone }}</td>
+          <td>{{ patient.doctor }}</td>
+          <td>{{ patient.payStatus }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="window-footer">
+    <button type="button" class="new-button" (click)="newRegistration.emit()">
+      <span>+</span>
+      New Registration
+    </button>
+    <strong>Patient registration</strong>
+    <span class="patient-count">No. of patients: {{ filteredPatients.length }}</span>
+
+    <button type="button">Refresh</button>
+    <button type="button" (click)="closed.emit()">
+      <span class="exit-icon">X</span>
+      Exit
+    </button>
+  </footer>
+</section>

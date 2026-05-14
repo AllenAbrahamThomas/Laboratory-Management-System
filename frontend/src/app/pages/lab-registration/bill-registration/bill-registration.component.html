@@ -1,0 +1,128 @@
+<section class="bill-window" aria-label="Bill and registration">
+  <header class="window-title">
+    <span class="app-icon">A</span>
+    Bill/Registration
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <form class="bill-form">
+    <section class="patient-details">
+      <div class="compact-left">
+        <div class="form-row top-row">
+          <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo"></label>
+          <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode"><option *ngFor="let mode of paymentModes">{{ mode }}</option></select></label>
+          <button type="button" class="adv-search">Adv. Search</button>
+        </div>
+
+        <div class="form-row">
+          <label class="field name-field">Name <span>:</span><input name="patientName" [(ngModel)]="patientName"></label>
+          <button type="button" class="small-add">+</button>
+        </div>
+
+        <div class="form-row gender-row">
+          <span class="row-label">Gender</span>
+          <span>:</span>
+          <span class="radio-group">
+            <label><input type="radio" name="gender" value="Male" [(ngModel)]="gender"> Male</label>
+            <label><input type="radio" name="gender" value="Female" [(ngModel)]="gender"> Female</label>
+          </span>
+          <label class="field age-field">Age <span>:</span><input name="age" [(ngModel)]="age"></label>
+          <select name="ageType" [(ngModel)]="ageType"><option>Years</option><option>Months</option><option>Days</option></select>
+          <input name="month" [(ngModel)]="month">
+          <select><option>Month</option></select>
+        </div>
+
+        <div class="form-row double-row">
+          <label class="field phone-field">Phone <span>:</span><input name="phone" [(ngModel)]="phone"></label>
+          <label class="field address-field">Address <span>:</span><input name="address" [(ngModel)]="address"></label>
+        </div>
+
+        <div class="form-row double-row">
+          <label class="field sample-field">Sample on <span>:</span><input name="sampleOn" [(ngModel)]="sampleOn"></label>
+          <label class="field ip-field">IP. No <span>:</span><input name="ipNo" [(ngModel)]="ipNo"></label>
+        </div>
+
+        <div class="form-row">
+          <label class="field corporate-field">Corporate <span>:</span><input name="corporate" [(ngModel)]="corporate"></label>
+        </div>
+      </div>
+
+      <div class="compact-right">
+        <div class="form-row date-time-row">
+          <label class="field date-field">Date <span>:</span><input name="date" [value]="today" readonly></label>
+          <label class="field time-field">Time <span>:</span><input name="time" [value]="currentTime | date:'hh:mm:ss a'" readonly></label>
+        </div>
+
+        <div class="form-row">
+          <label class="field doctor-field">Doctor <span>:</span><input name="doctor" [(ngModel)]="doctor"></label>
+          <button type="button" class="small-add">+</button>
+        </div>
+
+        <div class="form-row">
+          <label class="field doctor-field">Out.Dr <span>:</span><input name="outDoctor" [(ngModel)]="outDoctor"></label>
+        </div>
+
+        <div class="form-row">
+          <label class="field doctor-field">Hospital <span>:</span><input name="hospital" [(ngModel)]="hospital"></label>
+          <button type="button" class="small-add">+</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="test-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Sl. No.</th>
+            <th>Test Code</th>
+            <th>Test Name</th>
+            <th>Rate</th>
+            <th>Discount (%)</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let test of tests" [class.selected-row]="selectedTestSlNo === test.slNo">
+            <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}</td>
+            <td><input name="testCode{{ test.slNo }}" [(ngModel)]="test.testCode"></td>
+            <td><input name="testName{{ test.slNo }}" [(ngModel)]="test.testName"></td>
+            <td><input type="number" name="rate{{ test.slNo }}" [(ngModel)]="test.rate" (ngModelChange)="updateAmount(test)"></td>
+            <td><input type="number" name="discount{{ test.slNo }}" [(ngModel)]="test.discount" (ngModelChange)="updateAmount(test)"></td>
+            <td><input type="number" name="amount{{ test.slNo }}" [(ngModel)]="test.amount" readonly></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="payment-details">
+      <div class="payment-left">
+        <label>Disc. Mode <span>:</span><select name="discountMode" [(ngModel)]="discountMode"><option *ngFor="let mode of discountModes">{{ mode }}</option></select></label>
+        <label>Discount % <span>:</span><input name="discountPercent" [(ngModel)]="discountPercent"><input></label>
+        <label>Rcvd.Amt <span>:</span><input name="receivedAmount" [(ngModel)]="receivedAmount"></label>
+        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount"></label>
+      </div>
+
+      <div class="payment-middle">
+        <label>Note <span>:</span><textarea name="note" [(ngModel)]="note"></textarea></label>
+        <label>Round off <span>:</span><input name="roundOff" [(ngModel)]="roundOff"></label>
+        <label>Discount Reason <span>:</span><input name="discountReason" [(ngModel)]="discountReason"></label>
+      </div>
+
+      <div class="payment-right">
+        <label>Gross Amount <span>:</span><input [value]="grossAmount" readonly><input readonly><input readonly></label>
+        <div class="grand-total">{{ grossAmount }}</div>
+      </div>
+    </section>
+
+    <footer class="action-bar">
+      <button type="button">Result</button>
+      <button type="button">Previous</button>
+      <button type="button">Next</button>
+      <button type="button" (click)="addTestLine()"><span class="action-icon">+</span>New</button>
+      <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
+      <button type="button">Print</button>
+      <button type="button">Save</button>
+      <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
+    </footer>
+  </form>
+</section>
