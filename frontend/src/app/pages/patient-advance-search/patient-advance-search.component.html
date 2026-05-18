@@ -1,0 +1,74 @@
+<section class="advance-search-window" aria-label="Patient advance search">
+  <header class="window-title">
+    patient advance search
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <section class="search-panel">
+    <div class="search-options">
+      <label><input type="radio" name="searchBy" value="phone" [(ngModel)]="searchBy"> Phone</label>
+      <label><input type="radio" name="searchBy" value="patient" [(ngModel)]="searchBy"> Patient</label>
+      <label><input type="radio" name="searchBy" value="address" [(ngModel)]="searchBy"> Address</label>
+    </div>
+
+    <div class="word-options">
+      <label><input type="checkbox" name="hasPhoneWord" [(ngModel)]="hasPhoneWord"> Has the word</label>
+      <label><input type="checkbox" name="hasPatientWord" [(ngModel)]="hasPatientWord"> Has the word</label>
+      <label><input type="checkbox" name="hasAddressWord" [(ngModel)]="hasAddressWord"> Has the word</label>
+    </div>
+
+    <div class="query-fields">
+      <input class="active-query" name="phoneQuery" [(ngModel)]="phoneQuery">
+      <input name="patientQuery" [(ngModel)]="patientQuery">
+      <input name="addressQuery" [(ngModel)]="addressQuery">
+    </div>
+
+    <fieldset class="open-type">
+      <legend>Open Type</legend>
+      <label><input type="radio" name="openType" value="newBill" [(ngModel)]="openType"> Add to New Bill</label>
+      <label><input type="radio" name="openType" value="existingBill" [(ngModel)]="openType"> Open Existing Bill</label>
+      <label><input type="radio" name="openType" value="patientResult" [(ngModel)]="openType"> Open Patient Result</label>
+    </fieldset>
+
+    <button type="button" class="search-button" (click)="search()">Search..</button>
+  </section>
+
+  <section class="result-grid">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice No</th>
+          <th>Date</th>
+          <th>Patient</th>
+          <th>Gender</th>
+          <th>Age</th>
+          <th>Age Group</th>
+          <th>Address</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Invoiced by</th>
+          <th>Year</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let result of results">
+          <td>{{ result.invoiceNo }}</td>
+          <td>{{ result.date }}</td>
+          <td>{{ result.patient }}</td>
+          <td>{{ result.gender }}</td>
+          <td>{{ result.age }}</td>
+          <td>{{ result.ageGroup }}</td>
+          <td>{{ result.address }}</td>
+          <td>{{ result.phone }}</td>
+          <td>{{ result.email }}</td>
+          <td>{{ result.invoicedBy }}</td>
+          <td>{{ result.year }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+</section>

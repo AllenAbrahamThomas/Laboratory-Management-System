@@ -3,13 +3,14 @@ import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BillRegistrationComponent } from '../lab-registration/bill-registration/bill-registration.component';
 import { PatientListComponent } from '../lab-registration/patient-list/patient-list.component';
+import { PatientAdvanceSearchComponent } from '../patient-advance-search/patient-advance-search.component';
 import { AuthService, LoginSession } from '../../services/auth.service';
 import { ClockService } from '../../services/clock.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent],
+  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent, PatientAdvanceSearchComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -19,18 +20,15 @@ export class DashboardComponent implements OnInit {
 
   readonly currentTime$ = inject(ClockService).currentTime$;
   activeSession: LoginSession | null = null;
-  activeRegistrationView: 'patients' | 'new-registration' | null = null;
+  activeRegistrationView: 'patients' | 'new-registration' | 'patient-advance-search' | null = null;
 
   readonly menuItems = [
     'Lab registration',
     'Result entry',
     'Pending Collection',
     'Patient Adv. Search',
-    'Envelope',
-    'Calculator',
-    'Log off',
     'About us',
-    'Exit',
+    'Log off',
   ];
 
   ngOnInit(): void {
@@ -47,6 +45,11 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    if (item === 'Patient Adv. Search') {
+      this.activeRegistrationView = 'patient-advance-search';
+      return;
+    }
+
     if (item === 'Log off') {
       this.logout();
     }
@@ -58,6 +61,10 @@ export class DashboardComponent implements OnInit {
 
   closeRegistration(): void {
     this.activeRegistrationView = null;
+  }
+
+  openPatientAdvanceSearch(): void {
+    this.activeRegistrationView = 'patient-advance-search';
   }
 
   logout(): void {

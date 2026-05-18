@@ -11,7 +11,7 @@
         <div class="form-row top-row">
           <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo"></label>
           <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode"><option *ngFor="let mode of paymentModes">{{ mode }}</option></select></label>
-          <button type="button" class="adv-search">Adv. Search</button>
+          <button type="button" class="adv-search" (click)="advanceSearch.emit()">Adv. Search</button>
         </div>
 
         <div class="form-row">

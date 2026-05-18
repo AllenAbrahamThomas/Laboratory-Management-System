@@ -22,6 +22,7 @@ interface TestLine {
 })
 export class BillRegistrationComponent {
   @Output() closed = new EventEmitter<void>();
+  @Output() advanceSearch = new EventEmitter<void>();
 
   private readonly clockService = inject(ClockService);
   private readonly destroyRef = inject(DestroyRef);
