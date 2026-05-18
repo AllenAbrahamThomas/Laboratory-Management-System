@@ -63,15 +63,12 @@ type TopMenuAction =
   | 'user-wise-collection'
   | 'pending-register'
   | 'pending-collection-register'
-  | 'work-sheet-register'
   | 'result-register'
   | 'cancelled-invoices'
-  | 'collection-boy-wise-invoices'
   | 'doctor-wise-invoices'
   | 'hospital-wise-invoices'
   | 'patient-wise-invoices'
   | 'test-wise-invoices'
-  | 'debit-credit-card-insurance-invoices'
   | 'sample-collection-wise-invoices'
   | 'division-wise-invoices'
   | 'branch-wise-invoices'
@@ -86,9 +83,6 @@ type TopMenuAction =
   | 'divisions'
   | 'methods'
   | 'units'
-  | 'antibiotics'
-  | 'doctors-birth-days'
-  | 'hospitals-days'
   | 'payments-statement'
   | 'receipts-statement'
   | 'income-expense-statement'
@@ -208,18 +202,14 @@ export class DashboardComponent implements OnInit {
             { label: 'User wise Collection', action: 'user-wise-collection' },
             { label: 'Pending Register', action: 'pending-register' },
             { label: 'Pending collection register', action: 'pending-collection-register' },
-            { label: 'Work sheet register', action: 'work-sheet-register' },
             { label: 'Result Register', action: 'result-register' },
             { label: 'Cancelled Invoices', action: 'cancelled-invoices' },
-            { label: 'Collection Boy wise Invoices', action: 'collection-boy-wise-invoices' },
             { label: 'Doctor wise Invoices', action: 'doctor-wise-invoices' },
             { label: 'Hospital wise Invoices', action: 'hospital-wise-invoices' },
             { label: 'Patient wise Invoices', action: 'patient-wise-invoices' },
             { label: 'Test wise Invoices', action: 'test-wise-invoices' },
-            { label: 'Debit/Credit Card/Insurance Invoices', action: 'debit-credit-card-insurance-invoices' },
             { label: 'Sample Collection wise Invoices', action: 'sample-collection-wise-invoices' },
             { label: 'Division wise Invoices', action: 'division-wise-invoices' },
-            { label: 'Branch wise Invoices', action: 'branch-wise-invoices' },
             { label: 'Test Performance', action: 'test-performance' },
           ],
         },
@@ -241,9 +231,6 @@ export class DashboardComponent implements OnInit {
             { label: 'Methods', action: 'methods' },
             { label: 'Units', action: 'units' },
             { label: 'Technologies', action: 'technologies' },
-            { label: 'Antibiotics', action: 'antibiotics' },
-            { label: "Doctors Birth days", action: 'doctors-birth-days' },
-            { label: "Hospital's Days", action: 'hospitals-days' },
           ],
         },
         {
