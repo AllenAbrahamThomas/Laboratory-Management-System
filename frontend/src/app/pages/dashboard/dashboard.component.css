@@ -17,6 +17,119 @@
   align-items: center;
   padding: 0 5px;
   font-size: 12px;
+  position: relative;
+}
+
+.menu-group {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.menu-trigger {
+  height: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.menu-group.open .menu-trigger,
+.top-menu nav > span {
+  text-decoration: underline;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: -5px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #777;
+  box-shadow: 1px 1px 0 #d9d9d9;
+  z-index: 20;
+}
+
+.dropdown-item {
+  min-height: 29px;
+  border: 0;
+  border-bottom: 1px solid #b6b6b6;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.dropdown-item.active {
+  background: #cbe4ff;
+  outline: 1px solid #4ea0ff;
+  outline-offset: -1px;
+}
+
+.dropdown-panel > .dropdown-item:last-of-type {
+  border-bottom: 0;
+}
+
+.dropdown-item:hover {
+  background: #f1f1f1;
+}
+
+.submenu-panel {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  margin-left: -1px;
+  z-index: 21;
+}
+
+.submenu-list {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #777;
+  box-shadow: 1px 1px 0 #d9d9d9;
+}
+
+.submenu-item {
+  min-height: 27px;
+  gap: 0;
+  padding-left: 8px;
+}
+
+.submenu-list .submenu-item:last-child {
+  border-bottom: 0;
+}
+
+.dropdown-badge {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 1px solid #b7b7b7;
+  border-radius: 3px;
+  display: inline-grid;
+  place-items: center;
+  background: linear-gradient(#fff9d8, #ffdfa0);
+  color: #6b4f00;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dropdown-label {
+  flex: 1 1 auto;
+}
+
+.dropdown-arrow {
+  margin-left: auto;
+  color: #222;
+  font-size: 10px;
 }
 
 .app-title {
@@ -173,6 +286,10 @@
 
   .side-menu {
     padding: 14px;
+  }
+
+  .dropdown-panel {
+    max-width: calc(100vw - 20px);
   }
 
   .hero-panel {
