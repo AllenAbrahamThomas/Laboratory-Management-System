@@ -1,0 +1,150 @@
+.advance-search-window {
+  position: absolute;
+  inset: 6px 2% 10px;
+  z-index: 5;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-width: 780px;
+  border: 1px solid #0aa600;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+  color: #000;
+  font-size: 12px;
+}
+
+.window-title {
+  height: 31px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  background: #fbfbfb;
+}
+
+.window-title button {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #bb3d3d;
+  background: #c94d4d;
+  color: #fff;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.search-panel {
+  display: grid;
+  grid-template-columns: 100px 122px minmax(260px, 1fr) 198px 88px;
+  gap: 8px;
+  align-items: start;
+  margin: 0 7px 8px;
+  padding: 8px;
+  border: 1px solid #20aa25;
+}
+
+.search-options,
+.word-options,
+.query-fields,
+.open-type {
+  display: grid;
+  gap: 7px;
+}
+
+.search-options label,
+.word-options label,
+.open-type label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+.query-fields input {
+  height: 23px;
+  border: 1px solid #b5b5b5;
+}
+
+.query-fields .active-query {
+  background: #43ff5b;
+  border-color: #4788d3;
+}
+
+.open-type {
+  min-height: 72px;
+  margin: 0;
+  padding: 2px 8px 6px;
+  border: 1px solid #8a8a8a;
+}
+
+.open-type legend {
+  padding: 0 3px;
+}
+
+.search-button {
+  width: 86px;
+  height: 24px;
+  border: 1px solid #aaa;
+  background: #e8e8e8;
+  cursor: pointer;
+}
+
+.result-grid {
+  margin: 0 7px;
+  overflow: auto;
+  border: 1px solid #7fb53c;
+}
+
+table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  height: 23px;
+  padding: 2px 4px;
+  border-right: 1px solid #83bf1b;
+  border-bottom: 1px solid #83bf1b;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  background: #d9f28a;
+  font-weight: 400;
+}
+
+.window-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 8px 7px 7px;
+  padding: 9px;
+  border: 1px solid #20aa25;
+}
+
+.window-footer button {
+  width: 94px;
+  height: 31px;
+  border: 1px solid #aaa;
+  background: #e8e8e8;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .advance-search-window {
+    inset: 6px;
+    min-width: 0;
+  }
+
+  .search-panel {
+    grid-template-columns: 1fr;
+  }
+}

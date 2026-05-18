@@ -40,8 +40,14 @@
 
         <app-bill-registration
           *ngIf="activeRegistrationView === 'new-registration'"
+          (advanceSearch)="openPatientAdvanceSearch()"
           (closed)="closeRegistration()"
         ></app-bill-registration>
+
+        <app-patient-advance-search
+          *ngIf="activeRegistrationView === 'patient-advance-search'"
+          (closed)="closeRegistration()"
+        ></app-patient-advance-search>
       </div>
     </section>
 
