@@ -12,6 +12,9 @@ def visit_list(request):
 
     lab_no = request.query_params.get("lab_no", "").strip()
     patient = request.query_params.get("patient", "").strip()
+    phone = request.query_params.get("phone", "").strip()
+    address = request.query_params.get("address", "").strip()
+    match_mode = request.query_params.get("match_mode", "contains").strip().lower()
     from_date = request.query_params.get("from_date", "").strip()
     to_date = request.query_params.get("to_date", "").strip()
 
@@ -20,6 +23,18 @@ def visit_list(request):
 
     if patient:
         queryset = queryset.filter(patient__full_name__icontains=patient)
+
+    if phone:
+        if match_mode == "startswith":
+            queryset = queryset.filter(patient__phone__istartswith=phone)
+        else:
+            queryset = queryset.filter(patient__phone__icontains=phone)
+
+    if address:
+        if match_mode == "startswith":
+            queryset = queryset.filter(patient__address__istartswith=address)
+        else:
+            queryset = queryset.filter(patient__address__icontains=address)
 
     if from_date:
         queryset = queryset.filter(visit_date__gte=from_date)

@@ -265,6 +265,7 @@ export class DashboardComponent implements OnInit {
   activeSession: LoginSession | null = null;
   activeRegistrationView: 'patients' | 'new-registration' | 'patient-advance-search' | null = null;
   selectedVisitId: number | null = null;
+  billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
   openTopMenu: TopMenuKey | null = null;
   openReportsSubmenu: TopMenuAction | null = null;
 
@@ -348,11 +349,19 @@ export class DashboardComponent implements OnInit {
 
   openNewRegistration(): void {
     this.selectedVisitId = null;
+    this.billOpenMode = 'new';
     this.activeRegistrationView = 'new-registration';
   }
 
   openExistingRegistration(visitId: number): void {
     this.selectedVisitId = visitId;
+    this.billOpenMode = 'existing';
+    this.activeRegistrationView = 'new-registration';
+  }
+
+  openFromAdvanceSearch(payload: { visitId: number; openType: 'newBill' | 'existingBill' | 'patientResult' }): void {
+    this.selectedVisitId = payload.visitId;
+    this.billOpenMode = payload.openType === 'newBill' ? 'prefill-only' : 'existing';
     this.activeRegistrationView = 'new-registration';
   }
 

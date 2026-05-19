@@ -7,6 +7,10 @@ export interface VisitSummary {
   lab_no: string;
   visit_date: string;
   patient: string;
+  gender?: string;
+  age_years?: number;
+  age_months?: number;
+  address?: string;
   phone: string;
   doctor: string;
   pay_status: string;
@@ -15,6 +19,9 @@ export interface VisitSummary {
 export interface VisitListFilters {
   labNo?: string;
   patient?: string;
+  phone?: string;
+  address?: string;
+  matchMode?: 'contains' | 'startswith';
   fromDate?: string;
   toDate?: string;
 }
@@ -73,6 +80,18 @@ export class VisitService {
 
     if (filters.patient?.trim()) {
       params = params.set('patient', filters.patient.trim());
+    }
+
+    if (filters.phone?.trim()) {
+      params = params.set('phone', filters.phone.trim());
+    }
+
+    if (filters.address?.trim()) {
+      params = params.set('address', filters.address.trim());
+    }
+
+    if (filters.matchMode) {
+      params = params.set('match_mode', filters.matchMode);
     }
 
     if (filters.fromDate?.trim()) {

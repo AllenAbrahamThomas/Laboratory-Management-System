@@ -5,6 +5,10 @@ from .models import Visit, VisitTest
 
 class VisitListSerializer(serializers.ModelSerializer):
     patient = serializers.CharField(source="patient.full_name", read_only=True)
+    gender = serializers.CharField(source="patient.get_gender_display", read_only=True)
+    age_years = serializers.IntegerField(source="patient.age_years", read_only=True)
+    age_months = serializers.IntegerField(source="patient.age_months", read_only=True)
+    address = serializers.CharField(source="patient.address", read_only=True)
     phone = serializers.CharField(source="patient.phone", read_only=True)
     doctor = serializers.SerializerMethodField()
     pay_status = serializers.SerializerMethodField()
@@ -16,6 +20,10 @@ class VisitListSerializer(serializers.ModelSerializer):
             "lab_no",
             "visit_date",
             "patient",
+            "gender",
+            "age_years",
+            "age_months",
+            "address",
             "phone",
             "doctor",
             "pay_status",
