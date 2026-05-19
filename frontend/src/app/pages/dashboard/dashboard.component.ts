@@ -263,7 +263,7 @@ export class DashboardComponent implements OnInit {
   ];
 
   activeSession: LoginSession | null = null;
-  activeRegistrationView: 'patients' | 'new-registration' | 'patient-advance-search' | null = null;
+  activeRegistrationView: 'patients' | 'pending-collection' | 'new-registration' | 'patient-advance-search' | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
   openTopMenu: TopMenuKey | null = null;
@@ -303,6 +303,11 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    if (item === 'Pending Collection') {
+      this.activeRegistrationView = 'pending-collection';
+      return;
+    }
+
     if (item === 'Log off') {
       this.logout();
     }
@@ -339,6 +344,11 @@ export class DashboardComponent implements OnInit {
 
     if (action === 'patient-advance-search') {
       this.activeRegistrationView = 'patient-advance-search';
+      return;
+    }
+
+    if (action === 'pending-collection') {
+      this.activeRegistrationView = 'pending-collection';
       return;
     }
 

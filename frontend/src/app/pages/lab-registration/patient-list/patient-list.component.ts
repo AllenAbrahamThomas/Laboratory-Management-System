@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VisitService } from '../../../services/visit.service';
 
@@ -22,6 +22,7 @@ interface PatientSummary {
   styleUrl: './patient-list.component.css'
 })
 export class PatientListComponent implements OnInit {
+  @Input() mode: 'all' | 'pending' = 'all';
   @Output() newRegistration = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
   @Output() patientSelected = new EventEmitter<number>();
@@ -38,6 +39,11 @@ export class PatientListComponent implements OnInit {
   patients: PatientSummary[] = [];
 
   ngOnInit(): void {
+    if (this.mode === 'pending') {
+      this.fromDate = this.getMonthStartDate();
+      this.toDate = this.getMonthEndDate();
+    }
+
     this.loadPatients();
   }
 
@@ -48,6 +54,7 @@ export class PatientListComponent implements OnInit {
     this.visitService.getVisits({
       labNo: this.labNoSearch,
       patient: this.patientSearch,
+      pendingOnly: this.mode === 'pending',
       fromDate: this.fromDate,
       toDate: this.toDate,
     }).subscribe({
@@ -73,6 +80,12 @@ export class PatientListComponent implements OnInit {
     });
   }
 
+  get headerTitle(): string {
+    return this.mode === 'pending'
+      ? 'Pending collections - current month'
+      : 'Patients view - patient registration';
+  }
+
   openPatientBill(patient: PatientSummary): void {
     this.patientSelected.emit(patient.id);
   }
@@ -83,6 +96,21 @@ export class PatientListComponent implements OnInit {
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private getMonthStartDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}-01`;
+  }
+
+  private getMonthEndDate(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDate).padStart(2, '0')}`;
   }
 
   private formatDisplayDate(dateValue: string): string {

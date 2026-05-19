@@ -74,7 +74,8 @@
         <div class="tagline">Simplify your needs..</div>
 
         <app-patient-list
-          *ngIf="activeRegistrationView === 'patients'"
+          *ngIf="activeRegistrationView === 'patients' || activeRegistrationView === 'pending-collection'"
+          [mode]="activeRegistrationView === 'pending-collection' ? 'pending' : 'all'"
           (newRegistration)="openNewRegistration()"
           (patientSelected)="openExistingRegistration($event)"
           (closed)="closeRegistration()"

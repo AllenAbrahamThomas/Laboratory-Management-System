@@ -8,6 +8,8 @@
   <form class="bill-form">
     <p class="status-message" *ngIf="isLoadingVisit">Loading selected patient bill...</p>
     <p class="status-message error" *ngIf="loadError">{{ loadError }}</p>
+    <p class="status-message" *ngIf="isSaving">Saving...</p>
+    <p class="status-message" *ngIf="saveMessage">{{ saveMessage }}</p>
 
     <section class="patient-details">
       <div class="compact-left">
@@ -101,13 +103,13 @@
       <div class="payment-left">
         <label>Disc. Mode <span>:</span><select name="discountMode" [(ngModel)]="discountMode"><option *ngFor="let mode of discountModes">{{ mode }}</option></select></label>
         <label>Discount % <span>:</span><input name="discountPercent" [(ngModel)]="discountPercent"><input></label>
-        <label>Rcvd.Amt <span>:</span><input name="receivedAmount" [(ngModel)]="receivedAmount"></label>
-        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount"></label>
+        <label>Rcvd.Amt <span>:</span><input name="receivedAmount" [(ngModel)]="receivedAmount" (ngModelChange)="onReceivedAmountChange()"></label>
+        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount" readonly></label>
       </div>
 
       <div class="payment-middle">
         <label>Note <span>:</span><textarea name="note" [(ngModel)]="note"></textarea></label>
-        <label>Round off <span>:</span><input name="roundOff" [(ngModel)]="roundOff"></label>
+        <label>Round off <span>:</span><input name="roundOff" [(ngModel)]="roundOff" (ngModelChange)="onRoundOffChange()"></label>
         <label>Discount Reason <span>:</span><input name="discountReason" [(ngModel)]="discountReason"></label>
       </div>
 
@@ -124,7 +126,7 @@
       <button type="button" (click)="addTestLine()"><span class="action-icon">+</span>New</button>
       <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
       <button type="button">Print</button>
-      <button type="button">Save</button>
+      <button type="button" (click)="saveVisit()" [disabled]="isSaving">Save</button>
       <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
     </footer>
   </form>

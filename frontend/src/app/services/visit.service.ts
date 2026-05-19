@@ -22,6 +22,7 @@ export interface VisitListFilters {
   phone?: string;
   address?: string;
   matchMode?: 'contains' | 'startswith';
+  pendingOnly?: boolean;
   fromDate?: string;
   toDate?: string;
 }
@@ -64,6 +65,29 @@ export interface VisitDetail {
   tests: VisitDetailTest[];
 }
 
+export interface VisitSavePayload {
+  lab_no: string;
+  patient_name: string;
+  gender: string;
+  age_years: number;
+  age_months: number;
+  phone: string;
+  address: string;
+  sample_on: string;
+  ip_no: string;
+  out_doctor_name: string;
+  corporate_name: string;
+  pay_mode: string;
+  discount_mode: string;
+  discount_percent: number;
+  discount_reason: string;
+  received_amount: number;
+  balance_amount: number;
+  gross_amount: number;
+  round_off: number;
+  note: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -94,6 +118,10 @@ export class VisitService {
       params = params.set('match_mode', filters.matchMode);
     }
 
+    if (filters.pendingOnly) {
+      params = params.set('pending_only', '1');
+    }
+
     if (filters.fromDate?.trim()) {
       params = params.set('from_date', filters.fromDate.trim());
     }
@@ -107,5 +135,13 @@ export class VisitService {
 
   getVisitById(visitId: number): Observable<VisitDetail> {
     return this.http.get<VisitDetail>(`${this.apiUrl}/visits/${visitId}/`);
+  }
+
+  createVisit(payload: VisitSavePayload): Observable<VisitDetail> {
+    return this.http.post<VisitDetail>(`${this.apiUrl}/visits/create/`, payload);
+  }
+
+  updateVisit(visitId: number, payload: VisitSavePayload): Observable<VisitDetail> {
+    return this.http.put<VisitDetail>(`${this.apiUrl}/visits/${visitId}/update/`, payload);
   }
 }
