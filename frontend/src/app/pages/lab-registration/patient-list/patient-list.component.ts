@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { VisitService } from '../../../services/visit.service';
 
 interface PatientSummary {
+  id: number;
   labNo: string;
   date: string;
-  dateIso: string;
   patient: string;
   phone: string;
   doctor: string;
@@ -19,32 +21,60 @@ interface PatientSummary {
   templateUrl: './patient-list.component.html',
   styleUrl: './patient-list.component.css'
 })
-export class PatientListComponent {
+export class PatientListComponent implements OnInit {
   @Output() newRegistration = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
+  @Output() patientSelected = new EventEmitter<number>();
+
+  private readonly visitService = inject(VisitService);
 
   labNoSearch = '';
   patientSearch = '';
   fromDate = this.getTodayDate();
   toDate = this.getTodayDate();
+  isLoading = false;
+  errorMessage = '';
 
-  readonly patients: PatientSummary[] = [];
+  patients: PatientSummary[] = [];
 
-  get filteredPatients(): PatientSummary[] {
-    const labNo = this.labNoSearch.trim();
-    const patient = this.patientSearch.trim().toLowerCase();
-    const fromTime = this.getDateTime(this.fromDate);
-    const toTime = this.getDateTime(this.toDate);
+  ngOnInit(): void {
+    this.loadPatients();
+  }
 
-    return this.patients.filter((entry) => {
-      const entryTime = this.getDateTime(entry.dateIso);
-      const matchesLabNo = !labNo || entry.labNo.includes(labNo);
-      const matchesPatient = !patient || entry.patient.toLowerCase().includes(patient);
-      const matchesFrom = fromTime === null || entryTime === null || entryTime >= fromTime;
-      const matchesTo = toTime === null || entryTime === null || entryTime <= toTime;
+  loadPatients(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
 
-      return matchesLabNo && matchesPatient && matchesFrom && matchesTo;
+    this.visitService.getVisits({
+      labNo: this.labNoSearch,
+      patient: this.patientSearch,
+      fromDate: this.fromDate,
+      toDate: this.toDate,
+    }).subscribe({
+      next: (visits) => {
+        this.patients = visits.map((visit) => ({
+          id: visit.id,
+          labNo: visit.lab_no,
+          date: this.formatDisplayDate(visit.visit_date),
+          patient: visit.patient,
+          phone: visit.phone,
+          doctor: visit.doctor,
+          payStatus: visit.pay_status,
+        }));
+        this.isLoading = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.patients = [];
+        this.errorMessage = error.status === 0
+          ? 'Unable to reach backend.'
+          : 'Unable to load patient list.';
+        this.isLoading = false;
+      }
     });
+  }
+
+  openPatientBill(patient: PatientSummary): void {
+    this.patientSelected.emit(patient.id);
   }
 
   private getTodayDate(): string {
@@ -55,12 +85,16 @@ export class PatientListComponent {
     return `${year}-${month}-${day}`;
   }
 
-  private getDateTime(dateValue: string): number | null {
-    if (!dateValue) {
-      return null;
+  private formatDisplayDate(dateValue: string): string {
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) {
+      return dateValue;
     }
 
-    const time = new Date(dateValue).getTime();
-    return Number.isNaN(time) ? null : time;
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
   }
 }

@@ -1,0 +1,83 @@
+from django.contrib import admin
+
+from .models import (
+    Department,
+    Doctor,
+    Hospital,
+    Patient,
+    Test,
+    TestGroupItem,
+    TestReferenceRange,
+    TestResult,
+    Visit,
+    VisitTest,
+)
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("department_code", "name", "report_order", "is_active")
+    search_fields = ("department_code", "name")
+    list_filter = ("is_active",)
+
+
+@admin.register(Doctor)
+class DoctorAdmin(admin.ModelAdmin):
+    list_display = ("doctor_code", "name", "phone", "is_active")
+    search_fields = ("doctor_code", "name", "phone")
+    list_filter = ("is_active",)
+
+
+@admin.register(Hospital)
+class HospitalAdmin(admin.ModelAdmin):
+    list_display = ("hospital_code", "name", "phone", "is_active")
+    search_fields = ("hospital_code", "name", "phone")
+    list_filter = ("is_active",)
+
+
+@admin.register(Patient)
+class PatientAdmin(admin.ModelAdmin):
+    list_display = ("patient_code", "full_name", "gender", "age_years", "age_months", "phone")
+    search_fields = ("patient_code", "full_name", "phone")
+    list_filter = ("gender",)
+
+
+@admin.register(Test)
+class TestAdmin(admin.ModelAdmin):
+    list_display = ("test_code", "test_name", "department", "rate", "result_type", "is_group", "is_active")
+    search_fields = ("test_code", "test_name", "short_name")
+    list_filter = ("department", "result_type", "is_group", "is_active")
+
+
+@admin.register(TestGroupItem)
+class TestGroupItemAdmin(admin.ModelAdmin):
+    list_display = ("parent_test", "child_test", "line_order")
+    list_filter = ("parent_test",)
+
+
+@admin.register(Visit)
+class VisitAdmin(admin.ModelAdmin):
+    list_display = ("lab_no", "patient", "visit_date", "doctor", "hospital", "net_amount", "status")
+    search_fields = ("lab_no", "patient__full_name", "patient__phone")
+    list_filter = ("visit_date", "status", "pay_mode")
+
+
+@admin.register(VisitTest)
+class VisitTestAdmin(admin.ModelAdmin):
+    list_display = ("visit", "test_name_snapshot", "rate", "discount_percent", "amount", "line_order")
+    search_fields = ("visit__lab_no", "test_name_snapshot")
+
+
+@admin.register(TestReferenceRange)
+class TestReferenceRangeAdmin(admin.ModelAdmin):
+    list_display = ("test", "gender", "operator", "min_value", "max_value", "display_text", "is_active")
+    list_filter = ("gender", "operator", "is_active")
+    search_fields = ("test__test_name", "display_text")
+
+
+@admin.register(TestResult)
+class TestResultAdmin(admin.ModelAdmin):
+    list_display = ("visit", "test", "result_value", "result_value_numeric", "status", "entered_at", "authorized_at")
+    search_fields = ("visit__lab_no", "test__test_name", "result_value", "result_text")
+    list_filter = ("status",)
+
