@@ -73,8 +73,26 @@
   width: 130px;
 }
 
+.search-button {
+  min-width: 86px;
+  height: 27px;
+  border: 1px solid #888;
+  background: #ececec;
+  cursor: pointer;
+}
+
 .spacer {
   flex: 1;
+}
+
+.status-message {
+  margin: 0 10px 8px;
+  font-size: 12px;
+  color: #234c00;
+}
+
+.status-message.error {
+  color: #a00000;
 }
 
 .patient-grid {

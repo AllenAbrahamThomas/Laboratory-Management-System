@@ -27,7 +27,12 @@
       To
       <input type="date" name="toDate" [(ngModel)]="toDate">
     </label>
+
+    <button type="button" class="search-button" (click)="loadPatients()">Search</button>
   </div>
+
+  <p class="status-message" *ngIf="isLoading">Loading patient records...</p>
+  <p class="status-message error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
   <div class="patient-grid">
     <table>
@@ -42,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let patient of filteredPatients">
+        <tr *ngFor="let patient of patients" (click)="openPatientBill(patient)" title="Open billing">
           <td>{{ patient.labNo }}</td>
           <td>{{ patient.date }}</td>
           <td>{{ patient.patient }}</td>
@@ -60,9 +65,9 @@
       New Registration
     </button>
     <strong>Patient registration</strong>
-    <span class="patient-count">No. of patients: {{ filteredPatients.length }}</span>
+    <span class="patient-count">No. of patients: {{ patients.length }}</span>
 
-    <button type="button">Refresh</button>
+    <button type="button" (click)="loadPatients()">Refresh</button>
     <button type="button" (click)="closed.emit()">
       <span class="exit-icon">X</span>
       Exit

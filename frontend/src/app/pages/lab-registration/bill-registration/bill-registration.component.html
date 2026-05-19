@@ -6,6 +6,9 @@
   </header>
 
   <form class="bill-form">
+    <p class="status-message" *ngIf="isLoadingVisit">Loading selected patient bill...</p>
+    <p class="status-message error" *ngIf="loadError">{{ loadError }}</p>
+
     <section class="patient-details">
       <div class="compact-left">
         <div class="form-row top-row">

@@ -264,6 +264,7 @@ export class DashboardComponent implements OnInit {
 
   activeSession: LoginSession | null = null;
   activeRegistrationView: 'patients' | 'new-registration' | 'patient-advance-search' | null = null;
+  selectedVisitId: number | null = null;
   openTopMenu: TopMenuKey | null = null;
   openReportsSubmenu: TopMenuAction | null = null;
 
@@ -346,6 +347,12 @@ export class DashboardComponent implements OnInit {
   }
 
   openNewRegistration(): void {
+    this.selectedVisitId = null;
+    this.activeRegistrationView = 'new-registration';
+  }
+
+  openExistingRegistration(visitId: number): void {
+    this.selectedVisitId = visitId;
     this.activeRegistrationView = 'new-registration';
   }
 
