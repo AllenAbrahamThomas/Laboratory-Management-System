@@ -27,6 +27,10 @@ class VisitListSerializer(serializers.ModelSerializer):
             "phone",
             "doctor",
             "pay_status",
+            "gross_amount",
+            "received_amount",
+            "balance_amount",
+            "created_at",
         ]
 
     def get_doctor(self, obj: Visit) -> str:

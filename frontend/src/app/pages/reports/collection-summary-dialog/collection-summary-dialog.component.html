@@ -1,0 +1,125 @@
+<section class="summary-window" aria-label="Collection summary window">
+  <header class="summary-title">
+    {{ title }}
+    <button type="button" (click)="closed.emit()" aria-label="Close">X</button>
+  </header>
+
+  <div class="summary-body">
+    <fieldset class="criteria-box">
+      <legend>Criteria</legend>
+
+      <label *ngIf="mode !== 'monthly' && mode !== 'department-wise-monthly'">
+        Date from:
+        <input type="date" [(ngModel)]="fromDate">
+      </label>
+
+      <label *ngIf="mode !== 'monthly' && mode !== 'department-wise-monthly'">
+        Date to:
+        <input type="date" [(ngModel)]="toDate">
+      </label>
+
+      <label *ngIf="mode === 'monthly' || mode === 'department-wise-monthly'">
+        Month:
+        <input type="month" [(ngModel)]="selectedMonth">
+      </label>
+
+      <label *ngIf="isDepartmentWiseMode()">
+        Department:
+        <select [(ngModel)]="selectedDepartment">
+          <option *ngFor="let department of departments" [value]="department">{{ department }}</option>
+        </select>
+      </label>
+
+      <div class="criteria-actions">
+        <button type="button" (click)="preview()">Preview</button>
+        <button type="button" (click)="closed.emit()">Exit</button>
+      </div>
+    </fieldset>
+
+    <div class="report-sheet" *ngIf="!isLoading && !errorMessage">
+      <div class="report-header">
+        <h3>Neethi Clinical Lab</h3>
+        <p>Collection Statement</p>
+        <p>From {{ fromDate }} To {{ toDate }}</p>
+      </div>
+
+      <table class="main-table">
+        <colgroup>
+          <col style="width:8%">
+          <col style="width:14%">
+          <col style="width:34%">
+          <col style="width:14%">
+          <col style="width:14%">
+          <col style="width:16%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>SL.NO</th>
+            <th>INV.NO</th>
+            <th>PARTICULARS</th>
+            <th>CREDIT</th>
+            <th>CASH</th>
+            <th>RCVD.AMT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>{{ row.slNo }}</td>
+            <td>{{ row.invNo }}</td>
+            <td>{{ row.patient }}</td>
+            <td>{{ row.credit | number:'1.2-2' }}</td>
+            <td>{{ row.cash | number:'1.2-2' }}</td>
+            <td>{{ row.received | number:'1.2-2' }}</td>
+          </tr>
+          <tr *ngIf="rows.length === 0">
+            <td colspan="6">No records for selected criteria.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-line">
+        <strong>Total Bill: {{ totalBillAmount | number:'1.2-2' }}</strong>
+        <strong>Total Received: {{ totalReceived | number:'1.2-2' }}</strong>
+      </div>
+
+      <ng-container *ngIf="pendingRows.length > 0">
+        <h4 class="pending-title">PENDING COLLECTION</h4>
+        <table class="pending-table">
+          <colgroup>
+            <col style="width:10%">
+            <col style="width:16%">
+            <col style="width:38%">
+            <col style="width:18%">
+            <col style="width:18%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>SL.NO</th>
+              <th>INV.NO</th>
+              <th>PATIENT</th>
+              <th>RCVD.AMT</th>
+              <th>BALANCE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of pendingRows">
+              <td>{{ row.slNo }}</td>
+              <td>{{ row.invNo }}</td>
+              <td>{{ row.patient }}</td>
+              <td>{{ row.received | number:'1.2-2' }}</td>
+              <td>{{ row.credit | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+
+      <div class="summary-footer">
+        <div>Pending Amount: <strong>{{ totalPendingAmount | number:'1.2-2' }}</strong></div>
+        <div>Net Balance: <strong>{{ netBalance | number:'1.2-2' }}</strong></div>
+      </div>
+    </div>
+
+    <p class="status" *ngIf="isLoading">Loading preview...</p>
+    <p class="status error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </div>
+</section>

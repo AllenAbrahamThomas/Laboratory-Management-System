@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { BillRegistrationComponent } from '../lab-registration/bill-registration/bill-registration.component';
 import { PatientListComponent } from '../lab-registration/patient-list/patient-list.component';
 import { PatientAdvanceSearchComponent } from '../patient-advance-search/patient-advance-search.component';
+import { CollectionSummaryDialogComponent } from '../reports/collection-summary-dialog/collection-summary-dialog.component';
 import { AuthService, LoginSession } from '../../services/auth.service';
 import { ClockService } from '../../services/clock.service';
 
@@ -112,7 +113,7 @@ type TopMenu = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent, PatientAdvanceSearchComponent],
+  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent, PatientAdvanceSearchComponent, CollectionSummaryDialogComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -266,6 +267,8 @@ export class DashboardComponent implements OnInit {
   activeRegistrationView: 'patients' | 'pending-collection' | 'new-registration' | 'patient-advance-search' | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
+  activeCollectionSummaryMode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly' | null = null;
+  activeCollectionSummaryTitle = 'Collection summary';
   openTopMenu: TopMenuKey | null = null;
   openReportsSubmenu: TopMenuAction | null = null;
 
@@ -352,6 +355,26 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    if (action === 'daily-collection-statement') {
+      this.openCollectionSummary('daily', 'Daily Collection Summary');
+      return;
+    }
+
+    if (action === 'collection-summary') {
+      this.openCollectionSummary('monthly', 'Monthly Collection Summary');
+      return;
+    }
+
+    if (action === 'daily-collection-summary-division-wise') {
+      this.openCollectionSummary('department-wise-daily', 'Department Wise Daily Collection Summary');
+      return;
+    }
+
+    if (action === 'monthly-collection-summary-division-wise') {
+      this.openCollectionSummary('department-wise-monthly', 'Department Wise Monthly Collection Summary');
+      return;
+    }
+
     if (action === 'exit') {
       this.logout();
     }
@@ -381,6 +404,15 @@ export class DashboardComponent implements OnInit {
 
   openPatientAdvanceSearch(): void {
     this.activeRegistrationView = 'patient-advance-search';
+  }
+
+  closeCollectionSummary(): void {
+    this.activeCollectionSummaryMode = null;
+  }
+
+  private openCollectionSummary(mode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly', title: string): void {
+    this.activeCollectionSummaryMode = mode;
+    this.activeCollectionSummaryTitle = title;
   }
 
   logout(): void {
