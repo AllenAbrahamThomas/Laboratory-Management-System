@@ -24,6 +24,7 @@ interface TestLine {
 })
 export class BillRegistrationComponent implements OnChanges {
   @Input() selectedVisitId: number | null = null;
+  @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
   @Output() closed = new EventEmitter<void>();
   @Output() advanceSearch = new EventEmitter<void>();
 
@@ -83,16 +84,18 @@ export class BillRegistrationComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    const openModeChange = changes['openMode'];
     const selectedVisitIdChange = changes['selectedVisitId'];
-    if (!selectedVisitIdChange) {
+    if (openModeChange && this.openMode === 'new' && this.selectedVisitId === null) {
+      this.resetForNewRegistration();
       return;
     }
 
-    if (this.selectedVisitId === null) {
+    if (!selectedVisitIdChange || this.selectedVisitId === null) {
       return;
     }
 
-    this.loadVisit(this.selectedVisitId);
+    this.loadVisit(this.selectedVisitId, this.openMode);
   }
 
   addTestLine(): void {
@@ -140,13 +143,17 @@ export class BillRegistrationComponent implements OnChanges {
     this.grossAmount = this.tests.reduce((total, item) => total + (Number(item.amount) || 0), 0);
   }
 
-  private loadVisit(visitId: number): void {
+  private loadVisit(visitId: number, mode: 'new' | 'existing' | 'prefill-only'): void {
     this.isLoadingVisit = true;
     this.loadError = '';
 
     this.visitService.getVisitById(visitId).subscribe({
       next: (visit) => {
-        this.applyVisitData(visit);
+        if (mode === 'prefill-only') {
+          this.applyPrefillOnlyData(visit);
+        } else {
+          this.applyVisitData(visit);
+        }
         this.isLoadingVisit = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -204,6 +211,72 @@ export class BillRegistrationComponent implements OnChanges {
     }];
     this.selectedTestSlNo = null;
     this.updateGrossAmount();
+  }
+
+  private applyPrefillOnlyData(visit: VisitDetail): void {
+    this.patientName = visit.patient_name;
+    this.gender = visit.gender || 'Male';
+    this.age = String(visit.age_years ?? 0);
+    this.ageType = 'Years';
+    this.month = String(visit.age_months ?? 0);
+    this.phone = visit.phone;
+    this.address = visit.address;
+    this.sampleOn = this.getSampleTime();
+    this.ipNo = visit.ip_no;
+    this.doctor = visit.doctor;
+    this.outDoctor = visit.out_doctor_name;
+    this.hospital = visit.hospital;
+    this.corporate = visit.corporate_name;
+    this.note = '';
+
+    this.tests = [{
+      slNo: 1,
+      testCode: '',
+      testName: '',
+      rate: null,
+      discount: null,
+      amount: null
+    }];
+    this.selectedTestSlNo = null;
+    this.discountPercent = '';
+    this.receivedAmount = '';
+    this.balanceAmount = '';
+    this.grossAmount = 0;
+    this.roundOff = '';
+    this.discountReason = '';
+  }
+
+  private resetForNewRegistration(): void {
+    this.patientName = '';
+    this.gender = 'Male';
+    this.age = '';
+    this.ageType = 'Years';
+    this.month = '';
+    this.phone = '';
+    this.address = '';
+    this.sampleOn = this.getSampleTime();
+    this.ipNo = '';
+    this.doctor = '';
+    this.outDoctor = '';
+    this.hospital = '';
+    this.corporate = '';
+    this.discountMode = 'NORMAL';
+    this.discountPercent = '';
+    this.receivedAmount = '';
+    this.balanceAmount = '';
+    this.grossAmount = 0;
+    this.note = '';
+    this.roundOff = '';
+    this.discountReason = '';
+    this.tests = [{
+      slNo: 1,
+      testCode: '',
+      testName: '',
+      rate: null,
+      discount: null,
+      amount: null
+    }];
+    this.selectedTestSlNo = null;
   }
 
   private toTitleCase(value: string): string {

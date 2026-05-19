@@ -18,9 +18,9 @@
     </div>
 
     <div class="query-fields">
-      <input class="active-query" name="phoneQuery" [(ngModel)]="phoneQuery">
-      <input name="patientQuery" [(ngModel)]="patientQuery">
-      <input name="addressQuery" [(ngModel)]="addressQuery">
+      <input name="phoneQuery" [(ngModel)]="phoneQuery" [class.active-query]="getIsActiveSearch('phone')">
+      <input name="patientQuery" [(ngModel)]="patientQuery" [class.active-query]="getIsActiveSearch('patient')">
+      <input name="addressQuery" [(ngModel)]="addressQuery" [class.active-query]="getIsActiveSearch('address')">
     </div>
 
     <fieldset class="open-type">
@@ -33,6 +33,9 @@
     <button type="button" class="search-button" (click)="search()">Search..</button>
   </section>
 
+  <p class="status-message" *ngIf="isLoading">Searching visit records...</p>
+  <p class="status-message error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
   <section class="result-grid">
     <table>
       <thead>
@@ -42,33 +45,37 @@
           <th>Patient</th>
           <th>Gender</th>
           <th>Age</th>
-          <th>Age Group</th>
           <th>Address</th>
           <th>Phone</th>
-          <th>Email</th>
           <th>Invoiced by</th>
-          <th>Year</th>
+          <th>Visit Count</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let result of results">
+        <tr
+          *ngFor="let result of results"
+          [class.selected-row]="selectedVisitId === result.id"
+          (click)="selectVisit(result.id)"
+          (dblclick)="openSelected()"
+        >
           <td>{{ result.invoiceNo }}</td>
           <td>{{ result.date }}</td>
           <td>{{ result.patient }}</td>
           <td>{{ result.gender }}</td>
           <td>{{ result.age }}</td>
-          <td>{{ result.ageGroup }}</td>
           <td>{{ result.address }}</td>
           <td>{{ result.phone }}</td>
-          <td>{{ result.email }}</td>
           <td>{{ result.invoicedBy }}</td>
-          <td>{{ result.year }}</td>
+          <td>{{ result.visitsCount }}</td>
         </tr>
       </tbody>
     </table>
   </section>
 
   <footer class="window-footer">
+    <button type="button" (click)="openSelected()" [disabled]="selectedVisitId === null">
+      Open Selected
+    </button>
     <button type="button" (click)="closed.emit()">Exit</button>
   </footer>
 </section>
