@@ -21,6 +21,8 @@ def visit_list(request):
     address = request.query_params.get("address", "").strip()
     match_mode = request.query_params.get("match_mode", "contains").strip().lower()
     pending_only = request.query_params.get("pending_only", "").strip().lower()
+    department = request.query_params.get("department", "").strip()
+    split_by_department = request.query_params.get("split_by_department", "").strip().lower()
     from_date = request.query_params.get("from_date", "").strip()
     to_date = request.query_params.get("to_date", "").strip()
 
@@ -50,6 +52,53 @@ def visit_list(request):
 
     if pending_only in {"1", "true", "yes"}:
         queryset = queryset.filter(balance_amount__gt=0)
+
+    if department and department.lower() != "all":
+        queryset = queryset.filter(visit_tests__test__department__name__iexact=department).distinct()
+
+    if split_by_department in {"1", "true", "yes"} and department and department.lower() != "all":
+        queryset = queryset.prefetch_related("visit_tests__test")
+        department_rows = []
+        for visit in queryset.order_by("visit_date", "id"):
+            dept_total = Decimal("0")
+            for visit_test in visit.visit_tests.all():
+                test_department = getattr(getattr(visit_test, "test", None), "department", None)
+                if not test_department:
+                    continue
+                if str(test_department.name).strip().lower() != department.lower():
+                    continue
+                dept_total += Decimal(visit_test.amount or 0)
+
+            if dept_total <= 0:
+                continue
+
+            gross_amount = Decimal(visit.gross_amount or 0)
+            received_amount = Decimal(visit.received_amount or 0)
+            ratio = (dept_total / gross_amount) if gross_amount > 0 else Decimal("0")
+            dept_received = (received_amount * ratio).quantize(Decimal("0.01"))
+            if dept_received > dept_total:
+                dept_received = dept_total
+            dept_balance = (dept_total - dept_received).quantize(Decimal("0.01"))
+
+            department_rows.append({
+                "id": visit.id,
+                "lab_no": visit.lab_no,
+                "visit_date": visit.visit_date,
+                "patient": visit.patient.full_name,
+                "gender": visit.patient.get_gender_display(),
+                "age_years": visit.patient.age_years,
+                "age_months": visit.patient.age_months,
+                "address": visit.patient.address,
+                "phone": visit.patient.phone,
+                "doctor": visit.doctor.name if visit.doctor_id else visit.out_doctor_name,
+                "pay_status": "Pending" if dept_balance > 0 else "Paid",
+                "gross_amount": dept_total,
+                "received_amount": dept_received,
+                "balance_amount": dept_balance,
+                "created_at": visit.created_at,
+            })
+
+        return Response(department_rows)
 
     queryset = queryset.order_by("visit_date", "id")
     return Response(VisitListSerializer(queryset, many=True).data)

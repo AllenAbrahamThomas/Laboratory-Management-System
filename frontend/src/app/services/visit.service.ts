@@ -14,6 +14,10 @@ export interface VisitSummary {
   phone: string;
   doctor: string;
   pay_status: string;
+  gross_amount?: number;
+  received_amount?: number;
+  balance_amount?: number;
+  created_at?: string;
 }
 
 export interface VisitListFilters {
@@ -23,6 +27,8 @@ export interface VisitListFilters {
   address?: string;
   matchMode?: 'contains' | 'startswith';
   pendingOnly?: boolean;
+  department?: string;
+  splitByDepartment?: boolean;
   fromDate?: string;
   toDate?: string;
 }
@@ -120,6 +126,14 @@ export class VisitService {
 
     if (filters.pendingOnly) {
       params = params.set('pending_only', '1');
+    }
+
+    if (filters.department?.trim()) {
+      params = params.set('department', filters.department.trim());
+    }
+
+    if (filters.splitByDepartment) {
+      params = params.set('split_by_department', '1');
     }
 
     if (filters.fromDate?.trim()) {

@@ -94,6 +94,13 @@
           (openRequested)="openFromAdvanceSearch($event)"
           (closed)="closeRegistration()"
         ></app-patient-advance-search>
+
+        <app-collection-summary-dialog
+          *ngIf="activeCollectionSummaryMode"
+          [mode]="activeCollectionSummaryMode"
+          [title]="activeCollectionSummaryTitle"
+          (closed)="closeCollectionSummary()"
+        ></app-collection-summary-dialog>
       </div>
     </section>
 
