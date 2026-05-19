@@ -62,7 +62,10 @@ export class BillRegistrationComponent implements OnChanges {
   discountReason = '';
   selectedTestSlNo: number | null = null;
   isLoadingVisit = false;
+  isSaving = false;
+  saveMessage = '';
   loadError = '';
+  private currentVisitId: number | null = null;
 
   tests: TestLine[] = [
     {
@@ -139,8 +142,25 @@ export class BillRegistrationComponent implements OnChanges {
     this.updateGrossAmount();
   }
 
+  onReceivedAmountChange(): void {
+    this.updateBalanceAmount();
+  }
+
+  onRoundOffChange(): void {
+    this.updateBalanceAmount();
+  }
+
   private updateGrossAmount(): void {
     this.grossAmount = this.tests.reduce((total, item) => total + (Number(item.amount) || 0), 0);
+    this.updateBalanceAmount();
+  }
+
+  private updateBalanceAmount(): void {
+    const received = Number(this.receivedAmount) || 0;
+    const roundOff = Number(this.roundOff) || 0;
+    const netPayable = this.grossAmount + roundOff;
+    const balance = Math.max(netPayable - received, 0);
+    this.balanceAmount = balance.toFixed(2);
   }
 
   private loadVisit(visitId: number, mode: 'new' | 'existing' | 'prefill-only'): void {
@@ -149,6 +169,7 @@ export class BillRegistrationComponent implements OnChanges {
 
     this.visitService.getVisitById(visitId).subscribe({
       next: (visit) => {
+        this.currentVisitId = mode === 'prefill-only' ? null : visit.id;
         if (mode === 'prefill-only') {
           this.applyPrefillOnlyData(visit);
         } else {
@@ -157,6 +178,7 @@ export class BillRegistrationComponent implements OnChanges {
         this.isLoadingVisit = false;
       },
       error: (error: HttpErrorResponse) => {
+        this.currentVisitId = null;
         this.isLoadingVisit = false;
         this.loadError = error.status === 0
           ? 'Unable to reach backend.'
@@ -247,6 +269,7 @@ export class BillRegistrationComponent implements OnChanges {
   }
 
   private resetForNewRegistration(): void {
+    this.currentVisitId = null;
     this.patientName = '';
     this.gender = 'Male';
     this.age = '';
@@ -323,6 +346,56 @@ export class BillRegistrationComponent implements OnChanges {
       minute: '2-digit',
       hour12: true
     }).replace(',', '');
+  }
+
+  saveVisit(): void {
+    this.isSaving = true;
+    this.saveMessage = '';
+
+    const payload = {
+      lab_no: this.labNo.trim(),
+      patient_name: this.patientName.trim(),
+      gender: this.gender.toLowerCase(),
+      age_years: Number(this.age) || 0,
+      age_months: Number(this.month) || 0,
+      phone: this.phone.trim(),
+      address: this.address.trim(),
+      sample_on: this.sampleOn,
+      ip_no: this.ipNo.trim(),
+      out_doctor_name: this.outDoctor.trim(),
+      corporate_name: this.corporate.trim(),
+      pay_mode: this.payMode.toLowerCase(),
+      discount_mode: this.discountMode.toLowerCase(),
+      discount_percent: Number(this.discountPercent) || 0,
+      discount_reason: this.discountReason.trim(),
+      received_amount: Number(this.receivedAmount) || 0,
+      balance_amount: Number(this.balanceAmount) || 0,
+      gross_amount: Number(this.grossAmount) || 0,
+      round_off: Number(this.roundOff) || 0,
+      note: this.note.trim(),
+    };
+
+    const targetVisitId = this.openMode === 'prefill-only'
+      ? null
+      : (this.currentVisitId ?? this.selectedVisitId);
+    const request$ = targetVisitId
+      ? this.visitService.updateVisit(targetVisitId, payload)
+      : this.visitService.createVisit(payload);
+
+    request$.subscribe({
+      next: (savedVisit) => {
+        this.currentVisitId = savedVisit.id;
+        this.saveMessage = 'Saved successfully.';
+        this.isSaving = false;
+        this.applyVisitData(savedVisit);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isSaving = false;
+        this.saveMessage = error.status === 0
+          ? 'Unable to reach backend.'
+          : 'Save failed.';
+      }
+    });
   }
 
 }

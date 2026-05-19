@@ -1,7 +1,7 @@
 <section class="registration-window" aria-label="Patients view - patient registration">
   <header class="window-title">
     <span class="app-icon">A</span>
-    Patients view - patient registration
+    {{ headerTitle }}
     <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
   </header>
 
@@ -60,7 +60,7 @@
   </div>
 
   <footer class="window-footer">
-    <button type="button" class="new-button" (click)="newRegistration.emit()">
+    <button type="button" class="new-button" (click)="newRegistration.emit()" *ngIf="mode === 'all'">
       <span>+</span>
       New Registration
     </button>
