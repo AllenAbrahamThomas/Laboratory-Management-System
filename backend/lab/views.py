@@ -7,7 +7,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 
-from .models import Patient, Visit
+from .models import Patient, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest
 from .serializers import VisitDetailSerializer, VisitListSerializer
 
 
@@ -228,3 +228,126 @@ def visit_update(request, visit_id: int):
     visit.save()
 
     return Response(VisitDetailSerializer(visit).data)
+
+
+def _build_result_entry_payload(visit: Visit) -> dict:
+    visit_tests = list(
+        visit.visit_tests.select_related("test").order_by("line_order", "id")
+    )
+    patient = visit.patient
+    gender_code = (patient.gender or "").lower()
+    age_years = int(patient.age_years or 0)
+    age_months = int(patient.age_months or 0)
+
+    tests = []
+    for vt in visit_tests:
+        test = vt.test
+        if test.is_group:
+            child_items = TestGroupItem.objects.filter(parent_test=test).select_related("child_test").order_by("line_order", "id")
+            child_rows = []
+            for item in child_items:
+                child_test = item.child_test
+                existing_result = TestResult.objects.filter(visit=visit, visit_test=vt, test=child_test).order_by("-id").first()
+                reference = TestReferenceRange.objects.filter(test=child_test, is_active=True).filter(
+                    gender__in=[gender_code, "any"]
+                ).order_by("id").first()
+                child_rows.append({
+                    "test_id": child_test.id,
+                    "test_name": child_test.test_name,
+                    "unit": child_test.unit or "",
+                    "reference_range": reference.display_text if reference and reference.display_text else "",
+                    "result_value": existing_result.result_value if existing_result else "",
+                    "note": existing_result.remarks if existing_result else "",
+                })
+            tests.append({
+                "visit_test_id": vt.id,
+                "test_id": test.id,
+                "test_name": vt.test_name_snapshot or test.test_name,
+                "type": "group",
+                "children": child_rows,
+            })
+        else:
+            existing_result = TestResult.objects.filter(visit=visit, visit_test=vt, test=test).order_by("-id").first()
+            reference = TestReferenceRange.objects.filter(test=test, is_active=True).filter(
+                gender__in=[gender_code, "any"]
+            ).order_by("id").first()
+            tests.append({
+                "visit_test_id": vt.id,
+                "test_id": test.id,
+                "test_name": vt.test_name_snapshot or test.test_name,
+                "type": "general",
+                "unit": test.unit or "",
+                "reference_range": reference.display_text if reference and reference.display_text else "",
+                "result_value": existing_result.result_value if existing_result else "",
+                "note": existing_result.remarks if existing_result else "",
+            })
+
+    return {
+        "visit_id": visit.id,
+        "lab_no": visit.lab_no,
+        "date": str(visit.visit_date),
+        "pay_mode": visit.pay_mode,
+        "patient_name": patient.full_name,
+        "gender": patient.get_gender_display(),
+        "age_years": age_years,
+        "age_months": age_months,
+        "phone": patient.phone,
+        "address": patient.address,
+        "doctor": visit.doctor.name if visit.doctor_id else visit.out_doctor_name,
+        "out_doctor_name": visit.out_doctor_name,
+        "hospital": visit.hospital.name if visit.hospital_id else "",
+        "tests": tests,
+    }
+
+
+@api_view(["GET"])
+def result_entry_by_visit(request, visit_id: int):
+    visit = get_object_or_404(
+        Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
+        id=visit_id,
+    )
+    return Response(_build_result_entry_payload(visit))
+
+
+@api_view(["GET"])
+def result_entry_by_lab_no(request, lab_no: str):
+    visit = get_object_or_404(
+        Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
+        lab_no=lab_no,
+    )
+    return Response(_build_result_entry_payload(visit))
+
+
+@api_view(["POST"])
+def result_entry_save(request, visit_id: int):
+    visit = get_object_or_404(Visit, id=visit_id)
+    entries = request.data.get("entries", [])
+    if not isinstance(entries, list):
+        return Response({"detail": "entries must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+
+    for entry in entries:
+        visit_test_id = entry.get("visit_test_id")
+        test_id = entry.get("test_id")
+        result_value = str(entry.get("result_value", "")).strip()
+        note = str(entry.get("note", "")).strip()
+
+        if not visit_test_id or not test_id:
+            continue
+
+        vt = VisitTest.objects.filter(id=visit_test_id, visit=visit).first()
+        if not vt:
+            continue
+
+        tr = TestResult.objects.filter(visit=visit, visit_test=vt, test_id=test_id).order_by("-id").first()
+        if tr is None:
+            tr = TestResult(visit=visit, visit_test=vt, test_id=test_id)
+
+        tr.result_value = result_value
+        tr.remarks = note
+        tr.status = TestResult.Status.ENTERED if result_value else TestResult.Status.PENDING
+        tr.entered_at = timezone.now() if result_value else None
+        tr.save()
+
+    visit.status = Visit.Status.RESULT_ENTERED
+    visit.save(update_fields=["status", "updated_at"])
+    return Response({"detail": "Saved"})

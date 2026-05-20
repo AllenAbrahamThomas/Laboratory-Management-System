@@ -1,0 +1,99 @@
+<section class="result-window" aria-label="Result Issuing">
+  <header class="window-title">
+    Result Issuing
+    <button type="button" (click)="closed.emit()">X</button>
+  </header>
+
+  <div class="lookup-strip" *ngIf="!resultData">
+    <label>Lab No: <input [(ngModel)]="labNoSearch"></label>
+    <button type="button" (click)="loadByLabNo()">Open</button>
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </div>
+
+  <p class="status" *ngIf="isLoading">Loading...</p>
+  <p class="status error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="status" *ngIf="infoMessage">{{ infoMessage }}</p>
+
+  <ng-container *ngIf="resultData as data">
+    <section class="patient-head">
+      <div>Lab No: <strong>{{ data.lab_no }}</strong></div>
+      <div>Date: {{ data.date }}</div>
+      <div>Name: <strong>{{ data.patient_name }}</strong></div>
+      <div>Gender: {{ data.gender }}</div>
+      <div>Age: {{ data.age_years }} Years {{ data.age_months }} Months</div>
+      <div>Phone: {{ data.phone }}</div>
+    </section>
+
+    <section class="result-body">
+      <table class="test-list">
+        <thead>
+          <tr><th>Sl.No</th><th>Test Name</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let test of data.tests; let i = index" [class.active]="selectedTest?.visit_test_id === test.visit_test_id" (click)="selectTest(test)">
+            <td>{{ i + 1 }}</td>
+            <td>{{ test.test_name }}</td>
+            <td>{{ test.type === 'group' ? 'Group Test' : 'General Test' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="editor" *ngIf="selectedTest as test">
+        <h4>{{ test.test_name }}</h4>
+
+        <table *ngIf="test.type === 'group' && test.children?.length">
+          <thead>
+            <tr><th>Test</th><th>Reference</th><th>Result</th><th>Unit</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let child of test.children">
+              <td>{{ child.test_name }}</td>
+              <td>{{ child.reference_range }}</td>
+              <td><input [(ngModel)]="child.result_value"></td>
+              <td>{{ child.unit }}</td>
+              <td><input [(ngModel)]="child.note"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table *ngIf="test.type === 'general'">
+          <thead>
+            <tr><th>Reference</th><th>Result</th><th>Unit</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ test.reference_range }}</td>
+              <td><input [(ngModel)]="test.result_value"></td>
+              <td>{{ test.unit }}</td>
+              <td><input [(ngModel)]="test.note"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="action-bar">
+      <button type="button" (click)="saveResults()" [disabled]="isSaving">Save</button>
+      <button type="button" (click)="openPrintPreview()">Print</button>
+      <button type="button" (click)="closed.emit()">Exit</button>
+    </footer>
+
+    <section class="print-preview" *ngIf="showPreview">
+      <header>
+        <strong>Report Preview</strong>
+        <button type="button" (click)="closePrintPreview()">X</button>
+      </header>
+      <div class="preview-sheet">
+        <h3>{{ data.patient_name }} ({{ data.lab_no }})</h3>
+        <p>{{ data.gender }}, {{ data.age_years }} Years</p>
+        <div *ngFor="let test of data.tests">
+          <h4>{{ test.test_name }}</h4>
+          <div *ngIf="test.type === 'general'">{{ test.result_value || '-' }} {{ test.unit }}</div>
+          <div *ngIf="test.type === 'group'">
+            <div *ngFor="let child of test.children">{{ child.test_name }}: {{ child.result_value || '-' }} {{ child.unit }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</section>

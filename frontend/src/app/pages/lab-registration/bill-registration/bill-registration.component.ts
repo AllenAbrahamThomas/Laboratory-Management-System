@@ -27,6 +27,7 @@ export class BillRegistrationComponent implements OnChanges {
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
   @Output() closed = new EventEmitter<void>();
   @Output() advanceSearch = new EventEmitter<void>();
+  @Output() resultEntry = new EventEmitter<number>();
 
   private readonly clockService = inject(ClockService);
   private readonly visitService = inject(VisitService);
@@ -34,11 +35,13 @@ export class BillRegistrationComponent implements OnChanges {
 
   readonly paymentModes = ['Cash', 'Card', 'UPI', 'Credit'];
   readonly discountModes = ['NORMAL', 'CORPORATE', 'STAFF'];
+  readonly salutations = ['Mr', 'Mrs', 'Miss', 'Ms', 'Master', 'Father', 'Mother', 'Baby'];
   readonly today = this.getTodayDate();
 
   currentTime = new Date();
   labNo = '00001';
   payMode = 'Cash';
+  salutation = 'Mr';
   patientName = '';
   gender = 'Male';
   age = '';
@@ -190,7 +193,9 @@ export class BillRegistrationComponent implements OnChanges {
   private applyVisitData(visit: VisitDetail): void {
     this.labNo = visit.lab_no;
     this.payMode = this.toTitleCase(visit.pay_mode);
-    this.patientName = visit.patient_name;
+    const parsedName = this.parsePatientName(visit.patient_name);
+    this.salutation = parsedName.salutation;
+    this.patientName = parsedName.name;
     this.gender = visit.gender;
     this.age = String(visit.age_years ?? 0);
     this.ageType = 'Years';
@@ -236,7 +241,9 @@ export class BillRegistrationComponent implements OnChanges {
   }
 
   private applyPrefillOnlyData(visit: VisitDetail): void {
-    this.patientName = visit.patient_name;
+    const parsedName = this.parsePatientName(visit.patient_name);
+    this.salutation = parsedName.salutation;
+    this.patientName = parsedName.name;
     this.gender = visit.gender || 'Male';
     this.age = String(visit.age_years ?? 0);
     this.ageType = 'Years';
@@ -270,6 +277,7 @@ export class BillRegistrationComponent implements OnChanges {
 
   private resetForNewRegistration(): void {
     this.currentVisitId = null;
+    this.salutation = 'Mr';
     this.patientName = '';
     this.gender = 'Male';
     this.age = '';
@@ -354,7 +362,7 @@ export class BillRegistrationComponent implements OnChanges {
 
     const payload = {
       lab_no: this.labNo.trim(),
-      patient_name: this.patientName.trim(),
+      patient_name: this.buildPatientName(),
       gender: this.gender.toLowerCase(),
       age_years: Number(this.age) || 0,
       age_months: Number(this.month) || 0,
@@ -396,6 +404,41 @@ export class BillRegistrationComponent implements OnChanges {
           : 'Save failed.';
       }
     });
+  }
+
+  openResultEntry(): void {
+    const visitId = this.currentVisitId ?? this.selectedVisitId;
+    if (visitId) {
+      this.resultEntry.emit(visitId);
+    }
+  }
+
+  private parsePatientName(value: string): { salutation: string; name: string } {
+    const trimmed = (value || '').trim();
+    if (!trimmed) {
+      return { salutation: 'Mr', name: '' };
+    }
+
+    const parts = trimmed.split(/\s+/);
+    const firstToken = parts[0].replace('.', '');
+    const matched = this.salutations.find((item) => item.toLowerCase() === firstToken.toLowerCase());
+    if (!matched) {
+      return { salutation: 'Mr', name: trimmed };
+    }
+
+    return {
+      salutation: matched,
+      name: parts.slice(1).join(' ').trim()
+    };
+  }
+
+  private buildPatientName(): string {
+    const name = this.patientName.trim();
+    const salutation = this.salutation.trim();
+    if (!name) {
+      return salutation;
+    }
+    return `${salutation} ${name}`;
   }
 
 }

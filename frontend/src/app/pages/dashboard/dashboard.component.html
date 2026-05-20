@@ -86,8 +86,15 @@
           [selectedVisitId]="selectedVisitId"
           [openMode]="billOpenMode"
           (advanceSearch)="openPatientAdvanceSearch()"
+          (resultEntry)="openResultEntry($event)"
           (closed)="closeRegistration()"
         ></app-bill-registration>
+
+        <app-result-entry
+          *ngIf="activeRegistrationView === 'result-entry'"
+          [selectedVisitId]="selectedVisitId"
+          (closed)="closeRegistration()"
+        ></app-result-entry>
 
         <app-patient-advance-search
           *ngIf="activeRegistrationView === 'patient-advance-search'"
