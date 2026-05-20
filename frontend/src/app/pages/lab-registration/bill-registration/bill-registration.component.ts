@@ -4,7 +4,7 @@ import { Component, DestroyRef, EventEmitter, Input, OnChanges, Output, SimpleCh
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../../services/clock.service';
-import { VisitDetail, VisitService } from '../../../services/visit.service';
+import { TestLookupItem, VisitDetail, VisitService } from '../../../services/visit.service';
 
 interface TestLine {
   slNo: number;
@@ -35,7 +35,7 @@ export class BillRegistrationComponent implements OnChanges {
 
   readonly paymentModes = ['Cash', 'Card', 'UPI', 'Credit'];
   readonly discountModes = ['NORMAL', 'CORPORATE', 'STAFF'];
-  readonly salutations = ['Mr', 'Mrs', 'Miss', 'Ms', 'Master', 'Father', 'Mother', 'Baby'];
+  readonly salutations = ['Mr.', 'Mrs.', 'Miss.', 'Paster', 'Master.', 'Fr.', 'Mother.', 'Baby.', 'Sist.', 'Dr.', 'Justice'];
   readonly today = this.getTodayDate();
 
   currentTime = new Date();
@@ -68,6 +68,14 @@ export class BillRegistrationComponent implements OnChanges {
   isSaving = false;
   saveMessage = '';
   loadError = '';
+  showEditInvoiceDialog = false;
+  editLabNo = '';
+  editLookupError = '';
+  isLookingUpLabNo = false;
+  testSuggestions: TestLookupItem[] = [];
+  activeSuggestionSlNo: number | null = null;
+  isLoadingTestSuggestions = false;
+  private testLookupDebounceHandle: ReturnType<typeof setTimeout> | null = null;
   private currentVisitId: number | null = null;
 
   tests: TestLine[] = [
@@ -92,6 +100,10 @@ export class BillRegistrationComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     const openModeChange = changes['openMode'];
     const selectedVisitIdChange = changes['selectedVisitId'];
+    if (openModeChange && this.openMode === 'existing' && this.selectedVisitId === null) {
+      this.showEditInvoiceDialog = true;
+    }
+
     if (openModeChange && this.openMode === 'new' && this.selectedVisitId === null) {
       this.resetForNewRegistration();
       return;
@@ -145,6 +157,89 @@ export class BillRegistrationComponent implements OnChanges {
     this.updateGrossAmount();
   }
 
+  onPatientNameEnter(event: Event): void {
+    event.preventDefault();
+    this.patientName = this.toUppercase(this.patientName);
+  }
+
+  openEditInvoiceLookup(): void {
+    this.showEditInvoiceDialog = true;
+    this.editLookupError = '';
+  }
+
+  closeEditInvoiceLookup(): void {
+    this.showEditInvoiceDialog = false;
+    this.editLookupError = '';
+  }
+
+  searchEditInvoiceByLabNo(): void {
+    const labNo = this.editLabNo.trim();
+    if (!labNo) {
+      this.editLookupError = 'Enter lab number.';
+      return;
+    }
+    this.isLookingUpLabNo = true;
+    this.editLookupError = '';
+    this.visitService.getVisitByLabNo(labNo).subscribe({
+      next: (visit) => {
+        this.currentVisitId = visit.id;
+        this.applyVisitData(visit);
+        this.showEditInvoiceDialog = false;
+        this.isLookingUpLabNo = false;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isLookingUpLabNo = false;
+        this.editLookupError = error.status === 404 ? 'Lab number not found.' : 'Unable to load invoice.';
+      }
+    });
+  }
+
+  onTestCodeInput(test: TestLine): void {
+    test.testCode = this.toUppercase(test.testCode);
+    const query = test.testCode.trim();
+    if (!query) {
+      this.activeSuggestionSlNo = null;
+      this.testSuggestions = [];
+      return;
+    }
+
+    if (this.testLookupDebounceHandle) {
+      clearTimeout(this.testLookupDebounceHandle);
+    }
+    this.testLookupDebounceHandle = setTimeout(() => {
+      this.isLoadingTestSuggestions = true;
+      this.visitService.getTests(query).subscribe({
+        next: (rows) => {
+          this.activeSuggestionSlNo = test.slNo;
+          this.testSuggestions = rows;
+          this.isLoadingTestSuggestions = false;
+        },
+        error: () => {
+          this.activeSuggestionSlNo = null;
+          this.testSuggestions = [];
+          this.isLoadingTestSuggestions = false;
+        }
+      });
+    }, 150);
+  }
+
+  selectTestSuggestion(test: TestLine, selected: TestLookupItem): void {
+    test.testCode = selected.test_code;
+    test.testName = selected.test_name;
+    test.rate = Number(selected.rate) || 0;
+    test.discount = Number(test.discount) || 0;
+    this.updateAmount(test);
+    this.activeSuggestionSlNo = null;
+    this.testSuggestions = [];
+  }
+
+  closeTestSuggestion(): void {
+    setTimeout(() => {
+      this.activeSuggestionSlNo = null;
+      this.testSuggestions = [];
+    }, 150);
+  }
+
   onReceivedAmountChange(): void {
     this.updateBalanceAmount();
   }
@@ -196,6 +291,7 @@ export class BillRegistrationComponent implements OnChanges {
     const parsedName = this.parsePatientName(visit.patient_name);
     this.salutation = parsedName.salutation;
     this.patientName = parsedName.name;
+    this.patientName = this.toUppercase(this.patientName);
     this.gender = visit.gender;
     this.age = String(visit.age_years ?? 0);
     this.ageType = 'Years';
@@ -244,6 +340,7 @@ export class BillRegistrationComponent implements OnChanges {
     const parsedName = this.parsePatientName(visit.patient_name);
     this.salutation = parsedName.salutation;
     this.patientName = parsedName.name;
+    this.patientName = this.toUppercase(this.patientName);
     this.gender = visit.gender || 'Male';
     this.age = String(visit.age_years ?? 0);
     this.ageType = 'Years';
@@ -433,12 +530,17 @@ export class BillRegistrationComponent implements OnChanges {
   }
 
   private buildPatientName(): string {
-    const name = this.patientName.trim();
+    const name = this.toUppercase(this.patientName.trim());
     const salutation = this.salutation.trim();
+    this.patientName = name;
     if (!name) {
       return salutation;
     }
     return `${salutation} ${name}`;
+  }
+
+  private toUppercase(value: string): string {
+    return (value || '').toUpperCase();
   }
 
 }

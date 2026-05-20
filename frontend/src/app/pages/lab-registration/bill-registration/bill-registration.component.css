@@ -206,7 +206,7 @@ textarea {
 .test-table {
   min-height: 180px;
   overflow: auto;
-  background: #edffc4;
+  background: #d8e9b5;
   border-left: 1px solid #8fb426;
   border-right: 1px solid #8fb426;
 }
@@ -214,25 +214,51 @@ textarea {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.col-sl-no {
+  width: 60px;
+}
+
+.col-test-code {
+  width: 180px;
+}
+
+.col-test-name {
+  width: 260px;
+}
+
+.col-rate {
+  width: 120px;
+}
+
+.col-discount {
+  width: 140px;
+}
+
+.col-amount {
+  width: 130px;
 }
 
 th,
 td {
-  height: 25px;
-  border: 2px solid #9e9e9e;
+  height: 24px;
+  border: 1px solid #9aa58a;
   padding: 0;
   text-align: center;
 }
 
 th {
-  height: 31px;
-  background: #d9f28a;
+  height: 28px;
+  background: #c8e389;
   font-size: 14px;
+  font-weight: 700;
 }
 
 td {
-  background: #fffec2;
-  font-weight: 700;
+  background: #f4f0be;
+  font-weight: 600;
 }
 
 .selected-row td,
@@ -249,6 +275,55 @@ td input {
   width: 100%;
   border: 0;
   background: transparent;
+}
+
+.test-code-cell {
+  position: relative;
+}
+
+.test-suggestion-box {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 510px;
+  max-height: 178px;
+  overflow-y: auto;
+  border: 1px solid #4b8f2f;
+  background: #daddce;
+  z-index: 12;
+  box-shadow: 0 0 0 1px #8aa07a inset;
+}
+
+.suggestion-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid #aab89a;
+  background: #daddce;
+  display: grid;
+  grid-template-columns: 72px 1fr 76px;
+  gap: 6px;
+  padding: 3px 6px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.suggestion-row:hover {
+  background: #fff200;
+}
+
+.suggestion-code {
+  font-weight: 700;
+}
+
+.suggestion-rate {
+  text-align: right;
+  padding-right: 4px;
+}
+
+.suggestion-state {
+  padding: 6px;
+  text-align: left;
 }
 
 .payment-details {
@@ -281,6 +356,40 @@ td input {
 
 .payment-middle label:nth-child(2) {
   grid-template-columns: 82px 10px 1fr;
+}
+
+.edit-invoice-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: grid;
+  place-items: center;
+  z-index: 20;
+}
+
+.edit-invoice-dialog {
+  width: 330px;
+  border: 1px solid #1ea528;
+  background: #fff;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.edit-invoice-dialog header {
+  font-weight: 700;
+}
+
+.edit-invoice-dialog label {
+  display: grid;
+  grid-template-columns: 60px 10px 1fr;
+  align-items: center;
+}
+
+.edit-invoice-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .payment-right label {
