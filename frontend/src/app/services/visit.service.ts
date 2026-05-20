@@ -94,6 +94,44 @@ export interface VisitSavePayload {
   note: string;
 }
 
+export interface ResultEntryGroupChild {
+  test_id: number;
+  test_name: string;
+  unit: string;
+  reference_range: string;
+  result_value: string;
+  note: string;
+}
+
+export interface ResultEntryTest {
+  visit_test_id: number;
+  test_id: number;
+  test_name: string;
+  type: 'general' | 'group';
+  unit?: string;
+  reference_range?: string;
+  result_value?: string;
+  note?: string;
+  children?: ResultEntryGroupChild[];
+}
+
+export interface ResultEntryPayload {
+  visit_id: number;
+  lab_no: string;
+  date: string;
+  pay_mode: string;
+  patient_name: string;
+  gender: string;
+  age_years: number;
+  age_months: number;
+  phone: string;
+  address: string;
+  doctor: string;
+  out_doctor_name: string;
+  hospital: string;
+  tests: ResultEntryTest[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -157,5 +195,17 @@ export class VisitService {
 
   updateVisit(visitId: number, payload: VisitSavePayload): Observable<VisitDetail> {
     return this.http.put<VisitDetail>(`${this.apiUrl}/visits/${visitId}/update/`, payload);
+  }
+
+  getResultEntryByVisit(visitId: number): Observable<ResultEntryPayload> {
+    return this.http.get<ResultEntryPayload>(`${this.apiUrl}/result-entry/visit/${visitId}/`);
+  }
+
+  getResultEntryByLabNo(labNo: string): Observable<ResultEntryPayload> {
+    return this.http.get<ResultEntryPayload>(`${this.apiUrl}/result-entry/lab/${encodeURIComponent(labNo)}/`);
+  }
+
+  saveResultEntry(visitId: number, entries: Array<{ visit_test_id: number; test_id: number; result_value: string; note: string }>): Observable<{ detail: string }> {
+    return this.http.post<{ detail: string }>(`${this.apiUrl}/result-entry/visit/${visitId}/save/`, { entries });
   }
 }

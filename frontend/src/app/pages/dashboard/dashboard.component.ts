@@ -5,6 +5,7 @@ import { BillRegistrationComponent } from '../lab-registration/bill-registration
 import { PatientListComponent } from '../lab-registration/patient-list/patient-list.component';
 import { PatientAdvanceSearchComponent } from '../patient-advance-search/patient-advance-search.component';
 import { CollectionSummaryDialogComponent } from '../reports/collection-summary-dialog/collection-summary-dialog.component';
+import { ResultEntryComponent } from '../result-entry/result-entry.component';
 import { AuthService, LoginSession } from '../../services/auth.service';
 import { ClockService } from '../../services/clock.service';
 
@@ -113,7 +114,7 @@ type TopMenu = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent, PatientAdvanceSearchComponent, CollectionSummaryDialogComponent],
+  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent, PatientAdvanceSearchComponent, CollectionSummaryDialogComponent, ResultEntryComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -264,7 +265,7 @@ export class DashboardComponent implements OnInit {
   ];
 
   activeSession: LoginSession | null = null;
-  activeRegistrationView: 'patients' | 'pending-collection' | 'new-registration' | 'patient-advance-search' | null = null;
+  activeRegistrationView: 'patients' | 'pending-collection' | 'new-registration' | 'patient-advance-search' | 'result-entry' | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
   activeCollectionSummaryMode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly' | null = null;
@@ -311,6 +312,12 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    if (item === 'Result entry') {
+      this.selectedVisitId = null;
+      this.activeRegistrationView = 'result-entry';
+      return;
+    }
+
     if (item === 'Log off') {
       this.logout();
     }
@@ -352,6 +359,12 @@ export class DashboardComponent implements OnInit {
 
     if (action === 'pending-collection') {
       this.activeRegistrationView = 'pending-collection';
+      return;
+    }
+
+    if (action === 'result-entry') {
+      this.selectedVisitId = null;
+      this.activeRegistrationView = 'result-entry';
       return;
     }
 
@@ -404,6 +417,11 @@ export class DashboardComponent implements OnInit {
 
   openPatientAdvanceSearch(): void {
     this.activeRegistrationView = 'patient-advance-search';
+  }
+
+  openResultEntry(visitId: number): void {
+    this.selectedVisitId = visitId;
+    this.activeRegistrationView = 'result-entry';
   }
 
   closeCollectionSummary(): void {

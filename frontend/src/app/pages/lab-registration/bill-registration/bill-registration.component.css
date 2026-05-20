@@ -119,7 +119,11 @@ textarea {
 }
 
 .name-field input {
-  width: 154px;
+  width: 120px;
+}
+
+.salutation-field select {
+  width: 84px;
 }
 
 .phone-field input,
