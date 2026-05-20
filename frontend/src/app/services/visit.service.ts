@@ -43,6 +43,14 @@ export interface VisitDetailTest {
   line_order: number;
 }
 
+export interface TestLookupItem {
+  id: number;
+  test_code: string;
+  test_name: string;
+  rate: string | number;
+  department: string;
+}
+
 export interface VisitDetail {
   id: number;
   lab_no: string;
@@ -189,12 +197,23 @@ export class VisitService {
     return this.http.get<VisitDetail>(`${this.apiUrl}/visits/${visitId}/`);
   }
 
+  getVisitByLabNo(labNo: string): Observable<VisitDetail> {
+    return this.http.get<VisitDetail>(`${this.apiUrl}/visits/lab/${encodeURIComponent(labNo)}/`);
+  }
+
   createVisit(payload: VisitSavePayload): Observable<VisitDetail> {
     return this.http.post<VisitDetail>(`${this.apiUrl}/visits/create/`, payload);
   }
 
   updateVisit(visitId: number, payload: VisitSavePayload): Observable<VisitDetail> {
     return this.http.put<VisitDetail>(`${this.apiUrl}/visits/${visitId}/update/`, payload);
+  }
+
+  getTests(query: string): Observable<TestLookupItem[]> {
+    const params = query.trim()
+      ? new HttpParams().set('q', query.trim())
+      : new HttpParams();
+    return this.http.get<TestLookupItem[]>(`${this.apiUrl}/tests/`, { params });
   }
 
   getResultEntryByVisit(visitId: number): Observable<ResultEntryPayload> {

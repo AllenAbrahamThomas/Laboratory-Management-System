@@ -16,12 +16,13 @@
         <div class="form-row top-row">
           <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo"></label>
           <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode"><option *ngFor="let mode of paymentModes">{{ mode }}</option></select></label>
+          <button type="button" class="adv-search" (click)="openEditInvoiceLookup()">Edit Invoice</button>
           <button type="button" class="adv-search" (click)="advanceSearch.emit()">Adv. Search</button>
         </div>
 
         <div class="form-row">
           <label class="field salutation-field">Salutation <span>:</span><select name="salutation" [(ngModel)]="salutation"><option *ngFor="let item of salutations" [value]="item">{{ item }}</option></select></label>
-          <label class="field name-field">Name <span>:</span><input name="patientName" [(ngModel)]="patientName"></label>
+          <label class="field name-field">Name <span>:</span><input name="patientName" [(ngModel)]="patientName" (keydown.enter)="onPatientNameEnter($event)"></label>
           <button type="button" class="small-add">+</button>
         </div>
 
@@ -77,6 +78,14 @@
 
     <section class="test-table">
       <table>
+        <colgroup>
+          <col class="col-sl-no">
+          <col class="col-test-code">
+          <col class="col-test-name">
+          <col class="col-rate">
+          <col class="col-discount">
+          <col class="col-amount">
+        </colgroup>
         <thead>
           <tr>
             <th>Sl. No.</th>
@@ -90,7 +99,29 @@
         <tbody>
           <tr *ngFor="let test of tests" [class.selected-row]="selectedTestSlNo === test.slNo">
             <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}</td>
-            <td><input name="testCode{{ test.slNo }}" [(ngModel)]="test.testCode"></td>
+            <td class="test-code-cell">
+              <input
+                name="testCode{{ test.slNo }}"
+                [(ngModel)]="test.testCode"
+                (focus)="onTestCodeInput(test)"
+                (input)="onTestCodeInput(test)"
+                (blur)="closeTestSuggestion()"
+              >
+              <div class="test-suggestion-box" *ngIf="activeSuggestionSlNo === test.slNo">
+                <div class="suggestion-state" *ngIf="isLoadingTestSuggestions">Loading...</div>
+                <button
+                  type="button"
+                  class="suggestion-row"
+                  *ngFor="let option of testSuggestions"
+                  (mousedown)="selectTestSuggestion(test, option)"
+                >
+                  <span class="suggestion-code">{{ option.test_code }}</span>
+                  <span class="suggestion-name">{{ option.test_name }}</span>
+                  <span class="suggestion-rate">{{ option.rate }}</span>
+                </button>
+                <div class="suggestion-state" *ngIf="!isLoadingTestSuggestions && testSuggestions.length === 0">No tests found</div>
+              </div>
+            </td>
             <td><input name="testName{{ test.slNo }}" [(ngModel)]="test.testName"></td>
             <td><input type="number" name="rate{{ test.slNo }}" [(ngModel)]="test.rate" (ngModelChange)="updateAmount(test)"></td>
             <td><input type="number" name="discount{{ test.slNo }}" [(ngModel)]="test.discount" (ngModelChange)="updateAmount(test)"></td>
@@ -131,4 +162,16 @@
       <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
     </footer>
   </form>
+</section>
+
+<section class="edit-invoice-backdrop" *ngIf="showEditInvoiceDialog">
+  <div class="edit-invoice-dialog">
+    <header>Edit invoice</header>
+    <label>Lab No <span>:</span><input name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()"></label>
+    <p class="status-message error" *ngIf="editLookupError">{{ editLookupError }}</p>
+    <footer>
+      <button type="button" (click)="searchEditInvoiceByLabNo()" [disabled]="isLookingUpLabNo">Open</button>
+      <button type="button" (click)="closeEditInvoiceLookup()">Close</button>
+    </footer>
+  </div>
 </section>

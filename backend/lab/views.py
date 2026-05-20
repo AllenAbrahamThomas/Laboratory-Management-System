@@ -2,12 +2,13 @@ from datetime import datetime
 from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 
-from .models import Patient, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest
+from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest
 from .serializers import VisitDetailSerializer, VisitListSerializer
 
 
@@ -111,6 +112,32 @@ def visit_detail(request, visit_id: int):
         id=visit_id,
     )
     return Response(VisitDetailSerializer(visit).data)
+
+
+@api_view(["GET"])
+def visit_detail_by_lab_no(request, lab_no: str):
+    visit = get_object_or_404(
+        Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
+        lab_no=lab_no.strip(),
+    )
+    return Response(VisitDetailSerializer(visit).data)
+
+
+@api_view(["GET"])
+def test_lookup(request):
+    query = request.query_params.get("q", "").strip()
+    queryset = Test.objects.select_related("department").filter(is_active=True)
+    if query:
+        queryset = queryset.filter(Q(test_code__icontains=query) | Q(test_name__icontains=query))
+    tests = queryset.order_by("test_code")[:20]
+    rows = [{
+        "id": test.id,
+        "test_code": test.test_code,
+        "test_name": test.test_name,
+        "rate": str(test.rate),
+        "department": test.department.name if test.department_id else "",
+    } for test in tests]
+    return Response(rows)
 
 
 def _to_decimal(value, default: str = "0") -> Decimal:

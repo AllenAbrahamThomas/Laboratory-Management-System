@@ -352,6 +352,13 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    if (action === 'edit-invoice') {
+      this.selectedVisitId = null;
+      this.billOpenMode = 'existing';
+      this.activeRegistrationView = 'new-registration';
+      return;
+    }
+
     if (action === 'patient-advance-search') {
       this.activeRegistrationView = 'patient-advance-search';
       return;
