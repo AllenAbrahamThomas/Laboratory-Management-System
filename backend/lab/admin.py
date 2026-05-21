@@ -7,6 +7,7 @@ from .models import (
     Patient,
     Test,
     TestGroupItem,
+    Unit,
     TestReferenceRange,
     TestResult,
     Visit,
@@ -42,9 +43,26 @@ class PatientAdmin(admin.ModelAdmin):
     list_filter = ("gender",)
 
 
+@admin.register(Unit)
+class UnitAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active")
+    search_fields = ("name",)
+    list_filter = ("is_active",)
+
+
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    list_display = ("test_code", "test_name", "department", "rate", "result_type", "is_group", "is_active")
+    list_display = (
+        "test_code",
+        "test_name",
+        "department",
+        "rate",
+        "default_discount_percent",
+        "default_amount",
+        "result_type",
+        "is_group",
+        "is_active",
+    )
     search_fields = ("test_code", "test_name", "short_name")
     list_filter = ("department", "result_type", "is_group", "is_active")
 
