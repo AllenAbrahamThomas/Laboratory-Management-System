@@ -79,6 +79,18 @@ class Patient(TimestampedModel):
         return self.full_name
 
 
+class Unit(TimestampedModel):
+    name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "units"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class Test(TimestampedModel):
     class ResultType(models.TextChoices):
         NUMERIC = "numeric", "Numeric"
@@ -91,6 +103,8 @@ class Test(TimestampedModel):
     short_name = models.CharField(max_length=80, blank=True)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name="tests")
     rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    default_discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    default_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     unit = models.CharField(max_length=50, blank=True)
     result_type = models.CharField(
         max_length=20,
