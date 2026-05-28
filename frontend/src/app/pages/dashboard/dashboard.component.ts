@@ -296,6 +296,31 @@ export class DashboardComponent implements OnInit {
     this.openReportsSubmenu = null;
   }
 
+  @HostListener('document:keydown.enter', ['$event'])
+  handleEnterShortcut(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+
+    const tagName = target.tagName;
+    const editable = tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true';
+    if (editable) {
+      return;
+    }
+
+    if (this.activeRegistrationView === null) {
+      event.preventDefault();
+      this.activeRegistrationView = 'patients';
+      return;
+    }
+
+    if (this.activeRegistrationView === 'patients') {
+      event.preventDefault();
+      this.openNewRegistration();
+    }
+  }
+
   handleMenuClick(item: string): void {
     if (item === 'Lab registration') {
       this.activeRegistrationView = 'patients';

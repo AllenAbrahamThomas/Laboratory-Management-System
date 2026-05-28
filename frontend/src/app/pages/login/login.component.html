@@ -39,12 +39,12 @@
 
           <label>
             <span>User Name</span>
-            <input class="username-input" name="username" [(ngModel)]="username" autocomplete="username" autofocus>
+            <input class="username-input" name="username" [(ngModel)]="username" autocomplete="username" autofocus (keydown.enter)="focusPassword($event)">
           </label>
 
           <label>
             <span>Password</span>
-            <input name="password" [(ngModel)]="password" type="password" autocomplete="current-password">
+            <input name="password" [(ngModel)]="password" type="password" autocomplete="current-password" (keydown.enter)="submitFromPassword($event)">
           </label>
 
           <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>

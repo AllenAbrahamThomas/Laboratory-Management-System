@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../../services/clock.service';
@@ -22,7 +22,9 @@ interface TestLine {
   templateUrl: './bill-registration.component.html',
   styleUrl: './bill-registration.component.css'
 })
-export class BillRegistrationComponent implements OnChanges {
+export class BillRegistrationComponent implements OnChanges, AfterViewInit {
+  @ViewChild('billFormElement') billFormElement?: ElementRef<HTMLFormElement>;
+  @ViewChild('testTableElement') testTableElement?: ElementRef<HTMLTableElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
   @Output() closed = new EventEmitter<void>();
@@ -75,6 +77,8 @@ export class BillRegistrationComponent implements OnChanges {
   testSuggestions: TestLookupItem[] = [];
   activeSuggestionSlNo: number | null = null;
   isLoadingTestSuggestions = false;
+  suggestionWidthPx = 0;
+  suggestionGridTemplate = '';
   private testLookupDebounceHandle: ReturnType<typeof setTimeout> | null = null;
   private currentVisitId: number | null = null;
 
@@ -95,6 +99,16 @@ export class BillRegistrationComponent implements OnChanges {
       .subscribe((currentTime) => {
         this.currentTime = currentTime;
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.recalculateSuggestionLayout();
+    setTimeout(() => this.recalculateSuggestionLayout(), 0);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.recalculateSuggestionLayout();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -162,6 +176,75 @@ export class BillRegistrationComponent implements OnChanges {
     this.patientName = this.toUppercase(this.patientName);
   }
 
+  onFormEnter(event: KeyboardEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+
+    if (target.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    event.preventDefault();
+    const targetName = (target as HTMLInputElement | HTMLSelectElement).name || '';
+
+    if (targetName === 'patientName') {
+      this.patientName = this.toUppercase(this.patientName);
+    }
+
+    if (targetName.startsWith('testCode')) {
+      const slNo = this.extractSlNo(targetName, 'testCode');
+      const line = this.tests.find((item) => item.slNo === slNo);
+      if (line && this.activeSuggestionSlNo === slNo && this.testSuggestions.length > 0) {
+        this.selectTestSuggestion(line, this.testSuggestions[0]);
+        this.focusByName(`testName${slNo}`);
+        return;
+      }
+    }
+
+    if (targetName.startsWith('discount')) {
+      const slNo = this.extractSlNo(targetName, 'discount');
+      if (slNo) {
+        const current = this.tests.find((item) => item.slNo === slNo);
+        const next = this.tests.find((item) => item.slNo === slNo + 1);
+        const hasCurrentTest = !!current?.testCode.trim() || !!current?.testName.trim() || !!Number(current?.rate);
+        if (!next && hasCurrentTest) {
+          this.addTestLine();
+          setTimeout(() => this.focusByName(`testCode${slNo + 1}`), 0);
+          return;
+        }
+        this.focusByName(`amount${slNo}`);
+        return;
+      }
+    }
+
+    if (targetName.startsWith('amount')) {
+      const slNo = this.extractSlNo(targetName, 'amount');
+      if (slNo) {
+        const current = this.tests.find((item) => item.slNo === slNo);
+        const next = this.tests.find((item) => item.slNo === slNo + 1);
+        const hasCurrentTest = !!current?.testCode.trim() || !!current?.testName.trim() || !!Number(current?.rate);
+        if (!next && hasCurrentTest) {
+          this.addTestLine();
+          setTimeout(() => this.focusByName(`testCode${slNo + 1}`), 0);
+          return;
+        }
+        if (next) {
+          const nextEmpty = !next.testCode.trim() && !next.testName.trim() && !Number(next.rate) && !Number(next.discount);
+          if (nextEmpty) {
+            this.focusByName('discountMode');
+            return;
+          }
+          this.focusByName(`testCode${slNo + 1}`);
+          return;
+        }
+      }
+    }
+
+    this.focusNextControl(target);
+  }
+
   openEditInvoiceLookup(): void {
     this.showEditInvoiceDialog = true;
     this.editLookupError = '';
@@ -212,6 +295,7 @@ export class BillRegistrationComponent implements OnChanges {
         next: (rows) => {
           this.activeSuggestionSlNo = test.slNo;
           this.testSuggestions = rows;
+          this.recalculateSuggestionLayout();
           this.isLoadingTestSuggestions = false;
         },
         error: () => {
@@ -224,11 +308,13 @@ export class BillRegistrationComponent implements OnChanges {
   }
 
   selectTestSuggestion(test: TestLine, selected: TestLookupItem): void {
-    test.testCode = selected.test_code;
+    test.testCode = selected.short_name || selected.test_code;
     test.testName = selected.test_name;
     test.rate = Number(selected.rate) || 0;
-    test.discount = Number(test.discount) || 0;
-    this.updateAmount(test);
+    test.discount = Number(selected.default_discount_percent) || 0;
+    const defaultAmount = Number(selected.default_amount) || 0;
+    test.amount = defaultAmount > 0 ? defaultAmount : Math.max(Number(test.rate) - (Number(test.rate) * Number(test.discount) / 100), 0);
+    this.updateGrossAmount();
     this.activeSuggestionSlNo = null;
     this.testSuggestions = [];
   }
@@ -541,6 +627,64 @@ export class BillRegistrationComponent implements OnChanges {
 
   private toUppercase(value: string): string {
     return (value || '').toUpperCase();
+  }
+
+  private focusNextControl(currentTarget: HTMLElement): void {
+    const form = this.billFormElement?.nativeElement;
+    if (!form) {
+      return;
+    }
+
+    const controls = Array.from(
+      form.querySelectorAll<HTMLElement>('input:not([type="hidden"]), select, textarea, button[type="button"], button[type="submit"]')
+    ).filter((el) => !el.hasAttribute('disabled') && this.isVisible(el));
+
+    const currentIndex = controls.indexOf(currentTarget);
+    if (currentIndex === -1) {
+      return;
+    }
+    const next = controls[currentIndex + 1];
+    next?.focus();
+  }
+
+  private focusByName(name: string): void {
+    const form = this.billFormElement?.nativeElement;
+    if (!form) {
+      return;
+    }
+    const next = form.querySelector<HTMLElement>(`[name="${name}"]`);
+    next?.focus();
+  }
+
+  private isVisible(element: HTMLElement): boolean {
+    return !!(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+  }
+
+  private extractSlNo(value: string, prefix: string): number | null {
+    if (!value.startsWith(prefix)) {
+      return null;
+    }
+    const parsed = Number(value.slice(prefix.length));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private recalculateSuggestionLayout(): void {
+    const table = this.testTableElement?.nativeElement;
+    if (!table) {
+      return;
+    }
+
+    const headCells = table.querySelectorAll('thead th');
+    if (headCells.length < 4) {
+      return;
+    }
+
+    const shortNameWidth = Math.round((headCells[1] as HTMLElement).getBoundingClientRect().width);
+    const testNameWidth = Math.round((headCells[2] as HTMLElement).getBoundingClientRect().width);
+    const rateWidth = Math.round((headCells[3] as HTMLElement).getBoundingClientRect().width);
+
+    this.suggestionWidthPx = shortNameWidth + testNameWidth + rateWidth;
+    this.suggestionGridTemplate = `${shortNameWidth}px ${testNameWidth}px ${rateWidth}px`;
   }
 
 }

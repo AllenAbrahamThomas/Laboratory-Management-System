@@ -204,8 +204,16 @@ textarea {
 }
 
 .test-table {
+  --col-sl-no: 60px;
+  --col-short-name: clamp(180px, 27vw, 320px);
+  --col-test-name: clamp(240px, 36vw, 460px);
+  --col-rate: clamp(90px, 9vw, 130px);
+  --col-discount: clamp(95px, 10vw, 140px);
+  --col-amount: clamp(95px, 10vw, 135px);
+  --suggestion-total-width: calc(var(--col-short-name) + var(--col-test-name) + var(--col-rate));
   min-height: 180px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: #d8e9b5;
   border-left: 1px solid #8fb426;
   border-right: 1px solid #8fb426;
@@ -218,27 +226,27 @@ table {
 }
 
 .col-sl-no {
-  width: 60px;
+  width: var(--col-sl-no);
 }
 
 .col-test-code {
-  width: 180px;
+  width: var(--col-short-name);
 }
 
 .col-test-name {
-  width: 260px;
+  width: var(--col-test-name);
 }
 
 .col-rate {
-  width: 120px;
+  width: var(--col-rate);
 }
 
 .col-discount {
-  width: 140px;
+  width: var(--col-discount);
 }
 
 .col-amount {
-  width: 130px;
+  width: var(--col-amount);
 }
 
 th,
@@ -275,6 +283,7 @@ td input {
   width: 100%;
   border: 0;
   background: transparent;
+  min-width: 0;
 }
 
 .test-code-cell {
@@ -285,13 +294,15 @@ td input {
   position: absolute;
   top: 100%;
   left: 0;
-  width: 510px;
+  width: calc(var(--suggestion-total-width) + 1px);
   max-height: 178px;
   overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid #4b8f2f;
   background: #daddce;
   z-index: 12;
   box-shadow: 0 0 0 1px #8aa07a inset;
+  box-sizing: border-box;
 }
 
 .suggestion-row {
@@ -300,12 +311,14 @@ td input {
   border-bottom: 1px solid #aab89a;
   background: #daddce;
   display: grid;
-  grid-template-columns: 72px 1fr 76px;
-  gap: 6px;
-  padding: 3px 6px;
+  grid-template-columns: var(--col-short-name) var(--col-test-name) var(--col-rate);
+  padding: 0;
   text-align: left;
   font: inherit;
   cursor: pointer;
+  align-items: center;
+  column-gap: 0;
+  box-sizing: border-box;
 }
 
 .suggestion-row:hover {
@@ -314,11 +327,30 @@ td input {
 
 .suggestion-code {
   font-weight: 700;
+  display: block;
+  padding: 3px 6px;
+  border-right: 1px solid #9aa58a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .suggestion-rate {
+  display: block;
+  padding: 3px 6px;
   text-align: right;
-  padding-right: 4px;
+  box-sizing: border-box;
+}
+
+.suggestion-name {
+  display: block;
+  padding: 3px 6px;
+  border-right: 1px solid #9aa58a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 .suggestion-state {
@@ -451,5 +483,13 @@ td input {
   .payment-details,
   .action-bar {
     grid-template-columns: 1fr;
+  }
+
+  .test-table {
+    --col-short-name: clamp(140px, 30vw, 220px);
+    --col-test-name: clamp(170px, 32vw, 300px);
+    --col-rate: clamp(78px, 11vw, 100px);
+    --col-discount: clamp(82px, 12vw, 110px);
+    --col-amount: clamp(82px, 12vw, 110px);
   }
 }
