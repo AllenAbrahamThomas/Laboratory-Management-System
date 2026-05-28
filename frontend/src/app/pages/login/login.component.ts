@@ -50,4 +50,16 @@ export class LoginComponent {
     this.password = '';
     this.errorMessage = '';
   }
+
+  focusPassword(event: KeyboardEvent): void {
+    event.preventDefault();
+    const form = (event.target as HTMLElement | null)?.closest('form');
+    const passwordInput = form?.querySelector<HTMLInputElement>('input[name="password"]');
+    passwordInput?.focus();
+  }
+
+  submitFromPassword(event: KeyboardEvent): void {
+    event.preventDefault();
+    this.login();
+  }
 }

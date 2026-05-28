@@ -47,7 +47,10 @@ export interface TestLookupItem {
   id: number;
   test_code: string;
   test_name: string;
+  short_name: string;
   rate: string | number;
+  default_discount_percent: string | number;
+  default_amount: string | number;
   department: string;
 }
 
@@ -228,3 +231,4 @@ export class VisitService {
     return this.http.post<{ detail: string }>(`${this.apiUrl}/result-entry/visit/${visitId}/save/`, { entries });
   }
 }
+

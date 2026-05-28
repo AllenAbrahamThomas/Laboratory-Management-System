@@ -128,13 +128,16 @@ def test_lookup(request):
     query = request.query_params.get("q", "").strip()
     queryset = Test.objects.select_related("department").filter(is_active=True)
     if query:
-        queryset = queryset.filter(Q(test_code__icontains=query) | Q(test_name__icontains=query))
+        queryset = queryset.filter(Q(test_code__icontains=query) | Q(test_name__icontains=query) | Q(short_name__icontains=query))
     tests = queryset.order_by("test_code")[:20]
     rows = [{
         "id": test.id,
         "test_code": test.test_code,
         "test_name": test.test_name,
+        "short_name": test.short_name,
         "rate": str(test.rate),
+        "default_discount_percent": str(test.default_discount_percent),
+        "default_amount": str(test.default_amount),
         "department": test.department.name if test.department_id else "",
     } for test in tests]
     return Response(rows)
@@ -378,3 +381,4 @@ def result_entry_save(request, visit_id: int):
     visit.status = Visit.Status.RESULT_ENTERED
     visit.save(update_fields=["status", "updated_at"])
     return Response({"detail": "Saved"})
+
