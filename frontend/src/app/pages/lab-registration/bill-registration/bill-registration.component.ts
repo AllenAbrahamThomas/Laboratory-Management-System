@@ -25,6 +25,7 @@ interface TestLine {
 export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @ViewChild('billFormElement') billFormElement?: ElementRef<HTMLFormElement>;
   @ViewChild('testTableElement') testTableElement?: ElementRef<HTMLTableElement>;
+  @ViewChild('suggestionBoxElement') suggestionBoxElement?: ElementRef<HTMLDivElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
   @Output() closed = new EventEmitter<void>();
@@ -76,22 +77,15 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   isLookingUpLabNo = false;
   testSuggestions: TestLookupItem[] = [];
   activeSuggestionSlNo: number | null = null;
+  activeSuggestionIndex = -1;
   isLoadingTestSuggestions = false;
   suggestionWidthPx = 0;
   suggestionGridTemplate = '';
   private testLookupDebounceHandle: ReturnType<typeof setTimeout> | null = null;
   private currentVisitId: number | null = null;
 
-  tests: TestLine[] = [
-    {
-      slNo: 1,
-      testCode: '',
-      testName: '',
-      rate: null,
-      discount: null,
-      amount: null
-    }
-  ];
+  currentTest: TestLine = this.createBlankTestLine(1);
+  tests: TestLine[] = [];
 
   constructor() {
     this.clockService.currentTime$
@@ -131,19 +125,44 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   addTestLine(): void {
-    const nextSlNo = this.tests.length + 1;
+    this.commitCurrentTest();
+  }
 
-    this.tests = [
-      ...this.tests,
-      {
-        slNo: nextSlNo,
-        testCode: '',
-        testName: '',
-        rate: null,
-        discount: null,
-        amount: null
-      }
-    ];
+  private createBlankTestLine(slNo: number): TestLine {
+    return {
+      slNo,
+      testCode: '',
+      testName: '',
+      rate: null,
+      discount: null,
+      amount: null
+    };
+  }
+
+  private isTestFilled(test: TestLine): boolean {
+    return !!test.testCode.trim() || !!test.testName.trim() || !!Number(test.rate) || !!Number(test.discount) || !!Number(test.amount);
+  }
+
+  private getEditableLineBySlNo(slNo: number | null): TestLine | undefined {
+    if (slNo === this.currentTest.slNo) {
+      return this.currentTest;
+    }
+    return this.tests.find((item) => item.slNo === slNo);
+  }
+
+  private commitCurrentTest(): void {
+    if (!this.isTestFilled(this.currentTest)) {
+      return;
+    }
+
+    const committedLine: TestLine = {
+      ...this.currentTest,
+      slNo: this.tests.length + 1
+    };
+    this.tests = [...this.tests, committedLine];
+    this.currentTest = this.createBlankTestLine(this.tests.length + 1);
+    this.selectedTestSlNo = null;
+    this.updateGrossAmount();
   }
 
   selectTestLine(test: TestLine): void {
@@ -160,6 +179,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       ...test,
       slNo: index + 1
     }));
+    this.currentTest.slNo = this.tests.length + 1;
     this.selectedTestSlNo = null;
     this.updateGrossAmount();
   }
@@ -176,7 +196,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.patientName = this.toUppercase(this.patientName);
   }
 
-  onFormEnter(event: KeyboardEvent): void {
+  onFormKeyDown(event: KeyboardEvent): void {
     const target = event.target as HTMLElement | null;
     if (!target) {
       return;
@@ -186,63 +206,160 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       return;
     }
 
-    event.preventDefault();
     const targetName = (target as HTMLInputElement | HTMLSelectElement).name || '';
 
-    if (targetName === 'patientName') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      const slNo = targetName.startsWith('testCode') ? this.extractSlNo(targetName, 'testCode') : null;
+      if (slNo !== null && this.activeSuggestionSlNo === slNo && this.testSuggestions.length > 0) {
+        event.preventDefault();
+        this.moveSuggestionSelection(event.key === 'ArrowDown' ? 1 : -1);
+      }
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      // If suggestion dropdown is open, select the highlighted suggestion
+      const slNo = targetName.startsWith('testCode') ? this.extractSlNo(targetName, 'testCode') : null;
+      if (slNo !== null && this.activeSuggestionSlNo === slNo && this.testSuggestions.length > 0) {
+        event.preventDefault();
+        const line = this.getEditableLineBySlNo(slNo);
+        const selectedSuggestion = this.testSuggestions[this.activeSuggestionIndex >= 0 ? this.activeSuggestionIndex : 0];
+        if (line && selectedSuggestion) {
+          this.selectTestSuggestion(line, selectedSuggestion);
+          this.focusByName(`amount${slNo}`);
+        }
+        return;
+      }
+      // Otherwise, default enter behavior
+      this.onFormEnter(event, target, targetName);
+      return;
+    }
+  }
+
+  onTestCodeKeyDown(test: TestLine, event: KeyboardEvent): void {
+    if (this.activeSuggestionSlNo !== test.slNo || this.testSuggestions.length === 0) {
+      return;
+    }
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.moveSuggestionSelection(event.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.applyActiveSuggestion(test);
+    }
+  }
+
+  onCurrentTestCodeEnter(event: KeyboardEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (this.activeSuggestionSlNo === this.currentTest.slNo && this.testSuggestions.length > 0) {
+      this.applyActiveSuggestion(this.currentTest);
+      return;
+    }
+
+    this.focusByName(`amount${this.currentTest.slNo}`);
+  }
+
+  onCurrentTestAmountEnter(event: KeyboardEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.isTestFilled(this.currentTest)) {
+      this.focusByName(`testCode${this.currentTest.slNo}`);
+      return;
+    }
+
+    this.commitCurrentTest();
+    setTimeout(() => this.focusByName(`testCode${this.currentTest.slNo}`), 0);
+  }
+
+  moveSuggestionSelection(direction: 1 | -1): void {
+    if (this.testSuggestions.length === 0) return;
+    let nextIndex = this.activeSuggestionIndex + direction;
+    if (nextIndex < 0) nextIndex = this.testSuggestions.length - 1;
+    if (nextIndex >= this.testSuggestions.length) nextIndex = 0;
+    this.activeSuggestionIndex = nextIndex;
+    setTimeout(() => this.scrollActiveSuggestionIntoView(), 0);
+  }
+
+  scrollActiveSuggestionIntoView(): void {
+    if (this.suggestionBoxElement && this.activeSuggestionIndex >= 0) {
+      const box = this.suggestionBoxElement.nativeElement;
+      const rows = box.querySelectorAll('.suggestion-row');
+      if (rows && rows[this.activeSuggestionIndex]) {
+        (rows[this.activeSuggestionIndex] as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }
+
+  private applyActiveSuggestion(test: TestLine): void {
+    const selectedSuggestion = this.testSuggestions[this.activeSuggestionIndex >= 0 ? this.activeSuggestionIndex : 0];
+    if (!selectedSuggestion) {
+      return;
+    }
+    this.selectTestSuggestion(test, selectedSuggestion);
+    setTimeout(() => this.focusByName(`amount${test.slNo}`), 0);
+  }
+
+  onFormEnter(event: KeyboardEvent, target?: HTMLElement | null, targetName?: string): void {
+    const currentTarget = target ?? (event.target as HTMLElement | null);
+    if (!currentTarget) {
+      return;
+    }
+
+    const currentTargetName = targetName ?? ((currentTarget as HTMLInputElement | HTMLSelectElement).name || '');
+
+    if (['discountMode', 'discountPercent', 'receivedAmount', 'balanceAmount', 'note', 'roundOff', 'discountReason'].includes(currentTargetName)) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+
+    if (currentTargetName === 'patientName') {
       this.patientName = this.toUppercase(this.patientName);
     }
 
-    if (targetName.startsWith('testCode')) {
-      const slNo = this.extractSlNo(targetName, 'testCode');
-      const line = this.tests.find((item) => item.slNo === slNo);
+    if (currentTargetName.startsWith('testCode')) {
+      const slNo = this.extractSlNo(currentTargetName, 'testCode');
+      const line = this.getEditableLineBySlNo(slNo);
       if (line && this.activeSuggestionSlNo === slNo && this.testSuggestions.length > 0) {
-        this.selectTestSuggestion(line, this.testSuggestions[0]);
-        this.focusByName(`testName${slNo}`);
+        this.applyActiveSuggestion(line);
         return;
       }
     }
 
-    if (targetName.startsWith('discount')) {
-      const slNo = this.extractSlNo(targetName, 'discount');
-      if (slNo) {
-        const current = this.tests.find((item) => item.slNo === slNo);
-        const next = this.tests.find((item) => item.slNo === slNo + 1);
-        const hasCurrentTest = !!current?.testCode.trim() || !!current?.testName.trim() || !!Number(current?.rate);
-        if (!next && hasCurrentTest) {
-          this.addTestLine();
-          setTimeout(() => this.focusByName(`testCode${slNo + 1}`), 0);
-          return;
-        }
+    if (currentTargetName.startsWith('discount')) {
+      const slNo = this.extractSlNo(currentTargetName, 'discount');
+      if (slNo === this.currentTest.slNo) {
         this.focusByName(`amount${slNo}`);
         return;
       }
     }
 
-    if (targetName.startsWith('amount')) {
-      const slNo = this.extractSlNo(targetName, 'amount');
-      if (slNo) {
-        const current = this.tests.find((item) => item.slNo === slNo);
-        const next = this.tests.find((item) => item.slNo === slNo + 1);
-        const hasCurrentTest = !!current?.testCode.trim() || !!current?.testName.trim() || !!Number(current?.rate);
-        if (!next && hasCurrentTest) {
-          this.addTestLine();
-          setTimeout(() => this.focusByName(`testCode${slNo + 1}`), 0);
+    if (currentTargetName.startsWith('amount')) {
+      const slNo = this.extractSlNo(currentTargetName, 'amount');
+      if (slNo === this.currentTest.slNo) {
+        if (!this.isTestFilled(this.currentTest)) {
+          this.focusByName(`testCode${this.currentTest.slNo}`);
           return;
         }
-        if (next) {
-          const nextEmpty = !next.testCode.trim() && !next.testName.trim() && !Number(next.rate) && !Number(next.discount);
-          if (nextEmpty) {
-            this.focusByName('discountMode');
-            return;
-          }
-          this.focusByName(`testCode${slNo + 1}`);
-          return;
-        }
+        this.commitCurrentTest();
+        setTimeout(() => this.focusByName(`testCode${this.currentTest.slNo}`), 0);
+        return;
       }
     }
 
-    this.focusNextControl(target);
+    if (target) {
+      this.focusNextControl(target);
+    }
   }
 
   openEditInvoiceLookup(): void {
@@ -295,12 +412,15 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
         next: (rows) => {
           this.activeSuggestionSlNo = test.slNo;
           this.testSuggestions = rows;
+          this.activeSuggestionIndex = rows.length > 0 ? 0 : -1;
           this.recalculateSuggestionLayout();
           this.isLoadingTestSuggestions = false;
+          setTimeout(() => this.scrollActiveSuggestionIntoView(), 0);
         },
         error: () => {
           this.activeSuggestionSlNo = null;
           this.testSuggestions = [];
+          this.activeSuggestionIndex = -1;
           this.isLoadingTestSuggestions = false;
         }
       });
@@ -317,12 +437,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.updateGrossAmount();
     this.activeSuggestionSlNo = null;
     this.testSuggestions = [];
+    this.activeSuggestionIndex = -1;
   }
 
   closeTestSuggestion(): void {
     setTimeout(() => {
       this.activeSuggestionSlNo = null;
       this.testSuggestions = [];
+      this.activeSuggestionIndex = -1;
     }, 150);
   }
 
@@ -335,7 +457,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   private updateGrossAmount(): void {
-    this.grossAmount = this.tests.reduce((total, item) => total + (Number(item.amount) || 0), 0);
+    const committedTotal = this.tests.reduce((total, item) => total + (Number(item.amount) || 0), 0);
+    const currentTotal = Number(this.currentTest.amount) || 0;
+    this.grossAmount = committedTotal + currentTotal;
     this.updateBalanceAmount();
   }
 
@@ -410,14 +534,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
         amount: Number(test.amount) || 0,
       }));
 
-    this.tests = mappedTests.length > 0 ? mappedTests : [{
-      slNo: 1,
-      testCode: '',
-      testName: '',
-      rate: null,
-      discount: null,
-      amount: null
-    }];
+    this.tests = mappedTests;
+    this.currentTest = this.createBlankTestLine(this.tests.length + 1);
     this.selectedTestSlNo = null;
     this.updateGrossAmount();
   }
@@ -441,14 +559,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.corporate = visit.corporate_name;
     this.note = '';
 
-    this.tests = [{
-      slNo: 1,
-      testCode: '',
-      testName: '',
-      rate: null,
-      discount: null,
-      amount: null
-    }];
+    this.tests = [];
+    this.currentTest = this.createBlankTestLine(this.tests.length + 1);
     this.selectedTestSlNo = null;
     this.discountPercent = '';
     this.receivedAmount = '';
@@ -482,14 +594,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.note = '';
     this.roundOff = '';
     this.discountReason = '';
-    this.tests = [{
-      slNo: 1,
-      testCode: '',
-      testName: '',
-      rate: null,
-      discount: null,
-      amount: null
-    }];
+    this.tests = [];
+    this.currentTest = this.createBlankTestLine(this.tests.length + 1);
     this.selectedTestSlNo = null;
   }
 
@@ -686,5 +792,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.suggestionWidthPx = shortNameWidth + testNameWidth + rateWidth;
     this.suggestionGridTemplate = `${shortNameWidth}px ${testNameWidth}px ${rateWidth}px`;
   }
+
+
 
 }
