@@ -5,7 +5,7 @@
     <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
   </header>
 
-  <form class="bill-form" #billFormElement (keydown.enter)="onFormEnter($event)">
+  <form class="bill-form" #billFormElement (keydown)="onFormKeyDown($event)">
     <p class="status-message" *ngIf="isLoadingVisit">Loading selected patient bill...</p>
     <p class="status-message error" *ngIf="loadError">{{ loadError }}</p>
     <p class="status-message" *ngIf="isSaving">Saving...</p>
@@ -97,24 +97,27 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let test of tests" [class.selected-row]="selectedTestSlNo === test.slNo">
-            <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}</td>
+          <tr class="new-entry-row">
+            <td class="sl-no-cell"></td>
             <td class="test-code-cell">
               <input
-                name="testCode{{ test.slNo }}"
-                [(ngModel)]="test.testCode"
-                (focus)="onTestCodeInput(test)"
-                (input)="onTestCodeInput(test)"
+                name="testCode{{ currentTest.slNo }}"
+                [(ngModel)]="currentTest.testCode"
+                (focus)="onTestCodeInput(currentTest)"
+                (input)="onTestCodeInput(currentTest)"
+                (keydown)="onTestCodeKeyDown(currentTest, $event)"
+                (keydown.enter)="onCurrentTestCodeEnter($event)"
                 (blur)="closeTestSuggestion()"
               >
-              <div class="test-suggestion-box" *ngIf="activeSuggestionSlNo === test.slNo" [style.width.px]="suggestionWidthPx || null">
+              <div #suggestionBoxElement class="test-suggestion-box" *ngIf="activeSuggestionSlNo === currentTest.slNo" [style.width.px]="suggestionWidthPx || null">
                 <div class="suggestion-state" *ngIf="isLoadingTestSuggestions">Loading...</div>
                 <button
                   type="button"
                   class="suggestion-row"
+                  [class.active]="index === activeSuggestionIndex"
                   [style.gridTemplateColumns]="suggestionGridTemplate || null"
-                  *ngFor="let option of testSuggestions"
-                  (mousedown)="selectTestSuggestion(test, option)"
+                  *ngFor="let option of testSuggestions; let index = index"
+                  (mousedown)="selectTestSuggestion(currentTest, option)"
                 >
                   <span class="suggestion-code">{{ option.short_name || option.test_code }}</span>
                   <span class="suggestion-name">{{ option.test_name }}</span>
@@ -123,10 +126,18 @@
                 <div class="suggestion-state" *ngIf="!isLoadingTestSuggestions && testSuggestions.length === 0">No tests found</div>
               </div>
             </td>
-            <td><input name="testName{{ test.slNo }}" [(ngModel)]="test.testName"></td>
-            <td><input type="number" name="rate{{ test.slNo }}" [(ngModel)]="test.rate" (ngModelChange)="updateAmount(test)"></td>
-            <td><input type="number" name="discount{{ test.slNo }}" [(ngModel)]="test.discount" (ngModelChange)="updateAmount(test)"></td>
-            <td><input type="number" name="amount{{ test.slNo }}" [(ngModel)]="test.amount" readonly></td>
+            <td><input name="testName{{ currentTest.slNo }}" [(ngModel)]="currentTest.testName"></td>
+            <td><input type="number" name="rate{{ currentTest.slNo }}" [(ngModel)]="currentTest.rate" (ngModelChange)="updateAmount(currentTest)"></td>
+            <td><input type="number" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount" (ngModelChange)="updateAmount(currentTest)"></td>
+            <td><input type="number" name="amount{{ currentTest.slNo }}" [(ngModel)]="currentTest.amount" (keydown.enter)="onCurrentTestAmountEnter($event)" readonly></td>
+          </tr>
+          <tr *ngFor="let test of tests" [class.selected-row]="selectedTestSlNo === test.slNo">
+            <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}</td>
+            <td><input [name]="'testCode' + test.slNo" [ngModel]="test.testCode" readonly tabindex="-1"></td>
+            <td><input [name]="'testName' + test.slNo" [ngModel]="test.testName" readonly tabindex="-1"></td>
+            <td><input type="number" [name]="'rate' + test.slNo" [ngModel]="test.rate" readonly tabindex="-1"></td>
+            <td><input type="number" [name]="'discount' + test.slNo" [ngModel]="test.discount" readonly tabindex="-1"></td>
+            <td><input type="number" [name]="'amount' + test.slNo" [ngModel]="test.amount" readonly tabindex="-1"></td>
           </tr>
         </tbody>
       </table>

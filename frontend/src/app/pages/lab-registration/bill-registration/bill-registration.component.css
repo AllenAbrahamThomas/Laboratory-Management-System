@@ -269,6 +269,14 @@ td {
   font-weight: 600;
 }
 
+.new-entry-row td {
+  background: #f6f7cc;
+}
+
+.new-entry-row .test-code-cell input {
+  background: #62f35c;
+}
+
 .selected-row td,
 .selected-row td input {
   background: #b9dcff;
@@ -290,11 +298,12 @@ td input {
   position: relative;
 }
 
+
 .test-suggestion-box {
   position: absolute;
   top: 100%;
   left: 0;
-  width: calc(var(--suggestion-total-width) + 1px);
+  width: calc(var(--suggestion-total-width) + 18px);
   max-height: 178px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -303,6 +312,14 @@ td input {
   z-index: 12;
   box-shadow: 0 0 0 1px #8aa07a inset;
   box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  transition: box-shadow 0.2s;
+}
+
+.test-suggestion-box::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .suggestion-row {
@@ -323,6 +340,13 @@ td input {
 
 .suggestion-row:hover {
   background: #fff200;
+}
+
+.suggestion-row.active {
+  background: #fff200;
+  outline: 2px solid #4b8f2f;
+  color: #222;
+  font-weight: bold;
 }
 
 .suggestion-code {
