@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
@@ -10,6 +11,25 @@ from rest_framework.response import Response
 
 from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest
 from .serializers import VisitDetailSerializer, VisitListSerializer
+
+
+def _next_lab_no() -> str:
+    max_numeric_lab_no = 0
+    for lab_no in Visit.objects.values_list("lab_no", flat=True):
+        value = str(lab_no).strip()
+        if value.isdigit():
+            max_numeric_lab_no = max(max_numeric_lab_no, int(value))
+
+    candidate_number = max_numeric_lab_no + 1
+    while Visit.objects.filter(lab_no=str(candidate_number).zfill(5)).exists():
+        candidate_number += 1
+
+    return str(candidate_number).zfill(5)
+
+
+@api_view(["GET"])
+def next_visit_lab_no(request):
+    return Response({"lab_no": _next_lab_no()})
 
 
 @api_view(["GET"])
@@ -204,25 +224,46 @@ def visit_create(request):
     patient.address = str(data.get("address", patient.address)).strip()
     patient.save()
 
-    visit = Visit.objects.create(
-        lab_no=str(data.get("lab_no", "")).strip(),
-        patient=patient,
-        visit_date=data.get("visit_date") or timezone.localdate(),
-        sample_on=_parse_sample_on(str(data.get("sample_on", "")).strip()),
-        ip_no=str(data.get("ip_no", "")).strip(),
-        out_doctor_name=str(data.get("out_doctor_name", "")).strip(),
-        corporate_name=str(data.get("corporate_name", "")).strip(),
-        pay_mode=str(data.get("pay_mode", "cash")).strip().lower(),
-        discount_mode=str(data.get("discount_mode", "normal")).strip().lower(),
-        discount_percent=_to_decimal(data.get("discount_percent", "0")),
-        discount_reason=str(data.get("discount_reason", "")).strip(),
-        note=str(data.get("note", "")).strip(),
-        round_off=_to_decimal(data.get("round_off", "0")),
-        gross_amount=_to_decimal(data.get("gross_amount", "0")),
-        net_amount=_to_decimal(data.get("gross_amount", "0")) + _to_decimal(data.get("round_off", "0")),
-        received_amount=_to_decimal(data.get("received_amount", "0")),
-        balance_amount=_to_decimal(data.get("balance_amount", "0")),
-    )
+    try:
+        visit = Visit.objects.create(
+            lab_no=_next_lab_no(),
+            patient=patient,
+            visit_date=data.get("visit_date") or timezone.localdate(),
+            sample_on=_parse_sample_on(str(data.get("sample_on", "")).strip()),
+            ip_no=str(data.get("ip_no", "")).strip(),
+            out_doctor_name=str(data.get("out_doctor_name", "")).strip(),
+            corporate_name=str(data.get("corporate_name", "")).strip(),
+            pay_mode=str(data.get("pay_mode", "cash")).strip().lower(),
+            discount_mode=str(data.get("discount_mode", "normal")).strip().lower(),
+            discount_percent=_to_decimal(data.get("discount_percent", "0")),
+            discount_reason=str(data.get("discount_reason", "")).strip(),
+            note=str(data.get("note", "")).strip(),
+            round_off=_to_decimal(data.get("round_off", "0")),
+            gross_amount=_to_decimal(data.get("gross_amount", "0")),
+            net_amount=_to_decimal(data.get("gross_amount", "0")) + _to_decimal(data.get("round_off", "0")),
+            received_amount=_to_decimal(data.get("received_amount", "0")),
+            balance_amount=_to_decimal(data.get("balance_amount", "0")),
+        )
+    except IntegrityError:
+        visit = Visit.objects.create(
+            lab_no=_next_lab_no(),
+            patient=patient,
+            visit_date=data.get("visit_date") or timezone.localdate(),
+            sample_on=_parse_sample_on(str(data.get("sample_on", "")).strip()),
+            ip_no=str(data.get("ip_no", "")).strip(),
+            out_doctor_name=str(data.get("out_doctor_name", "")).strip(),
+            corporate_name=str(data.get("corporate_name", "")).strip(),
+            pay_mode=str(data.get("pay_mode", "cash")).strip().lower(),
+            discount_mode=str(data.get("discount_mode", "normal")).strip().lower(),
+            discount_percent=_to_decimal(data.get("discount_percent", "0")),
+            discount_reason=str(data.get("discount_reason", "")).strip(),
+            note=str(data.get("note", "")).strip(),
+            round_off=_to_decimal(data.get("round_off", "0")),
+            gross_amount=_to_decimal(data.get("gross_amount", "0")),
+            net_amount=_to_decimal(data.get("gross_amount", "0")) + _to_decimal(data.get("round_off", "0")),
+            received_amount=_to_decimal(data.get("received_amount", "0")),
+            balance_amount=_to_decimal(data.get("balance_amount", "0")),
+        )
     return Response(VisitDetailSerializer(visit).data, status=status.HTTP_201_CREATED)
 
 
