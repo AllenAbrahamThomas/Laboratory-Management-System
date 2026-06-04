@@ -105,6 +105,10 @@ export interface VisitSavePayload {
   note: string;
 }
 
+export interface NextLabNoResponse {
+  lab_no: string;
+}
+
 export interface ResultEntryGroupChild {
   test_id: number;
   test_name: string;
@@ -202,6 +206,10 @@ export class VisitService {
 
   getVisitByLabNo(labNo: string): Observable<VisitDetail> {
     return this.http.get<VisitDetail>(`${this.apiUrl}/visits/lab/${encodeURIComponent(labNo)}/`);
+  }
+
+  getNextLabNo(): Observable<NextLabNoResponse> {
+    return this.http.get<NextLabNoResponse>(`${this.apiUrl}/visits/next-lab-no/`);
   }
 
   createVisit(payload: VisitSavePayload): Observable<VisitDetail> {

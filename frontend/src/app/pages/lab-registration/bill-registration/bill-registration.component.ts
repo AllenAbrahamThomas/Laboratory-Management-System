@@ -26,6 +26,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @ViewChild('billFormElement') billFormElement?: ElementRef<HTMLFormElement>;
   @ViewChild('testTableElement') testTableElement?: ElementRef<HTMLTableElement>;
   @ViewChild('suggestionBoxElement') suggestionBoxElement?: ElementRef<HTMLDivElement>;
+  @ViewChild('testCodeInput') testCodeInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('amountInput') amountInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('discModeSelect') discModeSelect?: ElementRef<HTMLSelectElement>;
+  @ViewChild('discPercentInput') discPercentInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('receivedAmtInput') receivedAmtInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('roundOffInput') roundOffInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('discReasonInput') discReasonInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('saveButton') saveButton?: ElementRef<HTMLButtonElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
   @Output() closed = new EventEmitter<void>();
@@ -62,6 +70,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   discountPercent = '';
   receivedAmount = '';
   balanceAmount = '';
+  totalRate = 0;
+  totalDiscountAmount = 0;
   grossAmount = 0;
   note = '';
   roundOff = '';
@@ -70,8 +80,12 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   isLoadingVisit = false;
   isSaving = false;
   saveMessage = '';
+  saveMessageIsError = false;
   loadError = '';
   showEditInvoiceDialog = false;
+  showSaveConfirmDialog = false;
+  saveDialogMode: 'confirm' | 'alert' = 'confirm';
+  saveDialogMessage = '';
   editLabNo = '';
   editLookupError = '';
   isLookingUpLabNo = false;
@@ -103,6 +117,19 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @HostListener('window:resize')
   onWindowResize(): void {
     this.recalculateSuggestionLayout();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    const clickedInsideInput = this.testCodeInput?.nativeElement.contains(target);
+    const clickedInsideSuggestions = this.suggestionBoxElement?.nativeElement.contains(target);
+
+    if (!clickedInsideInput && !clickedInsideSuggestions) {
+      this.activeSuggestionSlNo = null;
+      this.testSuggestions = [];
+      this.activeSuggestionIndex = -1;
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -140,7 +167,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   private isTestFilled(test: TestLine): boolean {
-    return !!test.testCode.trim() || !!test.testName.trim() || !!Number(test.rate) || !!Number(test.discount) || !!Number(test.amount);
+    if (!test.testCode || !test.testCode.trim()) {
+      return false;
+    }
+    return !!test.testName.trim() || !!Number(test.rate) || !!Number(test.discount) || !!Number(test.amount);
   }
 
   private getEditableLineBySlNo(slNo: number | null): TestLine | undefined {
@@ -218,22 +248,58 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     }
 
     if (event.key === 'Enter') {
-      // If suggestion dropdown is open, select the highlighted suggestion
-      const slNo = targetName.startsWith('testCode') ? this.extractSlNo(targetName, 'testCode') : null;
-      if (slNo !== null && this.activeSuggestionSlNo === slNo && this.testSuggestions.length > 0) {
-        event.preventDefault();
-        const line = this.getEditableLineBySlNo(slNo);
-        const selectedSuggestion = this.testSuggestions[this.activeSuggestionIndex >= 0 ? this.activeSuggestionIndex : 0];
-        if (line && selectedSuggestion) {
-          this.selectTestSuggestion(line, selectedSuggestion);
-          this.focusByName(`amount${slNo}`);
-        }
+      if (targetName === 'saveButton') {
+        this.promptSave(event);
         return;
       }
-      // Otherwise, default enter behavior
+      if (
+        targetName.startsWith('testCode') || 
+        targetName.startsWith('amount') ||
+        ['discountMode', 'discountPercent', 'receivedAmount', 'roundOff', 'discountReason'].includes(targetName)
+      ) {
+        return;
+      }
       this.onFormEnter(event, target, targetName);
       return;
     }
+  }
+
+  promptSave(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    if (this.showSaveConfirmDialog || this.isSaving) {
+      return;
+    }
+
+    const validationMessage = this.getSaveValidationMessage();
+    if (validationMessage) {
+      this.saveDialogMode = 'alert';
+      this.saveDialogMessage = validationMessage;
+      this.showSaveConfirmDialog = true;
+      return;
+    }
+
+    this.saveDialogMode = 'confirm';
+    this.saveDialogMessage = 'Do you want to save this bill/registration now?';
+    this.showSaveConfirmDialog = true;
+  }
+
+  confirmSave(): void {
+    if (!this.showSaveConfirmDialog || this.isSaving) {
+      return;
+    }
+
+    this.showSaveConfirmDialog = false;
+    this.saveVisit();
+  }
+
+  cancelSaveConfirmation(): void {
+    this.showSaveConfirmDialog = false;
+  }
+
+  acknowledgeSaveAlert(): void {
+    this.showSaveConfirmDialog = false;
   }
 
   onTestCodeKeyDown(test: TestLine, event: KeyboardEvent): void {
@@ -255,7 +321,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     }
   }
 
-  onCurrentTestCodeEnter(event: KeyboardEvent): void {
+  onCurrentTestCodeEnter(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
 
@@ -264,20 +330,71 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       return;
     }
 
-    this.focusByName(`amount${this.currentTest.slNo}`);
+    if (!this.currentTest.testCode || !this.currentTest.testCode.trim()) {
+      this.currentTest.testCode = '';
+      this.currentTest.testName = '';
+      this.currentTest.rate = null;
+      this.currentTest.discount = null;
+      this.currentTest.amount = null;
+      this.updateGrossAmount();
+    }
+
+    setTimeout(() => {
+      this.amountInput?.nativeElement.focus();
+    }, 10);
   }
 
-  onCurrentTestAmountEnter(event: KeyboardEvent): void {
+  onCurrentTestAmountEnter(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
 
+    if (!this.currentTest.testCode && !this.currentTest.amount) {
+      setTimeout(() => {
+        this.discModeSelect?.nativeElement.focus();
+      }, 10);
+      return;
+    }
+
     if (!this.isTestFilled(this.currentTest)) {
-      this.focusByName(`testCode${this.currentTest.slNo}`);
+      this.testCodeInput?.nativeElement.focus();
       return;
     }
 
     this.commitCurrentTest();
-    setTimeout(() => this.focusByName(`testCode${this.currentTest.slNo}`), 0);
+    setTimeout(() => {
+      this.testCodeInput?.nativeElement.focus();
+    }, 30);
+  }
+
+  onBottomFieldEnter(event: Event, currentFieldName: string): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    switch (currentFieldName) {
+      case 'discMode':
+        this.discPercentInput?.nativeElement.focus();
+        break;
+      case 'discPercent':
+        this.receivedAmtInput?.nativeElement.focus();
+        break;
+      case 'receivedAmt':
+        this.roundOffInput?.nativeElement.focus();
+        break;
+      case 'roundOff':
+        this.discReasonInput?.nativeElement.focus();
+        break;
+      case 'discReason':
+        this.focusByName('discountMode'); 
+        const form = this.billFormElement?.nativeElement;
+        const grossAmountField = form?.querySelector('input[title="Net Amount"]') as HTMLElement;
+        grossAmountField?.focus();
+        break;
+      case 'grossAmt':
+        setTimeout(() => {
+          this.saveButton?.nativeElement.focus();
+        }, 10);
+        break;
+    }
   }
 
   moveSuggestionSelection(direction: 1 | -1): void {
@@ -305,7 +422,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       return;
     }
     this.selectTestSuggestion(test, selectedSuggestion);
-    setTimeout(() => this.focusByName(`amount${test.slNo}`), 0);
+    
+    this.activeSuggestionSlNo = null;
+    this.testSuggestions = [];
+    this.activeSuggestionIndex = -1;
+
+    setTimeout(() => {
+      this.amountInput?.nativeElement.focus();
+    }, 30);
   }
 
   onFormEnter(event: KeyboardEvent, target?: HTMLElement | null, targetName?: string): void {
@@ -325,36 +449,6 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
 
     if (currentTargetName === 'patientName') {
       this.patientName = this.toUppercase(this.patientName);
-    }
-
-    if (currentTargetName.startsWith('testCode')) {
-      const slNo = this.extractSlNo(currentTargetName, 'testCode');
-      const line = this.getEditableLineBySlNo(slNo);
-      if (line && this.activeSuggestionSlNo === slNo && this.testSuggestions.length > 0) {
-        this.applyActiveSuggestion(line);
-        return;
-      }
-    }
-
-    if (currentTargetName.startsWith('discount')) {
-      const slNo = this.extractSlNo(currentTargetName, 'discount');
-      if (slNo === this.currentTest.slNo) {
-        this.focusByName(`amount${slNo}`);
-        return;
-      }
-    }
-
-    if (currentTargetName.startsWith('amount')) {
-      const slNo = this.extractSlNo(currentTargetName, 'amount');
-      if (slNo === this.currentTest.slNo) {
-        if (!this.isTestFilled(this.currentTest)) {
-          this.focusByName(`testCode${this.currentTest.slNo}`);
-          return;
-        }
-        this.commitCurrentTest();
-        setTimeout(() => this.focusByName(`testCode${this.currentTest.slNo}`), 0);
-        return;
-      }
     }
 
     if (target) {
@@ -441,11 +535,6 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   closeTestSuggestion(): void {
-    setTimeout(() => {
-      this.activeSuggestionSlNo = null;
-      this.testSuggestions = [];
-      this.activeSuggestionIndex = -1;
-    }, 150);
   }
 
   onReceivedAmountChange(): void {
@@ -457,9 +546,16 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   private updateGrossAmount(): void {
-    const committedTotal = this.tests.reduce((total, item) => total + (Number(item.amount) || 0), 0);
-    const currentTotal = Number(this.currentTest.amount) || 0;
-    this.grossAmount = committedTotal + currentTotal;
+    let committedRate = this.tests.reduce((total, item) => total + (Number(item.rate) || 0), 0);
+    let committedAmount = this.tests.reduce((total, item) => total + (Number(item.amount) || 0), 0);
+
+    const currentRate = Number(this.currentTest.rate) || 0;
+    const currentAmount = Number(this.currentTest.amount) || 0;
+
+    this.totalRate = committedRate + currentRate;
+    this.grossAmount = committedAmount + currentAmount;
+    this.totalDiscountAmount = Math.max(this.totalRate - this.grossAmount, 0);
+
     this.updateBalanceAmount();
   }
 
@@ -496,6 +592,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   private applyVisitData(visit: VisitDetail): void {
+    this.showSaveConfirmDialog = false;
+    this.saveMessage = '';
+    this.saveMessageIsError = false;
     this.labNo = visit.lab_no;
     this.payMode = this.toTitleCase(visit.pay_mode);
     const parsedName = this.parsePatientName(visit.patient_name);
@@ -541,6 +640,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   private applyPrefillOnlyData(visit: VisitDetail): void {
+    this.showSaveConfirmDialog = false;
+    this.saveMessage = '';
+    this.saveMessageIsError = false;
     const parsedName = this.parsePatientName(visit.patient_name);
     this.salutation = parsedName.salutation;
     this.patientName = parsedName.name;
@@ -572,6 +674,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
 
   private resetForNewRegistration(): void {
     this.currentVisitId = null;
+    this.showSaveConfirmDialog = false;
+    this.saveMessage = '';
+    this.saveMessageIsError = false;
     this.salutation = 'Mr';
     this.patientName = '';
     this.gender = 'Male';
@@ -597,6 +702,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.tests = [];
     this.currentTest = this.createBlankTestLine(this.tests.length + 1);
     this.selectedTestSlNo = null;
+    this.loadNextLabNo();
   }
 
   private toTitleCase(value: string): string {
@@ -645,9 +751,45 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     }).replace(',', '');
   }
 
+  private loadNextLabNo(): void {
+    this.visitService.getNextLabNo().subscribe({
+      next: (response) => {
+        this.labNo = response.lab_no;
+      },
+      error: () => {
+        this.labNo = '00001';
+      }
+    });
+  }
+
+  private getSaveValidationMessage(): string {
+    const patientName = this.patientName.trim();
+    if (!patientName) {
+      return 'Enter patient name before saving.';
+    }
+
+    if (this.tests.length === 0) {
+      return 'Add at least 1 test before saving.';
+    }
+
+    return '';
+  }
+
   saveVisit(): void {
+    const validationMessage = this.getSaveValidationMessage();
+    if (validationMessage) {
+      this.saveDialogMode = 'alert';
+      this.saveDialogMessage = validationMessage;
+      this.showSaveConfirmDialog = true;
+      this.isSaving = false;
+      this.saveMessage = '';
+      this.saveMessageIsError = false;
+      return;
+    }
+
     this.isSaving = true;
     this.saveMessage = '';
+    this.saveMessageIsError = false;
 
     const payload = {
       lab_no: this.labNo.trim(),
@@ -683,14 +825,24 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       next: (savedVisit) => {
         this.currentVisitId = savedVisit.id;
         this.saveMessage = 'Saved successfully.';
+        this.saveMessageIsError = false;
         this.isSaving = false;
+        this.showSaveConfirmDialog = false;
         this.applyVisitData(savedVisit);
       },
       error: (error: HttpErrorResponse) => {
         this.isSaving = false;
-        this.saveMessage = error.status === 0
+        this.saveMessage = '';
+        this.saveMessageIsError = false;
+        this.saveDialogMode = 'alert';
+        this.saveDialogMessage = error.status === 0
           ? 'Unable to reach backend.'
-          : 'Save failed.';
+          : error.status === 400 && typeof error.error?.detail === 'string'
+            ? error.error.detail
+            : error.status === 409
+              ? 'Lab number already exists. A new number will be assigned.'
+              : 'Save failed.';
+        this.showSaveConfirmDialog = true;
       }
     });
   }
@@ -742,7 +894,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     }
 
     const controls = Array.from(
-      form.querySelectorAll<HTMLElement>('input:not([type="hidden"]), select, textarea, button[type="button"], button[type="submit"]')
+      form.querySelectorAll<HTMLElement>('input:not([type=\"hidden\"]), select, textarea, button[type=\"button\"], button[type=\"submit\"]')
     ).filter((el) => !el.hasAttribute('disabled') && this.isVisible(el));
 
     const currentIndex = controls.indexOf(currentTarget);
@@ -758,7 +910,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     if (!form) {
       return;
     }
-    const next = form.querySelector<HTMLElement>(`[name="${name}"]`);
+    const next = form.querySelector<HTMLElement>(`[name=\"${name}\"]`);
     next?.focus();
   }
 
@@ -792,7 +944,4 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.suggestionWidthPx = shortNameWidth + testNameWidth + rateWidth;
     this.suggestionGridTemplate = `${shortNameWidth}px ${testNameWidth}px ${rateWidth}px`;
   }
-
-
-
 }

@@ -9,7 +9,7 @@
     <p class="status-message" *ngIf="isLoadingVisit">Loading selected patient bill...</p>
     <p class="status-message error" *ngIf="loadError">{{ loadError }}</p>
     <p class="status-message" *ngIf="isSaving">Saving...</p>
-    <p class="status-message" *ngIf="saveMessage">{{ saveMessage }}</p>
+    <p class="status-message" *ngIf="saveMessage && !saveMessageIsError">{{ saveMessage }}</p>
 
     <section class="patient-details">
       <div class="compact-left">
@@ -101,13 +101,14 @@
             <td class="sl-no-cell"></td>
             <td class="test-code-cell">
               <input
+                #testCodeInput
                 name="testCode{{ currentTest.slNo }}"
                 [(ngModel)]="currentTest.testCode"
                 (focus)="onTestCodeInput(currentTest)"
                 (input)="onTestCodeInput(currentTest)"
                 (keydown)="onTestCodeKeyDown(currentTest, $event)"
                 (keydown.enter)="onCurrentTestCodeEnter($event)"
-                (blur)="closeTestSuggestion()"
+                autocomplete="off"
               >
               <div #suggestionBoxElement class="test-suggestion-box" *ngIf="activeSuggestionSlNo === currentTest.slNo" [style.width.px]="suggestionWidthPx || null">
                 <div class="suggestion-state" *ngIf="isLoadingTestSuggestions">Loading...</div>
@@ -117,7 +118,7 @@
                   [class.active]="index === activeSuggestionIndex"
                   [style.gridTemplateColumns]="suggestionGridTemplate || null"
                   *ngFor="let option of testSuggestions; let index = index"
-                  (mousedown)="selectTestSuggestion(currentTest, option)"
+                  (mousedown)="selectTestSuggestion(currentTest, option); $event.preventDefault();"
                 >
                   <span class="suggestion-code">{{ option.short_name || option.test_code }}</span>
                   <span class="suggestion-name">{{ option.test_name }}</span>
@@ -126,10 +127,25 @@
                 <div class="suggestion-state" *ngIf="!isLoadingTestSuggestions && testSuggestions.length === 0">No tests found</div>
               </div>
             </td>
-            <td><input name="testName{{ currentTest.slNo }}" [(ngModel)]="currentTest.testName"></td>
-            <td><input type="number" name="rate{{ currentTest.slNo }}" [(ngModel)]="currentTest.rate" (ngModelChange)="updateAmount(currentTest)"></td>
-            <td><input type="number" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount" (ngModelChange)="updateAmount(currentTest)"></td>
-            <td><input type="number" name="amount{{ currentTest.slNo }}" [(ngModel)]="currentTest.amount" (keydown.enter)="onCurrentTestAmountEnter($event)" readonly></td>
+            <td>
+              <input name="testName{{ currentTest.slNo }}" [(ngModel)]="currentTest.testName" readonly tabindex="-1">
+            </td>
+            <td>
+              <input type="number" name="rate{{ currentTest.slNo }}" [(ngModel)]="currentTest.rate" readonly tabindex="-1">
+            </td>
+            <td>
+              <input type="number" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount" readonly tabindex="-1">
+            </td>
+            <td>
+              <input 
+                #amountInput
+                type="number" 
+                name="amount{{ currentTest.slNo }}" 
+                [(ngModel)]="currentTest.amount" 
+                (keydown.enter)="onCurrentTestAmountEnter($event)"
+                readonly
+              >
+            </td>
           </tr>
           <tr *ngFor="let test of tests" [class.selected-row]="selectedTestSlNo === test.slNo">
             <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}</td>
@@ -145,35 +161,62 @@
 
     <section class="payment-details">
       <div class="payment-left">
-        <label>Disc. Mode <span>:</span><select name="discountMode" [(ngModel)]="discountMode"><option *ngFor="let mode of discountModes">{{ mode }}</option></select></label>
-        <label>Discount % <span>:</span><input name="discountPercent" [(ngModel)]="discountPercent"><input></label>
-        <label>Rcvd.Amt <span>:</span><input name="receivedAmount" [(ngModel)]="receivedAmount" (ngModelChange)="onReceivedAmountChange()"></label>
-        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount" readonly></label>
+        <label>Disc. Mode <span>:</span>
+          <select #discModeSelect name="discountMode" [(ngModel)]="discountMode" (keydown.enter)="onBottomFieldEnter($event, 'discMode')">
+            <option *ngFor="let mode of discountModes">{{ mode }}</option>
+          </select>
+        </label>
+        <label>Discount % <span>:</span>
+          <input #discPercentInput name="discountPercent" [(ngModel)]="discountPercent" (keydown.enter)="onBottomFieldEnter($event, 'discPercent')">
+          <input tabindex="-1" readonly style="visibility: hidden; width: 0; padding: 0; border: 0;">
+        </label>
+        <label>Rcvd.Amt <span>:</span>
+          <input #receivedAmtInput name="receivedAmount" [(ngModel)]="receivedAmount" (ngModelChange)="onReceivedAmountChange()" (keydown.enter)="onBottomFieldEnter($event, 'receivedAmt')">
+        </label>
+        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount" readonly tabindex="-1"></label>
       </div>
 
       <div class="payment-middle">
         <label>Note <span>:</span><textarea name="note" [(ngModel)]="note"></textarea></label>
-        <label>Round off <span>:</span><input name="roundOff" [(ngModel)]="roundOff" (ngModelChange)="onRoundOffChange()"></label>
-        <label>Discount Reason <span>:</span><input name="discountReason" [(ngModel)]="discountReason"></label>
+        <label>Round off <span>:</span>
+          <input #roundOffInput name="roundOff" [(ngModel)]="roundOff" (ngModelChange)="onRoundOffChange()" (keydown.enter)="onBottomFieldEnter($event, 'roundOff')">
+        </label>
+        <label>Discount Reason <span>:</span>
+          <input #discReasonInput name="discountReason" [(ngModel)]="discountReason" (keydown.enter)="onBottomFieldEnter($event, 'discReason')">
+        </label>
       </div>
 
       <div class="payment-right">
-        <label>Gross Amount <span>:</span><input [value]="grossAmount" readonly><input readonly><input readonly></label>
-        <div class="grand-total">{{ grossAmount }}</div>
+        <label>Gross Amount <span>:</span>
+          <input [value]="totalRate.toFixed(2)" readonly tabindex="-1" title="Total Rate">
+          <input [value]="totalDiscountAmount.toFixed(2)" readonly tabindex="-1" title="Total Discount Amount">
+          <input [value]="grossAmount.toFixed(2)" readonly title="Net Amount" (keydown.enter)="onBottomFieldEnter($event, 'grossAmt')">
+        </label>
+        <div class="grand-total">{{ grossAmount.toFixed(2) }}</div>
       </div>
     </section>
 
     <footer class="action-bar">
       <button type="button" (click)="openResultEntry()">Result</button>
-      <button type="button">Previous</button>
-      <button type="button">Next</button>
       <button type="button" (click)="addTestLine()"><span class="action-icon">+</span>New</button>
       <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
       <button type="button">Print</button>
-      <button type="button" (click)="saveVisit()" [disabled]="isSaving">Save</button>
+      <button #saveButton name="saveButton" type="button" (click)="promptSave($event)" (keydown.enter)="promptSave($event)" [disabled]="isSaving">Save</button>
       <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
     </footer>
   </form>
+</section>
+
+<section class="save-confirm-backdrop" *ngIf="showSaveConfirmDialog">
+  <div class="save-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="saveConfirmTitle">
+    <header id="saveConfirmTitle">{{ saveDialogMode === 'confirm' ? 'Save bill/registration' : 'Save required' }}</header>
+    <p>{{ saveDialogMessage }}</p>
+    <footer>
+      <button *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-yes" (click)="confirmSave()" [disabled]="isSaving">Yes</button>
+      <button *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-no" (click)="cancelSaveConfirmation()">No</button>
+      <button *ngIf="saveDialogMode === 'alert'" type="button" class="confirm-yes" (click)="acknowledgeSaveAlert()">OK</button>
+    </footer>
+  </div>
 </section>
 
 <section class="edit-invoice-backdrop" *ngIf="showEditInvoiceDialog">
