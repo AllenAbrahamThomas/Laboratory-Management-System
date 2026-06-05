@@ -408,6 +408,7 @@ def _build_result_entry_payload(visit: Visit) -> dict:
         "visit_id": visit.id,
         "lab_no": visit.lab_no,
         "date": str(visit.visit_date),
+        "sample_on": visit.sample_on.isoformat() if visit.sample_on else "",
         "pay_mode": visit.pay_mode,
         "patient_name": patient.full_name,
         "gender": patient.get_gender_display(),
@@ -418,6 +419,11 @@ def _build_result_entry_payload(visit: Visit) -> dict:
         "doctor": visit.doctor.name if visit.doctor_id else visit.out_doctor_name,
         "out_doctor_name": visit.out_doctor_name,
         "hospital": visit.hospital.name if visit.hospital_id else "",
+        "gross_amount": str(visit.gross_amount or 0),
+        "received_amount": str(visit.received_amount or 0),
+        "balance_amount": str(visit.balance_amount or 0),
+        "round_off": str(visit.round_off or 0),
+        "pay_status": "Pending" if (visit.balance_amount or 0) > 0 else "Paid",
         "tests": tests,
     }
 

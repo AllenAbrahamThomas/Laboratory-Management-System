@@ -1,8 +1,27 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ClockService } from '../../services/clock.service';
 import { ResultEntryPayload, ResultEntryTest, VisitService } from '../../services/visit.service';
+
+interface ResultEntryDisplayChild {
+  test_id: number;
+  test_name: string;
+  unit?: string;
+  reference_range?: string;
+  result_value?: string;
+  note?: string;
+  isIssued: boolean;
+  printEnabled: boolean;
+}
+
+type ResultEntryDisplayTest = Omit<ResultEntryTest, 'children'> & {
+  isIssued: boolean;
+  printEnabled: boolean;
+  children?: ResultEntryDisplayChild[];
+};
 
 @Component({
   selector: 'app-result-entry',
@@ -15,17 +34,29 @@ export class ResultEntryComponent implements OnChanges {
   @Input() selectedVisitId: number | null = null;
   @Output() closed = new EventEmitter<void>();
 
+  private readonly clockService = inject(ClockService);
   private readonly visitService = inject(VisitService);
+  private readonly destroyRef = inject(DestroyRef);
 
   labNoSearch = '';
+  currentTime = new Date();
   isLoading = false;
   isSaving = false;
   errorMessage = '';
   infoMessage = '';
 
   resultData: ResultEntryPayload | null = null;
-  selectedTest: ResultEntryTest | null = null;
+  resultTests: ResultEntryDisplayTest[] = [];
+  selectedTest: ResultEntryDisplayTest | null = null;
   showPreview = false;
+
+  constructor() {
+    this.clockService.currentTime$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((currentTime) => {
+        this.currentTime = currentTime;
+      });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedVisitId'] && this.selectedVisitId) {
@@ -44,8 +75,7 @@ export class ResultEntryComponent implements OnChanges {
     this.errorMessage = '';
     this.visitService.getResultEntryByLabNo(labNo).subscribe({
       next: (data) => {
-        this.resultData = data;
-        this.selectedTest = data.tests[0] || null;
+        this.bindResultData(data);
         this.isLoading = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -57,8 +87,34 @@ export class ResultEntryComponent implements OnChanges {
     });
   }
 
-  selectTest(test: ResultEntryTest): void {
+  selectTest(test: ResultEntryDisplayTest): void {
     this.selectedTest = test;
+  }
+
+  selectPreviousTest(): void {
+    if (!this.selectedTest || this.resultTests.length === 0) {
+      return;
+    }
+
+    const currentIndex = this.resultTests.findIndex((item) => item.visit_test_id === this.selectedTest?.visit_test_id);
+    if (currentIndex <= 0) {
+      return;
+    }
+
+    this.selectedTest = this.resultTests[currentIndex - 1];
+  }
+
+  selectNextTest(): void {
+    if (!this.selectedTest || this.resultTests.length === 0) {
+      return;
+    }
+
+    const currentIndex = this.resultTests.findIndex((item) => item.visit_test_id === this.selectedTest?.visit_test_id);
+    if (currentIndex === -1 || currentIndex >= this.resultTests.length - 1) {
+      return;
+    }
+
+    this.selectedTest = this.resultTests[currentIndex + 1];
   }
 
   saveResults(): void {
@@ -68,7 +124,7 @@ export class ResultEntryComponent implements OnChanges {
 
     const entries: Array<{ visit_test_id: number; test_id: number; result_value: string; note: string }> = [];
 
-    for (const test of this.resultData.tests) {
+    for (const test of this.resultTests) {
       if (test.type === 'group' && test.children) {
         for (const child of test.children) {
           entries.push({
@@ -117,9 +173,7 @@ export class ResultEntryComponent implements OnChanges {
 
     this.visitService.getResultEntryByVisit(visitId).subscribe({
       next: (data) => {
-        this.resultData = data;
-        this.labNoSearch = data.lab_no;
-        this.selectedTest = data.tests[0] || null;
+        this.bindResultData(data);
         this.isLoading = false;
       },
       error: () => {
@@ -127,5 +181,22 @@ export class ResultEntryComponent implements OnChanges {
         this.isLoading = false;
       }
     });
+  }
+
+  private bindResultData(data: ResultEntryPayload): void {
+    this.resultData = data;
+    this.labNoSearch = data.lab_no;
+    this.resultTests = data.tests.map((test) => ({
+      ...test,
+      isIssued: true,
+      printEnabled: true,
+      children: test.children?.map((child) => ({
+        ...child,
+        isIssued: true,
+        printEnabled: true,
+      }))
+    }));
+    this.selectedTest = this.resultTests[0] || null;
+    this.showPreview = false;
   }
 }

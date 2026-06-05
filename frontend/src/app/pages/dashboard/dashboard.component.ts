@@ -268,6 +268,7 @@ export class DashboardComponent implements OnInit {
   activeRegistrationView: 'patients' | 'pending-collection' | 'new-registration' | 'patient-advance-search' | 'result-entry' | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
+  patientListPurpose: 'registration' | 'result' = 'registration';
   activeCollectionSummaryMode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly' | null = null;
   activeCollectionSummaryTitle = 'Collection summary';
   openTopMenu: TopMenuKey | null = null;
@@ -323,6 +324,7 @@ export class DashboardComponent implements OnInit {
 
   handleMenuClick(item: string): void {
     if (item === 'Lab registration') {
+      this.patientListPurpose = 'registration';
       this.activeRegistrationView = 'patients';
       return;
     }
@@ -339,7 +341,8 @@ export class DashboardComponent implements OnInit {
 
     if (item === 'Result entry') {
       this.selectedVisitId = null;
-      this.activeRegistrationView = 'result-entry';
+      this.patientListPurpose = 'result';
+      this.activeRegistrationView = 'patients';
       return;
     }
 
@@ -373,6 +376,7 @@ export class DashboardComponent implements OnInit {
     this.openReportsSubmenu = null;
 
     if (action === 'invoice-entry') {
+      this.patientListPurpose = 'registration';
       this.activeRegistrationView = 'patients';
       return;
     }
@@ -396,7 +400,8 @@ export class DashboardComponent implements OnInit {
 
     if (action === 'result-entry') {
       this.selectedVisitId = null;
-      this.activeRegistrationView = 'result-entry';
+      this.patientListPurpose = 'result';
+      this.activeRegistrationView = 'patients';
       return;
     }
 
@@ -428,26 +433,45 @@ export class DashboardComponent implements OnInit {
   openNewRegistration(): void {
     this.selectedVisitId = null;
     this.billOpenMode = 'new';
+    this.patientListPurpose = 'registration';
     this.activeRegistrationView = 'new-registration';
   }
 
   openExistingRegistration(visitId: number): void {
     this.selectedVisitId = visitId;
     this.billOpenMode = 'existing';
+    this.patientListPurpose = 'registration';
     this.activeRegistrationView = 'new-registration';
+  }
+
+  handlePatientSelected(visitId: number): void {
+    if (this.patientListPurpose === 'result') {
+      this.openResultEntry(visitId);
+      return;
+    }
+
+    this.openExistingRegistration(visitId);
   }
 
   openFromAdvanceSearch(payload: { visitId: number; openType: 'newBill' | 'existingBill' | 'patientResult' }): void {
     this.selectedVisitId = payload.visitId;
+    if (payload.openType === 'patientResult') {
+      this.activeRegistrationView = 'result-entry';
+      return;
+    }
+
     this.billOpenMode = payload.openType === 'newBill' ? 'prefill-only' : 'existing';
+    this.patientListPurpose = 'registration';
     this.activeRegistrationView = 'new-registration';
   }
 
   closeRegistration(): void {
+    this.patientListPurpose = 'registration';
     this.activeRegistrationView = null;
   }
 
   openPatientAdvanceSearch(): void {
+    this.patientListPurpose = 'registration';
     this.activeRegistrationView = 'patient-advance-search';
   }
 

@@ -76,8 +76,9 @@
         <app-patient-list
           *ngIf="activeRegistrationView === 'patients' || activeRegistrationView === 'pending-collection'"
           [mode]="activeRegistrationView === 'pending-collection' ? 'pending' : 'all'"
+          [purpose]="patientListPurpose"
           (newRegistration)="openNewRegistration()"
-          (patientSelected)="openExistingRegistration($event)"
+          (patientSelected)="handlePatientSelected($event)"
           (closed)="closeRegistration()"
         ></app-patient-list>
 
