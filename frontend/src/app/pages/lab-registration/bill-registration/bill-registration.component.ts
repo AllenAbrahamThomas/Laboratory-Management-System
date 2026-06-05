@@ -8,6 +8,7 @@ import { TestLookupItem, VisitDetail, VisitService } from '../../../services/vis
 
 interface TestLine {
   slNo: number;
+  testId: number | null;
   testCode: string;
   testName: string;
   rate: number | null;
@@ -34,6 +35,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @ViewChild('roundOffInput') roundOffInput?: ElementRef<HTMLInputElement>;
   @ViewChild('discReasonInput') discReasonInput?: ElementRef<HTMLInputElement>;
   @ViewChild('saveButton') saveButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('saveConfirmYesButton') saveConfirmYesButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('saveConfirmNoButton') saveConfirmNoButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('saveAlertOkButton') saveAlertOkButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('editLabNoInput') editLabNoInput?: ElementRef<HTMLInputElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
@@ -102,6 +106,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   isLoadingTestSuggestions = false;
   suggestionWidthPx = 0;
   suggestionGridTemplate = '';
+  showCurrentEntryRow = true;
   private testLookupDebounceHandle: ReturnType<typeof setTimeout> | null = null;
   private currentVisitId: number | null = null;
 
@@ -139,6 +144,47 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     }
   }
 
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeyDown(event: KeyboardEvent): void {
+    if (!this.showSaveConfirmDialog) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (this.saveDialogMode === 'confirm') {
+        this.cancelSaveConfirmation();
+      } else {
+        this.acknowledgeSaveAlert();
+      }
+      return;
+    }
+
+    if (this.saveDialogMode === 'alert') {
+      if (event.key === 'Enter' || event.key === 'NumpadEnter' || event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        this.acknowledgeSaveAlert();
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.toggleSaveDialogFocus(event.key === 'ArrowRight' || event.key === 'ArrowDown');
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === 'NumpadEnter') {
+      event.preventDefault();
+      const activeElement = document.activeElement;
+      if (activeElement === this.saveConfirmNoButton?.nativeElement) {
+        this.cancelSaveConfirmation();
+      } else {
+        this.confirmSave();
+      }
+    }
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     const openModeChange = changes['openMode'];
     const selectedVisitIdChange = changes['selectedVisitId'];
@@ -165,6 +211,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   private createBlankTestLine(slNo: number): TestLine {
     return {
       slNo,
+      testId: null,
       testCode: '',
       testName: '',
       rate: null,
@@ -228,6 +275,21 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.updateGrossAmount();
   }
 
+  getPaymentStatus(): string {
+    const received = Number(this.receivedAmount) || 0;
+    const balance = Number(this.balanceAmount) || 0;
+
+    if (balance > 0) {
+      return 'Pending';
+    }
+
+    if (received > 0) {
+      return 'Paid';
+    }
+
+    return this.tests.length > 0 ? 'Unpaid' : 'No tests';
+  }
+
   onPatientNameEnter(event: Event): void {
     event.preventDefault();
     this.patientName = this.toUppercase(this.patientName);
@@ -284,12 +346,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       this.saveDialogMode = 'alert';
       this.saveDialogMessage = validationMessage;
       this.showSaveConfirmDialog = true;
+      setTimeout(() => this.saveAlertOkButton?.nativeElement.focus(), 0);
       return;
     }
 
     this.saveDialogMode = 'confirm';
     this.saveDialogMessage = 'Do you want to save this bill/registration now?';
     this.showSaveConfirmDialog = true;
+    setTimeout(() => this.saveConfirmYesButton?.nativeElement.focus(), 0);
   }
 
   confirmSave(): void {
@@ -540,6 +604,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   selectTestSuggestion(test: TestLine, selected: TestLookupItem): void {
+    test.testId = selected.id;
     test.testCode = selected.short_name || selected.test_code;
     test.testName = selected.test_name;
     test.rate = Number(selected.rate) || 0;
@@ -649,6 +714,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       .sort((a, b) => a.line_order - b.line_order)
       .map((test, index) => ({
         slNo: index + 1,
+        testId: test.test_id,
         testCode: test.test_code || '',
         testName: test.test_name || '',
         rate: Number(test.rate) || 0,
@@ -702,6 +768,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
 
   private resetForNewRegistration(): void {
     this.currentVisitId = null;
+    this.selectedVisitId = null;
     this.showSaveConfirmDialog = false;
     this.saveMessage = '';
     this.saveMessageIsError = false;
@@ -724,6 +791,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.discountPercent = '';
     this.receivedAmount = '';
     this.balanceAmount = '';
+    this.totalRate = 0;
+    this.totalDiscountAmount = 0;
     this.grossAmount = 0;
     this.note = '';
     this.roundOff = '';
@@ -733,8 +802,20 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.urgentReport = false;
     this.emailToPatient = false;
     this.tests = [];
-    this.currentTest = this.createBlankTestLine(this.tests.length + 1);
+    this.showCurrentEntryRow = false;
+    this.currentTest = this.createBlankTestLine(1);
     this.selectedTestSlNo = null;
+    this.testSuggestions = [];
+    this.activeSuggestionSlNo = null;
+    this.activeSuggestionIndex = -1;
+    this.isLoadingTestSuggestions = false;
+    this.suggestionWidthPx = 0;
+    this.suggestionGridTemplate = '';
+    this.updateGrossAmount();
+    setTimeout(() => {
+      this.currentTest = this.createBlankTestLine(1);
+      this.showCurrentEntryRow = true;
+    }, 0);
     this.loadNextLabNo();
   }
 
@@ -795,6 +876,21 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     });
   }
 
+  private getPersistableTests(): TestLine[] {
+    const committedTests = this.tests.map((test) => ({ ...test }));
+    if (this.isTestFilled(this.currentTest)) {
+      committedTests.push({
+        ...this.currentTest,
+        slNo: committedTests.length + 1
+      });
+    }
+
+    return committedTests.map((test, index) => ({
+      ...test,
+      slNo: index + 1
+    }));
+  }
+
   private getSaveValidationMessage(): string {
     const patientName = this.patientName.trim();
     if (!patientName) {
@@ -823,6 +919,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.isSaving = true;
     this.saveMessage = '';
     this.saveMessageIsError = false;
+    const persistableTests = this.getPersistableTests();
 
     const payload = {
       lab_no: this.labNo.trim(),
@@ -845,6 +942,15 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       gross_amount: Number(this.grossAmount) || 0,
       round_off: Number(this.roundOff) || 0,
       note: this.note.trim(),
+      tests: persistableTests.map((test, index) => ({
+        test_id: test.testId,
+        test_code: test.testCode.trim(),
+        test_name: test.testName.trim(),
+        rate: Number(test.rate) || 0,
+        discount: Number(test.discount) || 0,
+        amount: Number(test.amount) || 0,
+        line_order: index + 1,
+      })),
     };
 
     const targetVisitId = this.openMode === 'prefill-only'
@@ -855,13 +961,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       : this.visitService.createVisit(payload);
 
     request$.subscribe({
-      next: (savedVisit) => {
-        this.currentVisitId = savedVisit.id;
+      next: (_savedVisit) => {
         this.saveMessage = 'Saved successfully.';
         this.saveMessageIsError = false;
         this.isSaving = false;
         this.showSaveConfirmDialog = false;
-        this.applyVisitData(savedVisit);
+        this.resetForNewRegistration();
+        this.saveMessage = 'Saved successfully.';
+        this.saveMessageIsError = false;
       },
       error: (error: HttpErrorResponse) => {
         this.isSaving = false;
@@ -876,6 +983,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
               ? 'Lab number already exists. A new number will be assigned.'
               : 'Save failed.';
         this.showSaveConfirmDialog = true;
+        setTimeout(() => this.saveAlertOkButton?.nativeElement.focus(), 0);
       }
     });
   }
@@ -945,6 +1053,24 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     }
     const next = form.querySelector<HTMLElement>(`[name=\"${name}\"]`);
     next?.focus();
+  }
+
+  private toggleSaveDialogFocus(_moveForward: boolean): void {
+    if (this.saveDialogMode === 'alert') {
+      this.saveAlertOkButton?.nativeElement.focus();
+      return;
+    }
+
+    const yesButton = this.saveConfirmYesButton?.nativeElement;
+    const noButton = this.saveConfirmNoButton?.nativeElement;
+    const activeElement = document.activeElement;
+
+    if (activeElement === noButton) {
+      yesButton?.focus();
+      return;
+    }
+
+    noButton?.focus();
   }
 
   private isVisible(element: HTMLElement): boolean {

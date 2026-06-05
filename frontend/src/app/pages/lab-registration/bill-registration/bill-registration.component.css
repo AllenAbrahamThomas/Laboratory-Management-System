@@ -678,6 +678,14 @@ td input {
   line-height: 1;
 }
 
+.payment-status {
+  justify-self: end;
+  padding-right: 10px;
+  color: #1f5f00;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .action-bar {
   display: grid;
   grid-template-columns: 1fr repeat(5, auto);
