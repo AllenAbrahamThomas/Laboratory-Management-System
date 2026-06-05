@@ -1,39 +1,62 @@
 <section class="result-window" aria-label="Result Issuing">
   <header class="window-title">
+    <span class="app-icon">A</span>
     Result Issuing
-    <button type="button" (click)="closed.emit()">X</button>
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
   </header>
 
   <div class="lookup-strip" *ngIf="!resultData">
-    <label>Lab No: <input [(ngModel)]="labNoSearch"></label>
+    <label>Lab No: <input [(ngModel)]="labNoSearch" (keydown.enter)="loadByLabNo()"></label>
     <button type="button" (click)="loadByLabNo()">Open</button>
     <button type="button" (click)="closed.emit()">Exit</button>
   </div>
 
   <p class="status" *ngIf="isLoading">Loading...</p>
   <p class="status error" *ngIf="errorMessage">{{ errorMessage }}</p>
-  <p class="status" *ngIf="infoMessage">{{ infoMessage }}</p>
+  <p class="status ok" *ngIf="infoMessage">{{ infoMessage }}</p>
 
   <ng-container *ngIf="resultData as data">
     <section class="patient-head">
-      <div>Lab No: <strong>{{ data.lab_no }}</strong></div>
-      <div>Date: {{ data.date }}</div>
-      <div>Name: <strong>{{ data.patient_name }}</strong></div>
-      <div>Gender: {{ data.gender }}</div>
-      <div>Age: {{ data.age_years }} Years {{ data.age_months }} Months</div>
-      <div>Phone: {{ data.phone }}</div>
+      <div><span>Lab No:</span> <strong>{{ data.lab_no }}</strong></div>
+      <div><span>Pay Mode:</span> <strong>{{ data.pay_mode | titlecase }}</strong></div>
+      <div><span>Date:</span> <strong>{{ data.date | date:'dd-MM-yyyy' }}</strong></div>
+      <div><span>Time:</span> <strong>{{ data.sample_on | date:'hh:mm:ss a' }}</strong></div>
+      <div><span>Name:</span> <strong>{{ data.patient_name }}</strong></div>
+      <div><span>Doctor:</span> <strong>{{ data.doctor || '-' }}</strong></div>
+      <div><span>Gender:</span> <strong>{{ data.gender }}</strong></div>
+      <div><span>Age:</span> <strong>{{ data.age_years }} Years {{ data.age_months }} Months</strong></div>
+      <div><span>Out.Dr:</span> <strong>{{ data.out_doctor_name || '-' }}</strong></div>
+      <div><span>Phone:</span> <strong>{{ data.phone }}</strong></div>
+      <div><span>Address:</span> <strong>{{ data.address }}</strong></div>
+      <div><span>Hospital:</span> <strong>{{ data.hospital || '-' }}</strong></div>
+      <div><span>Status:</span> <strong>{{ data.pay_status }}</strong></div>
+      <div><span>Gross:</span> <strong>{{ data.gross_amount }}</strong></div>
+      <div><span>Received:</span> <strong>{{ data.received_amount }}</strong></div>
+      <div><span>Balance:</span> <strong>{{ data.balance_amount }}</strong></div>
     </section>
 
     <section class="result-body">
       <table class="test-list">
         <thead>
-          <tr><th>Sl.No</th><th>Test Name</th><th>Type</th></tr>
+          <tr>
+            <th>Sl.No</th>
+            <th>Is Issued</th>
+            <th>Test Name</th>
+            <th>Type of test</th>
+            <th>Print (Y/N)</th>
+          </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let test of data.tests; let i = index" [class.active]="selectedTest?.visit_test_id === test.visit_test_id" (click)="selectTest(test)">
+          <tr
+            *ngFor="let test of resultTests; let i = index"
+            [class.active]="selectedTest?.visit_test_id === test.visit_test_id"
+            (click)="selectTest(test)"
+          >
             <td>{{ i + 1 }}</td>
+            <td><input type="checkbox" [(ngModel)]="test.isIssued" (click)="$event.stopPropagation()"></td>
             <td>{{ test.test_name }}</td>
             <td>{{ test.type === 'group' ? 'Group Test' : 'General Test' }}</td>
+            <td><input type="checkbox" [(ngModel)]="test.printEnabled" (click)="$event.stopPropagation()"></td>
           </tr>
         </tbody>
       </table>
@@ -73,8 +96,13 @@
     </section>
 
     <footer class="action-bar">
-      <button type="button" (click)="saveResults()" [disabled]="isSaving">Save</button>
+      <button type="button" (click)="loadByLabNo()">Registration</button>
+      <button type="button" (click)="infoMessage = 'Half verified mode is not yet wired.'">Half Verified</button>
+      <button type="button" (click)="infoMessage = 'Envelope preview is not yet wired.'">Envelope</button>
+      <button type="button" (click)="selectPreviousTest()" [disabled]="!selectedTest || resultTests.length === 0">Previous</button>
+      <button type="button" (click)="selectNextTest()" [disabled]="!selectedTest || resultTests.length === 0">Next</button>
       <button type="button" (click)="openPrintPreview()">Print</button>
+      <button type="button" (click)="saveResults()" [disabled]="isSaving">Finished</button>
       <button type="button" (click)="closed.emit()">Exit</button>
     </footer>
 
@@ -85,8 +113,8 @@
       </header>
       <div class="preview-sheet">
         <h3>{{ data.patient_name }} ({{ data.lab_no }})</h3>
-        <p>{{ data.gender }}, {{ data.age_years }} Years</p>
-        <div *ngFor="let test of data.tests">
+        <p>{{ data.gender }}, {{ data.age_years }} Years {{ data.age_months }} Months</p>
+        <div *ngFor="let test of resultTests">
           <h4>{{ test.test_name }}</h4>
           <div *ngIf="test.type === 'general'">{{ test.result_value || '-' }} {{ test.unit }}</div>
           <div *ngIf="test.type === 'group'">

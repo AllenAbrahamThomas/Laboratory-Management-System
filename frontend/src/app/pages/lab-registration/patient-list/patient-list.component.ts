@@ -23,6 +23,7 @@ interface PatientSummary {
 })
 export class PatientListComponent implements OnInit {
   @Input() mode: 'all' | 'pending' = 'all';
+  @Input() purpose: 'registration' | 'result' = 'registration';
   @Output() newRegistration = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
   @Output() patientSelected = new EventEmitter<number>();
@@ -81,6 +82,10 @@ export class PatientListComponent implements OnInit {
   }
 
   get headerTitle(): string {
+    if (this.purpose === 'result') {
+      return 'Patients view - result entry';
+    }
+
     return this.mode === 'pending'
       ? 'Pending collections - current month'
       : 'Patients view - patient registration';
@@ -88,6 +93,10 @@ export class PatientListComponent implements OnInit {
 
   openPatientBill(patient: PatientSummary): void {
     this.patientSelected.emit(patient.id);
+  }
+
+  get rowActionTitle(): string {
+    return this.purpose === 'result' ? 'Open result entry' : 'Open billing';
   }
 
   private getTodayDate(): string {

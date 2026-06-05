@@ -144,6 +144,7 @@ export interface ResultEntryPayload {
   visit_id: number;
   lab_no: string;
   date: string;
+  sample_on: string;
   pay_mode: string;
   patient_name: string;
   gender: string;
@@ -154,6 +155,11 @@ export interface ResultEntryPayload {
   doctor: string;
   out_doctor_name: string;
   hospital: string;
+  gross_amount: string | number;
+  received_amount: string | number;
+  balance_amount: string | number;
+  round_off: string | number;
+  pay_status: string;
   tests: ResultEntryTest[];
 }
 

@@ -47,7 +47,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let patient of patients" (click)="openPatientBill(patient)" title="Open billing">
+        <tr *ngFor="let patient of patients" (click)="openPatientBill(patient)" [title]="rowActionTitle">
           <td>{{ patient.labNo }}</td>
           <td>{{ patient.date }}</td>
           <td>{{ patient.patient }}</td>
@@ -60,11 +60,11 @@
   </div>
 
   <footer class="window-footer">
-    <button type="button" class="new-button" (click)="newRegistration.emit()" *ngIf="mode === 'all'">
+    <button type="button" class="new-button" (click)="newRegistration.emit()" *ngIf="mode === 'all' && purpose === 'registration'">
       <span>+</span>
       New Registration
     </button>
-    <strong>Patient registration</strong>
+    <strong>{{ purpose === 'result' ? 'Result entry' : 'Patient registration' }}</strong>
     <span class="patient-count">No. of patients: {{ patients.length }}</span>
 
     <button type="button" (click)="loadPatients()">Refresh</button>
