@@ -14,7 +14,7 @@
     <section class="patient-details">
       <div class="compact-left">
         <div class="form-row top-row">
-          <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo"></label>
+          <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo" readonly></label>
           <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode"><option *ngFor="let mode of paymentModes">{{ mode }}</option></select></label>
           <button type="button" class="adv-search" (click)="openEditInvoiceLookup()">Edit Invoice</button>
           <button type="button" class="adv-search" (click)="advanceSearch.emit()">Adv. Search</button>
@@ -220,13 +220,93 @@
 </section>
 
 <section class="edit-invoice-backdrop" *ngIf="showEditInvoiceDialog">
-  <div class="edit-invoice-dialog">
-    <header>Edit invoice</header>
-    <label>Lab No <span>:</span><input name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()"></label>
-    <p class="status-message error" *ngIf="editLookupError">{{ editLookupError }}</p>
-    <footer>
-      <button type="button" (click)="searchEditInvoiceByLabNo()" [disabled]="isLookingUpLabNo">Open</button>
-      <button type="button" (click)="closeEditInvoiceLookup()">Close</button>
-    </footer>
+  <div class="edit-invoice-dialog" [class.lookup-mode]="editInvoiceMode === 'lookup'" [class.form-mode]="editInvoiceMode === 'form'">
+    <header class="edit-invoice-header">
+      <span>Edit invoice</span>
+      <button type="button" class="edit-close-button" (click)="closeEditInvoiceLookup()">X</button>
+    </header>
+
+    <ng-container *ngIf="editInvoiceMode === 'lookup'; else editInvoiceForm">
+      <div class="edit-lookup-grid">
+        <label>Lab No <span>:</span><input #editLabNoInput name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()"></label>
+        <label>Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'" readonly></label>
+      </div>
+      <p class="status-message error" *ngIf="editLookupError">{{ editLookupError }}</p>
+      <footer class="edit-invoice-footer lookup-footer">
+        <button type="button" class="edit-action-button" (click)="searchEditInvoiceByLabNo()" [disabled]="isLookingUpLabNo">Open</button>
+        <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Close</button>
+      </footer>
+    </ng-container>
+
+    <ng-template #editInvoiceForm>
+      <div class="edit-form-shell">
+        <section class="edit-top-grid">
+          <label class="edit-top-lab-no">Lab No <span>:</span><input name="editDisplayLabNo" [value]="labNo" readonly></label>
+          <label class="edit-top-date">Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'" readonly></label>
+        </section>
+
+        <section class="edit-body-grid">
+          <div class="edit-column left-column">
+            <label class="wide-field">Name <span>:</span>
+              <div class="name-composite">
+                <select name="editSalutation" [(ngModel)]="salutation">
+                  <option *ngFor="let item of salutations" [value]="item">{{ item }}</option>
+                </select>
+                <input name="editPatientName" [(ngModel)]="patientName">
+              </div>
+            </label>
+
+            <label>Gender <span>:</span>
+              <span class="radio-group">
+                <label><input type="radio" name="editGenderMale" value="Male" [(ngModel)]="gender"> Male</label>
+                <label><input type="radio" name="editGenderFemale" value="Female" [(ngModel)]="gender"> Female</label>
+              </span>
+            </label>
+
+            <label>Age <span>:</span>
+              <div class="age-composite">
+                <input name="editAge" [(ngModel)]="age">
+                <select name="editAgeType" [(ngModel)]="ageType">
+                  <option>Years</option>
+                  <option>Months</option>
+                  <option>Days</option>
+                </select>
+              </div>
+            </label>
+
+            <label>Phone <span>:</span><input name="editPhone" [(ngModel)]="phone"></label>
+            <label>IP/OP No <span>:</span><input name="editIpNo" [(ngModel)]="ipNo"></label>
+            <label>Address <span>:</span><input name="editAddress" [(ngModel)]="address"></label>
+            <label>Doctor <span>:</span><input name="editDoctor" [(ngModel)]="doctor"></label>
+          </div>
+
+          <div class="edit-column right-column">
+            <label>Out.Dr <span>:</span><input name="editOutDoctor" [(ngModel)]="outDoctor"></label>
+            <label>Hospital <span>:</span><input name="editHospital" [(ngModel)]="hospital"></label>
+            <label>Collected by <span>:</span><input name="editCollectedBy" [(ngModel)]="editCollectedBy"></label>
+            <label>Area <span>:</span><input name="editArea" [(ngModel)]="editArea"></label>
+
+            <div class="checkbox-row">
+              <label><input type="checkbox" name="urgentReport" [(ngModel)]="urgentReport"> Urgent Report</label>
+              <label><input type="checkbox" name="emailToPatient" [(ngModel)]="emailToPatient"> Email to Patient</label>
+            </div>
+
+            <label class="report-release-row">Report Releasing <span>:</span>
+              <input name="editSampleOn" [(ngModel)]="sampleOn">
+            </label>
+
+            <label class="note-row">Note <span>:</span>
+              <textarea name="editNote" [(ngModel)]="note"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <footer class="edit-invoice-footer">
+          <button type="button" class="edit-action-button new-button" (click)="startEditInvoiceLookup()">New</button>
+          <button type="button" class="edit-action-button save-button" (click)="promptSave($event)" [disabled]="isSaving">Save</button>
+          <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Exit</button>
+        </footer>
+      </div>
+    </ng-template>
   </div>
 </section>

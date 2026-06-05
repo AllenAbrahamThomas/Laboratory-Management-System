@@ -34,6 +34,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @ViewChild('roundOffInput') roundOffInput?: ElementRef<HTMLInputElement>;
   @ViewChild('discReasonInput') discReasonInput?: ElementRef<HTMLInputElement>;
   @ViewChild('saveButton') saveButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('editLabNoInput') editLabNoInput?: ElementRef<HTMLInputElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
   @Output() closed = new EventEmitter<void>();
@@ -89,6 +90,12 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   editLabNo = '';
   editLookupError = '';
   isLookingUpLabNo = false;
+  editInvoiceMode: 'lookup' | 'form' = 'lookup';
+  visitDate = this.today;
+  editCollectedBy = '';
+  editArea = '';
+  urgentReport = false;
+  emailToPatient = false;
   testSuggestions: TestLookupItem[] = [];
   activeSuggestionSlNo: number | null = null;
   activeSuggestionIndex = -1;
@@ -458,12 +465,23 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
 
   openEditInvoiceLookup(): void {
     this.showEditInvoiceDialog = true;
+    this.editInvoiceMode = 'lookup';
+    this.editLabNo = '';
     this.editLookupError = '';
+    setTimeout(() => this.editLabNoInput?.nativeElement.focus(), 0);
   }
 
   closeEditInvoiceLookup(): void {
     this.showEditInvoiceDialog = false;
     this.editLookupError = '';
+    this.editInvoiceMode = 'lookup';
+  }
+
+  startEditInvoiceLookup(): void {
+    this.editInvoiceMode = 'lookup';
+    this.editLabNo = '';
+    this.editLookupError = '';
+    setTimeout(() => this.editLabNoInput?.nativeElement.focus(), 0);
   }
 
   searchEditInvoiceByLabNo(): void {
@@ -478,7 +496,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       next: (visit) => {
         this.currentVisitId = visit.id;
         this.applyVisitData(visit);
-        this.showEditInvoiceDialog = false;
+        this.editInvoiceMode = 'form';
         this.isLookingUpLabNo = false;
       },
       error: (error: HttpErrorResponse) => {
@@ -596,6 +614,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.saveMessage = '';
     this.saveMessageIsError = false;
     this.labNo = visit.lab_no;
+    this.visitDate = visit.visit_date || this.today;
     this.payMode = this.toTitleCase(visit.pay_mode);
     const parsedName = this.parsePatientName(visit.patient_name);
     this.salutation = parsedName.salutation;
@@ -621,6 +640,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.note = visit.note;
     this.roundOff = String(visit.round_off ?? '');
     this.discountReason = visit.discount_reason;
+    this.editCollectedBy = visit.doctor || visit.out_doctor_name || '';
+    this.editArea = visit.hospital || '';
+    this.urgentReport = false;
+    this.emailToPatient = false;
 
     const mappedTests = visit.tests
       .sort((a, b) => a.line_order - b.line_order)
@@ -643,6 +666,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.showSaveConfirmDialog = false;
     this.saveMessage = '';
     this.saveMessageIsError = false;
+    this.visitDate = visit.visit_date || this.today;
     const parsedName = this.parsePatientName(visit.patient_name);
     this.salutation = parsedName.salutation;
     this.patientName = parsedName.name;
@@ -660,6 +684,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.hospital = visit.hospital;
     this.corporate = visit.corporate_name;
     this.note = '';
+    this.editCollectedBy = visit.doctor || visit.out_doctor_name || '';
+    this.editArea = visit.hospital || '';
+    this.urgentReport = false;
+    this.emailToPatient = false;
 
     this.tests = [];
     this.currentTest = this.createBlankTestLine(this.tests.length + 1);
@@ -677,6 +705,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.showSaveConfirmDialog = false;
     this.saveMessage = '';
     this.saveMessageIsError = false;
+    this.visitDate = this.today;
     this.salutation = 'Mr';
     this.patientName = '';
     this.gender = 'Male';
@@ -699,6 +728,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.note = '';
     this.roundOff = '';
     this.discountReason = '';
+    this.editCollectedBy = '';
+    this.editArea = '';
+    this.urgentReport = false;
+    this.emailToPatient = false;
     this.tests = [];
     this.currentTest = this.createBlankTestLine(this.tests.length + 1);
     this.selectedTestSlNo = null;
