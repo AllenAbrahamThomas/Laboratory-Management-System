@@ -239,10 +239,6 @@ class TestReferenceRange(TimestampedModel):
 
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="reference_ranges")
     gender = models.CharField(max_length=10, choices=Gender.choices, default=Gender.ANY)
-    age_years_min = models.PositiveIntegerField(null=True, blank=True)
-    age_years_max = models.PositiveIntegerField(null=True, blank=True)
-    age_months_min = models.PositiveIntegerField(null=True, blank=True)
-    age_months_max = models.PositiveIntegerField(null=True, blank=True)
     operator = models.CharField(max_length=20, choices=Operator.choices, default=Operator.BETWEEN)
     min_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     max_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -252,7 +248,7 @@ class TestReferenceRange(TimestampedModel):
 
     class Meta:
         db_table = "test_reference_ranges"
-        ordering = ["test", "gender", "age_years_min", "age_months_min", "id"]
+        ordering = ["test", "gender", "id"]
 
     def __str__(self) -> str:
         return f"{self.test.test_name} ({self.gender})"
