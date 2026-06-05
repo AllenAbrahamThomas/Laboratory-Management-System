@@ -31,7 +31,7 @@ export class PatientAdvanceSearchComponent {
   private readonly visitService = inject(VisitService);
 
   searchBy: 'phone' | 'patient' | 'address' = 'phone';
-  openType: 'newBill' | 'existingBill' | 'patientResult' = 'newBill';
+  openType: 'newBill' | 'existingBill' | 'patientResult' = 'existingBill';
   hasPhoneWord = false;
   hasPatientWord = false;
   hasAddressWord = false;

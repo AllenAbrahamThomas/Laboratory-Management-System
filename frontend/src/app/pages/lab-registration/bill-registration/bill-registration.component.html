@@ -97,7 +97,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="new-entry-row">
+          <tr class="new-entry-row" *ngIf="showCurrentEntryRow">
             <td class="sl-no-cell"></td>
             <td class="test-code-cell">
               <input
@@ -193,6 +193,7 @@
           <input [value]="grossAmount.toFixed(2)" readonly title="Net Amount" (keydown.enter)="onBottomFieldEnter($event, 'grossAmt')">
         </label>
         <div class="grand-total">{{ grossAmount.toFixed(2) }}</div>
+        <div class="payment-status">Status: {{ getPaymentStatus() }}</div>
       </div>
     </section>
 
@@ -212,9 +213,9 @@
     <header id="saveConfirmTitle">{{ saveDialogMode === 'confirm' ? 'Save bill/registration' : 'Save required' }}</header>
     <p>{{ saveDialogMessage }}</p>
     <footer>
-      <button *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-yes" (click)="confirmSave()" [disabled]="isSaving">Yes</button>
-      <button *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-no" (click)="cancelSaveConfirmation()">No</button>
-      <button *ngIf="saveDialogMode === 'alert'" type="button" class="confirm-yes" (click)="acknowledgeSaveAlert()">OK</button>
+      <button #saveConfirmYesButton *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-yes" (click)="confirmSave()" [disabled]="isSaving">Yes</button>
+      <button #saveConfirmNoButton *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-no" (click)="cancelSaveConfirmation()">No</button>
+      <button #saveAlertOkButton *ngIf="saveDialogMode === 'alert'" type="button" class="confirm-yes" (click)="acknowledgeSaveAlert()">OK</button>
     </footer>
   </div>
 </section>

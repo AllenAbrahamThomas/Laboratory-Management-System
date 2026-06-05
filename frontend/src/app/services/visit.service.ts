@@ -35,6 +35,7 @@ export interface VisitListFilters {
 
 export interface VisitDetailTest {
   id: number;
+  test_id: number;
   test_code: string;
   test_name: string;
   rate: number;
@@ -103,6 +104,15 @@ export interface VisitSavePayload {
   gross_amount: number;
   round_off: number;
   note: string;
+  tests: Array<{
+    test_id: number | null;
+    test_code: string;
+    test_name: string;
+    rate: number;
+    discount: number;
+    amount: number;
+    line_order: number;
+  }>;
 }
 
 export interface NextLabNoResponse {

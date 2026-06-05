@@ -45,6 +45,7 @@ class VisitListSerializer(serializers.ModelSerializer):
 
 
 class VisitTestDetailSerializer(serializers.ModelSerializer):
+    test_id = serializers.IntegerField(source="test.id", read_only=True)
     test_code = serializers.CharField(source="test.test_code", read_only=True)
     test_name = serializers.CharField(source="test_name_snapshot", read_only=True)
 
@@ -52,6 +53,7 @@ class VisitTestDetailSerializer(serializers.ModelSerializer):
         model = VisitTest
         fields = [
             "id",
+            "test_id",
             "test_code",
             "test_name",
             "rate",
