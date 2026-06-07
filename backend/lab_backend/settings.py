@@ -4,6 +4,25 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def _load_env_file(env_path: Path) -> None:
+    if not env_path.exists():
+        return
+
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_env_file(BASE_DIR / ".env")
+
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DEBUG", "0") == "1"
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "backend"]
@@ -75,6 +94,12 @@ CORS_ALLOWED_ORIGINS = [
     for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:4200").split(",")
     if origin.strip()
 ]
+
+PAYMENT_UPI_VPA = os.getenv("UPI_VPA", "").strip()
+PAYMENT_UPI_NAME = os.getenv("UPI_PAYEE_NAME", "Lab Payments").strip()
+PAYMENT_UPI_CURRENCY = os.getenv("UPI_CURRENCY", "INR").strip() or "INR"
+PAYMENT_UPI_NOTE = os.getenv("UPI_NOTE", "Lab bill payment").strip()
+PAYMENT_UPI_MCC = os.getenv("UPI_MCC", "").strip()
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],

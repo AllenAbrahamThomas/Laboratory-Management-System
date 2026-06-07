@@ -497,6 +497,137 @@ td input {
   cursor: not-allowed;
 }
 
+.upi-payment-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 32, 14, 0.56);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.upi-payment-dialog {
+  width: min(620px, calc(100vw - 32px));
+  border: 2px solid #1d8f33;
+  background: linear-gradient(180deg, #f7fff7 0%, #effaea 100%);
+  border-radius: 14px;
+  padding: 14px 16px 16px;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
+}
+
+.upi-payment-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 16px;
+  color: #15511b;
+}
+
+.upi-close-button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #a5a5a5;
+  background: #f0f0f0;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.upi-payment-note,
+.upi-payment-message {
+  margin: 0;
+  color: #273227;
+  line-height: 1.4;
+}
+
+.upi-payment-message.error {
+  color: #b00020;
+}
+
+.upi-payment-amount {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #0a6b1d;
+}
+
+.upi-payment-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.upi-payment-qr {
+  width: 280px;
+  height: 280px;
+  border: 1px solid #7db36f;
+  background: #fff;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.upi-payment-details {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.upi-payment-details div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #c6d8bf;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 10px;
+}
+
+.upi-payment-details span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #45624a;
+}
+
+.upi-payment-details strong {
+  font-size: 14px;
+  color: #1a1a1a;
+  word-break: break-word;
+}
+
+.upi-payment-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.upi-payment-dialog button {
+  min-width: 112px;
+  height: 34px;
+  border: 1px solid #8a8a8a;
+  background: #efefef;
+  cursor: pointer;
+}
+
+.upi-payment-dialog .upi-save-button {
+  border-color: #1d8f33;
+  background: #53dc69;
+  font-weight: 800;
+}
+
+.upi-payment-dialog .upi-cancel-button {
+  background: #f4f4f4;
+}
+
+.upi-payment-dialog button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .edit-invoice-dialog {
   width: min(620px, calc(100vw - 32px));
   border: 1px solid #6abf4b;
@@ -758,6 +889,11 @@ td input {
   .payment-details,
   .action-bar {
     grid-template-columns: 1fr;
+  }
+
+  .upi-payment-shell {
+    grid-template-columns: 1fr;
+    justify-items: center;
   }
 
   .test-table {

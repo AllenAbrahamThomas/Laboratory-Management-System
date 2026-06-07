@@ -163,6 +163,15 @@ export interface ResultEntryPayload {
   tests: ResultEntryTest[];
 }
 
+export interface UpiPaymentConfig {
+  upi_id: string;
+  payee_name: string;
+  currency: string;
+  note: string;
+  merchant_code: string;
+  is_configured: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -241,6 +250,10 @@ export class VisitService {
       ? new HttpParams().set('q', query.trim())
       : new HttpParams();
     return this.http.get<TestLookupItem[]>(`${this.apiUrl}/tests/`, { params });
+  }
+
+  getUpiPaymentConfig(): Observable<UpiPaymentConfig> {
+    return this.http.get<UpiPaymentConfig>(`${this.apiUrl}/payments/upi-config/`);
   }
 
   getResultEntryByVisit(visitId: number): Observable<ResultEntryPayload> {

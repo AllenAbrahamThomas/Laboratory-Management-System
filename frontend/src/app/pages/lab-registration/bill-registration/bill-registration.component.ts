@@ -4,7 +4,7 @@ import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostLis
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../../services/clock.service';
-import { TestLookupItem, VisitDetail, VisitService } from '../../../services/visit.service';
+import { TestLookupItem, UpiPaymentConfig, VisitDetail, VisitService } from '../../../services/visit.service';
 
 interface TestLine {
   slNo: number;
@@ -38,6 +38,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @ViewChild('saveConfirmYesButton') saveConfirmYesButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('saveConfirmNoButton') saveConfirmNoButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('saveAlertOkButton') saveAlertOkButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('upiSaveButton') upiSaveButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('upiCancelButton') upiCancelButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('editLabNoInput') editLabNoInput?: ElementRef<HTMLInputElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
@@ -93,6 +95,13 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   saveDialogMessage = '';
   editLabNo = '';
   editLookupError = '';
+  showUpiPaymentDialog = false;
+  upiPaymentConfig: UpiPaymentConfig | null = null;
+  upiPaymentQrUrl = '';
+  upiPaymentUri = '';
+  upiPaymentAmount = '0';
+  upiPaymentMessage = '';
+  isLoadingUpiPaymentConfig = false;
   isLookingUpLabNo = false;
   editInvoiceMode: 'lookup' | 'form' = 'lookup';
   visitDate = this.today;
@@ -359,6 +368,11 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       return;
     }
 
+    if (this.payMode.trim().toLowerCase() === 'upi') {
+      this.openUpiPaymentDialog();
+      return;
+    }
+
     this.saveDialogMode = 'confirm';
     this.saveDialogMessage = 'Do you want to save this bill/registration now?';
     this.showSaveConfirmDialog = true;
@@ -380,6 +394,59 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
 
   acknowledgeSaveAlert(): void {
     this.showSaveConfirmDialog = false;
+  }
+
+  openUpiPaymentDialog(): void {
+    if (this.isSaving) {
+      return;
+    }
+
+    this.showSaveConfirmDialog = false;
+    this.showUpiPaymentDialog = true;
+    this.upiPaymentMessage = '';
+    this.upiPaymentAmount = this.getPayableAmount().toFixed(0);
+    this.receivedAmount = this.upiPaymentAmount;
+    this.updateBalanceAmount();
+
+    if (this.upiPaymentConfig) {
+      this.buildUpiQrCode();
+      setTimeout(() => this.upiSaveButton?.nativeElement.focus(), 0);
+      return;
+    }
+
+    this.isLoadingUpiPaymentConfig = true;
+    this.visitService.getUpiPaymentConfig().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (config) => {
+        this.upiPaymentConfig = config;
+        this.isLoadingUpiPaymentConfig = false;
+        this.buildUpiQrCode();
+        setTimeout(() => this.upiSaveButton?.nativeElement.focus(), 0);
+      },
+      error: () => {
+        this.isLoadingUpiPaymentConfig = false;
+        this.upiPaymentConfig = null;
+        this.upiPaymentQrUrl = '';
+        this.upiPaymentUri = '';
+        this.upiPaymentMessage = 'UPI payment details are not configured yet. Ask the admin to set the backend .env values.';
+        setTimeout(() => this.upiCancelButton?.nativeElement.focus(), 0);
+      }
+    });
+  }
+
+  confirmUpiPaymentAndSave(): void {
+    if (!this.showUpiPaymentDialog || this.isSaving) {
+      return;
+    }
+
+    this.showUpiPaymentDialog = false;
+    this.saveVisit();
+  }
+
+  cancelUpiPaymentDialog(): void {
+    this.showUpiPaymentDialog = false;
+    this.upiPaymentQrUrl = '';
+    this.upiPaymentUri = '';
+    this.upiPaymentMessage = '';
   }
 
   onTestCodeKeyDown(test: TestLine, event: KeyboardEvent): void {
@@ -661,6 +728,39 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.balanceAmount = balance.toFixed(0);
   }
 
+  private getPayableAmount(): number {
+    const roundOff = Number(this.roundOff) || 0;
+    return Math.max((Number(this.grossAmount) || 0) + roundOff, 0);
+  }
+
+  private buildUpiQrCode(): void {
+    const config = this.upiPaymentConfig;
+    if (!config?.upi_id) {
+      this.upiPaymentQrUrl = '';
+      this.upiPaymentUri = '';
+      this.upiPaymentMessage = 'UPI ID is missing from the backend configuration.';
+      return;
+    }
+
+    const amount = this.getPayableAmount().toFixed(0);
+    const payeeName = config.payee_name || 'Lab Payments';
+    const note = config.note || `Lab bill ${this.labNo}`;
+    const params = new URLSearchParams({
+      pa: config.upi_id,
+      pn: payeeName,
+      am: amount,
+      cu: config.currency || 'INR',
+      tn: note
+    });
+    if (config.merchant_code) {
+      params.set('mc', config.merchant_code);
+    }
+
+    this.upiPaymentUri = `upi://pay?${params.toString()}`;
+    this.upiPaymentQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(this.upiPaymentUri)}`;
+    this.upiPaymentMessage = '';
+  }
+
   private loadVisit(visitId: number, mode: 'new' | 'existing' | 'prefill-only'): void {
     this.isLoadingVisit = true;
     this.loadError = '';
@@ -781,9 +881,11 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.currentVisitId = null;
     this.selectedVisitId = null;
     this.showSaveConfirmDialog = false;
+    this.showUpiPaymentDialog = false;
     this.saveMessage = '';
     this.saveMessageIsError = false;
     this.visitDate = this.today;
+    this.payMode = 'Cash';
     this.salutation = 'Mr';
     this.patientName = '';
     this.gender = 'Male';
@@ -822,6 +924,12 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.isLoadingTestSuggestions = false;
     this.suggestionWidthPx = 0;
     this.suggestionGridTemplate = '';
+    this.upiPaymentConfig = null;
+    this.upiPaymentQrUrl = '';
+    this.upiPaymentUri = '';
+    this.upiPaymentAmount = '0';
+    this.upiPaymentMessage = '';
+    this.isLoadingUpiPaymentConfig = false;
     this.updateGrossAmount();
     setTimeout(() => {
       this.currentTest = this.createBlankTestLine(1);
