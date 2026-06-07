@@ -221,6 +221,42 @@
   </div>
 </section>
 
+<section class="upi-payment-backdrop" *ngIf="showUpiPaymentDialog">
+  <div class="upi-payment-dialog" role="dialog" aria-modal="true" aria-labelledby="upiPaymentTitle">
+    <header id="upiPaymentTitle">
+      <span>UPI payment</span>
+      <button type="button" class="upi-close-button" (click)="cancelUpiPaymentDialog()">X</button>
+    </header>
+
+    <p class="upi-payment-note">Show this QR to the patient before saving the bill.</p>
+    <p class="upi-payment-amount">Amount: {{ upiPaymentAmount }}</p>
+
+    <ng-container *ngIf="!isLoadingUpiPaymentConfig; else loadingUpiConfig">
+      <div class="upi-payment-shell" *ngIf="upiPaymentQrUrl; else noUpiConfig">
+        <img class="upi-payment-qr" [src]="upiPaymentQrUrl" alt="UPI payment QR code">
+        <div class="upi-payment-details">
+          <div><span>Payee</span><strong>{{ upiPaymentConfig?.payee_name || 'Lab Payments' }}</strong></div>
+          <div><span>UPI ID</span><strong>{{ upiPaymentConfig?.upi_id }}</strong></div>
+          <div><span>Note</span><strong>{{ upiPaymentConfig?.note || 'Lab bill payment' }}</strong></div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #loadingUpiConfig>
+      <p class="upi-payment-message">Loading payment QR...</p>
+    </ng-template>
+
+    <ng-template #noUpiConfig>
+      <p class="upi-payment-message error">{{ upiPaymentMessage || 'UPI payment details are missing from the backend .env file.' }}</p>
+    </ng-template>
+
+    <footer>
+      <button #upiCancelButton type="button" class="upi-cancel-button" (click)="cancelUpiPaymentDialog()">Cancel</button>
+      <button #upiSaveButton type="button" class="upi-save-button" (click)="confirmUpiPaymentAndSave()" [disabled]="!upiPaymentQrUrl || isSaving || isLoadingUpiPaymentConfig">Payment received & Save</button>
+    </footer>
+  </div>
+</section>
+
 <section class="edit-invoice-backdrop" *ngIf="showEditInvoiceDialog">
   <div class="edit-invoice-dialog" [class.lookup-mode]="editInvoiceMode === 'lookup'" [class.form-mode]="editInvoiceMode === 'form'">
     <header class="edit-invoice-header">

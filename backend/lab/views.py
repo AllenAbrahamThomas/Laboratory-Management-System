@@ -5,6 +5,7 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
+from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
@@ -161,6 +162,18 @@ def test_lookup(request):
         "department": test.department.name if test.department_id else "",
     } for test in tests]
     return Response(rows)
+
+
+@api_view(["GET"])
+def upi_payment_config(request):
+    return Response({
+        "upi_id": settings.PAYMENT_UPI_VPA,
+        "payee_name": settings.PAYMENT_UPI_NAME,
+        "currency": settings.PAYMENT_UPI_CURRENCY,
+        "note": settings.PAYMENT_UPI_NOTE,
+        "merchant_code": settings.PAYMENT_UPI_MCC,
+        "is_configured": bool(settings.PAYMENT_UPI_VPA),
+    })
 
 
 def _to_decimal(value, default: str = "0") -> Decimal:
