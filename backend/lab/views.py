@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -28,6 +29,18 @@ def _next_lab_no() -> str:
     return str(candidate_number).zfill(5)
 
 
+def _normalize_lab_no(value: str) -> str:
+    cleaned = str(value or "").strip()
+    if not cleaned:
+        return ""
+
+    if cleaned.isdigit():
+        normalized = cleaned.lstrip("0")
+        return normalized or "0"
+
+    return cleaned
+
+
 @api_view(["GET"])
 def next_visit_lab_no(request):
     return Response({"lab_no": _next_lab_no()})
@@ -49,7 +62,14 @@ def visit_list(request):
     to_date = request.query_params.get("to_date", "").strip()
 
     if lab_no:
-        queryset = queryset.filter(lab_no__icontains=lab_no)
+        normalized_lab_no = _normalize_lab_no(lab_no)
+        if normalized_lab_no.isdigit():
+            queryset = queryset.filter(
+                Q(lab_no=normalized_lab_no.zfill(5))
+                | Q(lab_no__regex=rf"^0*{re.escape(normalized_lab_no)}$")
+            )
+        else:
+            queryset = queryset.filter(lab_no__icontains=lab_no)
 
     if patient:
         queryset = queryset.filter(patient__full_name__icontains=patient)
@@ -66,11 +86,12 @@ def visit_list(request):
         else:
             queryset = queryset.filter(patient__address__icontains=address)
 
-    if from_date:
-        queryset = queryset.filter(visit_date__gte=from_date)
+    if not lab_no:
+        if from_date:
+            queryset = queryset.filter(visit_date__gte=from_date)
 
-    if to_date:
-        queryset = queryset.filter(visit_date__lte=to_date)
+        if to_date:
+            queryset = queryset.filter(visit_date__lte=to_date)
 
     if pending_only in {"1", "true", "yes"}:
         queryset = queryset.filter(balance_amount__gt=0)
@@ -137,9 +158,11 @@ def visit_detail(request, visit_id: int):
 
 @api_view(["GET"])
 def visit_detail_by_lab_no(request, lab_no: str):
+    normalized_lab_no = _normalize_lab_no(lab_no)
+    lookup = Q(lab_no=normalized_lab_no.zfill(5)) if normalized_lab_no.isdigit() else Q(lab_no=lab_no.strip())
     visit = get_object_or_404(
         Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
-        lab_no=lab_no.strip(),
+        lookup,
     )
     return Response(VisitDetailSerializer(visit).data)
 
@@ -466,9 +489,11 @@ def result_entry_by_visit(request, visit_id: int):
 
 @api_view(["GET"])
 def result_entry_by_lab_no(request, lab_no: str):
+    normalized_lab_no = _normalize_lab_no(lab_no)
+    lookup = Q(lab_no=normalized_lab_no.zfill(5)) if normalized_lab_no.isdigit() else Q(lab_no=lab_no.strip())
     visit = get_object_or_404(
         Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
-        lab_no=lab_no,
+        lookup,
     )
     return Response(_build_result_entry_payload(visit))
 
