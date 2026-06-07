@@ -220,6 +220,15 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     };
   }
 
+  private roundBillAmount(value: number): number {
+    const safeValue = Math.max(Number(value) || 0, 0);
+    return Math.round(safeValue / 10) * 10;
+  }
+
+  private roundDiscountPercent(value: number): number {
+    return Math.max(Math.round(Number(value) || 0), 0);
+  }
+
   private isTestFilled(test: TestLine): boolean {
     if (!test.testCode || !test.testCode.trim()) {
       return false;
@@ -271,7 +280,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   updateAmount(test: TestLine): void {
     const rate = Number(test.rate) || 0;
     const discount = Number(test.discount) || 0;
-    test.amount = Math.max(rate - (rate * discount / 100), 0);
+    test.amount = this.roundBillAmount(Math.max(rate - (rate * discount / 100), 0));
     this.updateGrossAmount();
   }
 
@@ -608,9 +617,11 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     test.testCode = selected.short_name || selected.test_code;
     test.testName = selected.test_name;
     test.rate = Number(selected.rate) || 0;
-    test.discount = Number(selected.default_discount_percent) || 0;
+    test.discount = this.roundDiscountPercent(Number(selected.default_discount_percent) || 0);
     const defaultAmount = Number(selected.default_amount) || 0;
-    test.amount = defaultAmount > 0 ? defaultAmount : Math.max(Number(test.rate) - (Number(test.rate) * Number(test.discount) / 100), 0);
+    test.amount = defaultAmount > 0
+      ? this.roundBillAmount(defaultAmount)
+      : this.roundBillAmount(Math.max(Number(test.rate) - (Number(test.rate) * Number(test.discount) / 100), 0));
     this.updateGrossAmount();
     this.activeSuggestionSlNo = null;
     this.testSuggestions = [];
@@ -647,7 +658,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     const roundOff = Number(this.roundOff) || 0;
     const netPayable = this.grossAmount + roundOff;
     const balance = Math.max(netPayable - received, 0);
-    this.balanceAmount = balance.toFixed(2);
+    this.balanceAmount = balance.toFixed(0);
   }
 
   private loadVisit(visitId: number, mode: 'new' | 'existing' | 'prefill-only'): void {
@@ -698,10 +709,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.hospital = visit.hospital;
     this.corporate = visit.corporate_name;
     this.discountMode = (visit.discount_mode || 'NORMAL').toUpperCase();
-    this.discountPercent = String(visit.discount_percent ?? '');
+    this.discountPercent = String(this.roundDiscountPercent(Number(visit.discount_percent ?? 0)));
     this.receivedAmount = String(visit.received_amount ?? '');
-    this.balanceAmount = String(visit.balance_amount ?? '');
-    this.grossAmount = Number(visit.gross_amount) || 0;
+    this.balanceAmount = String(this.roundBillAmount(Number(visit.balance_amount) || 0));
+    this.grossAmount = this.roundBillAmount(Number(visit.gross_amount) || 0);
     this.note = visit.note;
     this.roundOff = String(visit.round_off ?? '');
     this.discountReason = visit.discount_reason;
@@ -718,8 +729,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
         testCode: test.test_code || '',
         testName: test.test_name || '',
         rate: Number(test.rate) || 0,
-        discount: Number(test.discount_percent) || 0,
-        amount: Number(test.amount) || 0,
+        discount: this.roundDiscountPercent(Number(test.discount_percent) || 0),
+        amount: this.roundBillAmount(Number(test.amount) || 0),
       }));
 
     this.tests = mappedTests;
@@ -935,11 +946,11 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       corporate_name: this.corporate.trim(),
       pay_mode: this.payMode.toLowerCase(),
       discount_mode: this.discountMode.toLowerCase(),
-      discount_percent: Number(this.discountPercent) || 0,
+      discount_percent: this.roundDiscountPercent(Number(this.discountPercent) || 0),
       discount_reason: this.discountReason.trim(),
       received_amount: Number(this.receivedAmount) || 0,
       balance_amount: Number(this.balanceAmount) || 0,
-      gross_amount: Number(this.grossAmount) || 0,
+      gross_amount: this.roundBillAmount(Number(this.grossAmount) || 0),
       round_off: Number(this.roundOff) || 0,
       note: this.note.trim(),
       tests: persistableTests.map((test, index) => ({
@@ -947,8 +958,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
         test_code: test.testCode.trim(),
         test_name: test.testName.trim(),
         rate: Number(test.rate) || 0,
-        discount: Number(test.discount) || 0,
-        amount: Number(test.amount) || 0,
+        discount: this.roundDiscountPercent(Number(test.discount) || 0),
+        amount: this.roundBillAmount(Number(test.amount) || 0),
         line_order: index + 1,
       })),
     };
