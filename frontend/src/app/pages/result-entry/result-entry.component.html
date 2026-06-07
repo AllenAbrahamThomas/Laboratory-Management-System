@@ -60,39 +60,6 @@
           </tr>
         </tbody>
       </table>
-
-      <div class="editor" *ngIf="selectedTest as test">
-        <h4>{{ test.test_name }}</h4>
-
-        <table *ngIf="test.type === 'group' && test.children?.length">
-          <thead>
-            <tr><th>Test</th><th>Reference</th><th>Result</th><th>Unit</th><th>Note</th></tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let child of test.children">
-              <td>{{ child.test_name }}</td>
-              <td>{{ child.reference_range }}</td>
-              <td><input [(ngModel)]="child.result_value"></td>
-              <td>{{ child.unit }}</td>
-              <td><input [(ngModel)]="child.note"></td>
-            </tr>
-          </tbody>
-        </table>
-
-        <table *ngIf="test.type === 'general'">
-          <thead>
-            <tr><th>Reference</th><th>Result</th><th>Unit</th><th>Note</th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>{{ test.reference_range }}</td>
-              <td><input [(ngModel)]="test.result_value"></td>
-              <td>{{ test.unit }}</td>
-              <td><input [(ngModel)]="test.note"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </section>
 
     <footer class="action-bar">
@@ -106,20 +73,146 @@
       <button type="button" (click)="closed.emit()">Exit</button>
     </footer>
 
-    <section class="print-preview" *ngIf="showPreview">
-      <header>
-        <strong>Report Preview</strong>
-        <button type="button" (click)="closePrintPreview()">X</button>
-      </header>
-      <div class="preview-sheet">
-        <h3>{{ data.patient_name }} ({{ data.lab_no }})</h3>
-        <p>{{ data.gender }}, {{ data.age_years }} Years {{ data.age_months }} Months</p>
-        <div *ngFor="let test of resultTests">
-          <h4>{{ test.test_name }}</h4>
-          <div *ngIf="test.type === 'general'">{{ test.result_value || '-' }} {{ test.unit }}</div>
-          <div *ngIf="test.type === 'group'">
-            <div *ngFor="let child of test.children">{{ child.test_name }}: {{ child.result_value || '-' }} {{ child.unit }}</div>
+    <section class="entry-dialog-backdrop" *ngIf="showEntryDialog && selectedTest">
+      <div class="entry-dialog">
+        <header class="entry-dialog-header">
+          <div class="entry-dialog-title">
+            <strong>{{ entryDialogMode === 'group' ? 'Group result issue' : 'General result issue' }}</strong>
+            <span>{{ selectedTest.test_name }}</span>
           </div>
+          <div class="entry-dialog-patient">
+            <span>Lab No: <strong>{{ data.lab_no }}</strong></span>
+            <span>{{ data.patient_name }} | {{ data.gender }} | {{ data.age_years }} Years {{ data.age_months }} Months</span>
+            <span>Pay Mode: <strong>{{ data.pay_mode | titlecase }}</strong></span>
+          </div>
+          <button type="button" class="entry-dialog-close" (click)="closeEntryDialog()">X</button>
+        </header>
+
+          <div class="entry-dialog-body" *ngIf="entryDialogMode === 'group'; else generalEntryDialog">
+            <table>
+            <thead>
+              <tr>
+                <th>Sl.No</th>
+                <th>Test Name</th>
+                <th>Reference Range</th>
+                <th>Result Value</th>
+                <th>Unit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let child of dialogGroupChildren; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ child.test_name }}</td>
+                <td>{{ child.reference_range || '-' }}</td>
+                <td><input [(ngModel)]="child.result_value"></td>
+                <td>{{ child.unit || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <ng-template #generalEntryDialog>
+          <div class="entry-dialog-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sl.No</th>
+                  <th>Test Name</th>
+                  <th>Reference Range</th>
+                  <th>Result Value</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of dialogGeneralTests; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ row.test_name }}</td>
+                  <td>{{ row.reference_range || '-' }}</td>
+                  <td><input [(ngModel)]="row.result_value"></td>
+                  <td>{{ row.unit || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-template>
+
+        <footer class="entry-dialog-footer">
+          <button type="button" (click)="selectPreviousTest()" [disabled]="!selectedTest || resultTests.length === 0">Previous</button>
+          <button type="button" (click)="selectNextTest()" [disabled]="!selectedTest || resultTests.length === 0">Next</button>
+          <button type="button" (click)="closeEntryDialog()">Exit</button>
+          <button type="button" class="primary" (click)="saveResults()" [disabled]="isSaving">Save</button>
+        </footer>
+      </div>
+    </section>
+
+    <section class="print-preview-backdrop" *ngIf="showPrintPreview">
+      <div class="print-preview" id="resultPrintSheet">
+        <header class="print-header">
+          <div class="print-brand">
+            <img *ngIf="labPrintConfig?.logo_url" [src]="labPrintConfig?.logo_url" alt="Lab logo" class="print-logo">
+            <div class="print-brand-text">
+              <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
+              <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
+              <p>{{ labPrintConfig?.address || 'Eraviperoor, Pin: 689542' }} | Ph: {{ labPrintConfig?.phone || '0469 2956315, 9037148251' }}</p>
+            </div>
+          </div>
+          <div class="print-meta">
+            <div><span>DATE</span><strong>{{ data.date | date:'dd-MMM-yyyy' }}</strong></div>
+            <div><span>TIME</span><strong>{{ data.sample_on | date:'hh:mm:ss a' }}</strong></div>
+            <div><span>BILL NO</span><strong>{{ data.lab_no }}</strong></div>
+          </div>
+        </header>
+
+        <section class="print-patient">
+          <div><span>NAME</span><strong>{{ data.patient_name }}</strong></div>
+          <div><span>PH.NO</span><strong>{{ data.phone || '-' }}</strong></div>
+          <div><span>REF.BY</span><strong>{{ data.doctor || data.out_doctor_name || 'SELF' }}</strong></div>
+          <div><span>HOSPITAL</span><strong>{{ data.hospital || '-' }}</strong></div>
+          <div><span>AGE & GENDER</span><strong>{{ data.age_years }} Years / {{ data.gender }}</strong></div>
+          <div><span>ADDRESS</span><strong>{{ data.address || '-' }}</strong></div>
+        </section>
+
+        <section class="print-table-shell">
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>SL NO</th>
+                <th>TEST NAME</th>
+                <th>OBSERVATION</th>
+                <th>REFERENCE RANGE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let row of getPrintableResultRows()">
+                <tr *ngIf="row.type === 'group'" class="group-row">
+                  <td colspan="4">{{ row.name }}</td>
+                </tr>
+                <tr *ngIf="row.type === 'general'">
+                  <td class="center">{{ row.displayNo }}</td>
+                  <td>{{ row.name }}</td>
+                  <td class="center">{{ row.result || '-' }}</td>
+                  <td>{{ row.reference || '-' }}</td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </section>
+
+        <footer class="print-footer">
+          <div class="print-footer-left">
+            <div>Pay Mode: <strong>{{ data.pay_mode | titlecase }}</strong></div>
+            <div>Gross Amount: <strong>{{ data.gross_amount }}</strong></div>
+            <div>Received: <strong>{{ data.received_amount }}</strong></div>
+            <div>Balance: <strong>{{ data.balance_amount }}</strong></div>
+          </div>
+          <div class="print-footer-right">
+            <span>Auth.Sign</span>
+          </div>
+        </footer>
+
+        <div class="print-actions no-print">
+          <button type="button" (click)="printResultPreview()">Print</button>
+          <button type="button" (click)="closePrintPreview()">Close</button>
         </div>
       </div>
     </section>

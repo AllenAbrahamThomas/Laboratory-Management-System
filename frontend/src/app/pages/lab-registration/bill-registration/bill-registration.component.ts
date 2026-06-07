@@ -4,7 +4,7 @@ import { AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, HostLis
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../../services/clock.service';
-import { TestLookupItem, UpiPaymentConfig, VisitDetail, VisitService } from '../../../services/visit.service';
+import { LabPrintConfig, TestLookupItem, UpiPaymentConfig, VisitDetail, VisitService } from '../../../services/visit.service';
 
 interface TestLine {
   slNo: number;
@@ -40,6 +40,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   @ViewChild('saveAlertOkButton') saveAlertOkButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('upiSaveButton') upiSaveButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('upiCancelButton') upiCancelButton?: ElementRef<HTMLButtonElement>;
+  @ViewChild('billPrintCloseButton') billPrintCloseButton?: ElementRef<HTMLButtonElement>;
   @ViewChild('editLabNoInput') editLabNoInput?: ElementRef<HTMLInputElement>;
   @Input() selectedVisitId: number | null = null;
   @Input() openMode: 'new' | 'existing' | 'prefill-only' = 'new';
@@ -91,6 +92,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   loadError = '';
   showEditInvoiceDialog = false;
   showSaveConfirmDialog = false;
+  showBillPrintPreview = false;
   saveDialogMode: 'confirm' | 'alert' = 'confirm';
   saveDialogMessage = '';
   editLabNo = '';
@@ -102,6 +104,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   upiPaymentAmount = '0';
   upiPaymentMessage = '';
   isLoadingUpiPaymentConfig = false;
+  labPrintConfig: LabPrintConfig | null = null;
+  isLoadingLabPrintConfig = false;
+  billPrintData: VisitDetail | null = null;
   isLookingUpLabNo = false;
   editInvoiceMode: 'lookup' | 'form' = 'lookup';
   visitDate = this.today;
@@ -128,6 +133,8 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       .subscribe((currentTime) => {
         this.currentTime = currentTime;
       });
+
+    this.loadLabPrintConfig();
   }
 
   ngAfterViewInit(): void {
@@ -617,6 +624,23 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.editInvoiceMode = 'lookup';
   }
 
+  openBillPrintPreview(): void {
+    if (!this.billPrintData) {
+      return;
+    }
+
+    this.showBillPrintPreview = true;
+    setTimeout(() => this.billPrintCloseButton?.nativeElement.focus(), 0);
+  }
+
+  closeBillPrintPreview(): void {
+    this.showBillPrintPreview = false;
+  }
+
+  printBillPreview(): void {
+    window.print();
+  }
+
   startEditInvoiceLookup(): void {
     this.editInvoiceMode = 'lookup';
     this.editLabNo = '';
@@ -728,9 +752,29 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.balanceAmount = balance.toFixed(0);
   }
 
+  private loadLabPrintConfig(): void {
+    this.isLoadingLabPrintConfig = true;
+    this.visitService.getLabPrintConfig().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (config) => {
+        this.labPrintConfig = config;
+        this.isLoadingLabPrintConfig = false;
+      },
+      error: () => {
+        this.labPrintConfig = null;
+        this.isLoadingLabPrintConfig = false;
+      }
+    });
+  }
+
   private getPayableAmount(): number {
     const roundOff = Number(this.roundOff) || 0;
     return Math.max((Number(this.grossAmount) || 0) + roundOff, 0);
+  }
+
+  private getSavedAmount(visit: VisitDetail): number {
+    const totalRate = (visit.tests || []).reduce((total, test) => total + (Number(test.rate) || 0), 0);
+    const billedAmount = (visit.tests || []).reduce((total, test) => total + (Number(test.amount) || 0), 0);
+    return Math.max(totalRate - billedAmount, 0);
   }
 
   private buildUpiQrCode(): void {
@@ -789,6 +833,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.showSaveConfirmDialog = false;
     this.saveMessage = '';
     this.saveMessageIsError = false;
+    this.billPrintData = visit;
     this.labNo = visit.lab_no;
     this.visitDate = visit.visit_date || this.today;
     this.payMode = this.toTitleCase(visit.pay_mode);
@@ -1080,7 +1125,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       : this.visitService.createVisit(payload);
 
     request$.subscribe({
-      next: (_savedVisit) => {
+      next: (savedVisit) => {
+        this.billPrintData = savedVisit;
+        this.showBillPrintPreview = true;
         this.saveMessage = 'Saved successfully.';
         this.saveMessageIsError = false;
         this.isSaving = false;

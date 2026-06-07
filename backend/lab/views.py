@@ -199,6 +199,17 @@ def upi_payment_config(request):
     })
 
 
+@api_view(["GET"])
+def lab_print_config(request):
+    return Response({
+        "lab_name": settings.LAB_NAME,
+        "subtitle": settings.LAB_SUBTITLE,
+        "address": settings.LAB_ADDRESS,
+        "phone": settings.LAB_PHONE,
+        "logo_url": settings.LAB_LOGO_URL,
+    })
+
+
 def _to_decimal(value, default: str = "0") -> Decimal:
     try:
         return Decimal(str(value).strip())

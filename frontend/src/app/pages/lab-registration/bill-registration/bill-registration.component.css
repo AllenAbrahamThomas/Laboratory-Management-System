@@ -497,6 +497,197 @@ td input {
   cursor: not-allowed;
 }
 
+.bill-print-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.42);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+}
+
+.bill-print-sheet {
+  width: min(1100px, calc(100vw - 20px));
+  max-height: calc(100vh - 20px);
+  background: #fff;
+  border: 2px solid #222;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  overflow: hidden;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.4);
+}
+
+.bill-print-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 16px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #222;
+}
+
+.bill-brand {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.bill-logo {
+  width: 82px;
+  height: 82px;
+  object-fit: contain;
+  border: 1px solid #bcbcbc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.bill-brand-text h1 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.bill-brand-text p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.bill-print-meta {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+}
+
+.bill-print-meta div,
+.bill-patient div,
+.bill-summary-left div {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.bill-print-meta span,
+.bill-patient span {
+  font-weight: 700;
+  color: #444;
+}
+
+.bill-patient {
+  padding: 8px 12px 10px;
+  border-bottom: 1px solid #222;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+.bill-table-shell {
+  padding: 0 12px;
+  overflow: auto;
+}
+
+.bill-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bill-table th,
+.bill-table td {
+  border: 1px solid #222;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.bill-table th {
+  background: #efefef;
+  text-align: center;
+  font-weight: 700;
+}
+
+.bill-table td.center,
+.bill-table td.right {
+  text-align: center;
+}
+
+.bill-table td.right {
+  text-align: right;
+}
+
+.bill-summary {
+  padding: 8px 12px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  border-top: 1px solid #222;
+}
+
+.bill-summary-left {
+  display: grid;
+  gap: 4px;
+}
+
+.bill-summary-right {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  align-content: end;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bill-auth {
+  padding: 0 12px 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bill-print-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px 12px;
+  border-top: 1px solid #ddd;
+}
+
+.bill-print-actions button {
+  min-width: 84px;
+  height: 32px;
+  border: 1px solid #8c8c8c;
+  background: #ececec;
+}
+
+.no-print {
+  display: flex;
+}
+
+@media print {
+  .bill-window > *:not(.bill-print-backdrop) {
+    display: none !important;
+  }
+
+  .bill-print-backdrop {
+    position: static;
+    inset: auto;
+    background: transparent;
+    padding: 0;
+  }
+
+  .bill-print-sheet {
+    width: 100%;
+    max-height: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
 .upi-payment-backdrop {
   position: fixed;
   inset: 0;
@@ -894,6 +1085,14 @@ td input {
   .upi-payment-shell {
     grid-template-columns: 1fr;
     justify-items: center;
+  }
+
+  .bill-print-header {
+    grid-template-columns: 1fr;
+  }
+
+  .bill-patient {
+    grid-template-columns: 1fr;
   }
 
   .test-table {

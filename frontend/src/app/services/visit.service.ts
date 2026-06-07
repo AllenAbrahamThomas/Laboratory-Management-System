@@ -172,6 +172,14 @@ export interface UpiPaymentConfig {
   is_configured: boolean;
 }
 
+export interface LabPrintConfig {
+  lab_name: string;
+  subtitle: string;
+  address: string;
+  phone: string;
+  logo_url: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -254,6 +262,10 @@ export class VisitService {
 
   getUpiPaymentConfig(): Observable<UpiPaymentConfig> {
     return this.http.get<UpiPaymentConfig>(`${this.apiUrl}/payments/upi-config/`);
+  }
+
+  getLabPrintConfig(): Observable<LabPrintConfig> {
+    return this.http.get<LabPrintConfig>(`${this.apiUrl}/print-config/`);
   }
 
   getResultEntryByVisit(visitId: number): Observable<ResultEntryPayload> {
