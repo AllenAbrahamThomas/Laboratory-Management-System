@@ -202,7 +202,7 @@
       <button type="button" (click)="openResultEntry()">Result</button>
       <button type="button" (click)="addTestLine()"><span class="action-icon">+</span>New</button>
       <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
-      <button type="button">Print</button>
+      <button type="button" (click)="openBillPrintPreview()">Print</button>
       <button #saveButton name="saveButton" type="button" (click)="promptSave($event)" (keydown.enter)="promptSave($event)" [disabled]="isSaving">Save</button>
       <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
     </footer>
@@ -254,6 +254,76 @@
       <button #upiCancelButton type="button" class="upi-cancel-button" (click)="cancelUpiPaymentDialog()">Cancel</button>
       <button #upiSaveButton type="button" class="upi-save-button" (click)="confirmUpiPaymentAndSave()" [disabled]="!upiPaymentQrUrl || isSaving || isLoadingUpiPaymentConfig">Payment received & Save</button>
     </footer>
+  </div>
+</section>
+
+<section class="bill-print-backdrop" *ngIf="showBillPrintPreview">
+  <div class="bill-print-sheet" *ngIf="billPrintData as billData">
+    <header class="bill-print-header">
+      <div class="bill-brand">
+        <img *ngIf="labPrintConfig?.logo_url" [src]="labPrintConfig?.logo_url" alt="Lab logo" class="bill-logo">
+        <div class="bill-brand-text">
+          <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
+          <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
+          <p>{{ labPrintConfig?.address || 'Eraviperoor, Pin: 689542' }} | Ph: {{ labPrintConfig?.phone || '0469 2956315, 9037148251' }}</p>
+        </div>
+      </div>
+      <div class="bill-print-meta">
+        <div><span>DATE</span><strong>{{ billData.visit_date | date:'dd-MMM-yyyy' }}</strong></div>
+        <div><span>TIME</span><strong>{{ billData.sample_on | date:'hh:mm:ss a' }}</strong></div>
+        <div><span>BILL NO</span><strong>{{ billData.lab_no }}</strong></div>
+      </div>
+    </header>
+
+    <section class="bill-patient">
+      <div><span>NAME</span><strong>{{ billData.patient_name }}</strong></div>
+      <div><span>PH.NO</span><strong>{{ billData.phone || '-' }}</strong></div>
+      <div><span>REF.BY</span><strong>{{ billData.doctor || billData.out_doctor_name || 'SELF' }}</strong></div>
+      <div><span>HOSPITAL</span><strong>{{ billData.hospital || '-' }}</strong></div>
+      <div><span>AGE & GENDER</span><strong>{{ billData.age_years }} Years / {{ billData.gender }}</strong></div>
+      <div><span>ADDRESS</span><strong>{{ billData.address || '-' }}</strong></div>
+    </section>
+
+    <section class="bill-table-shell">
+      <table class="bill-table">
+        <thead>
+          <tr>
+            <th>SL NO</th>
+            <th>TEST NAME</th>
+            <th>RATE</th>
+            <th>DISC. %</th>
+            <th>AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let test of billData.tests; let i = index">
+            <td class="center">{{ i + 1 }}</td>
+            <td>{{ test.test_name }}</td>
+            <td class="right">{{ test.rate | number:'1.0-0' }}</td>
+            <td class="right">{{ test.discount_percent | number:'1.0-0' }}</td>
+            <td class="right">{{ test.amount | number:'1.0-0' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="bill-summary">
+      <div class="bill-summary-left">
+        <div>You have Saved Amount: <strong>{{ getSavedAmount(billData) | number:'1.0-0' }}</strong></div>
+        <div>Collected: <strong>{{ billData.received_amount | number:'1.0-0' }}</strong></div>
+      </div>
+      <div class="bill-summary-right">
+        <div>Net Amount :</div>
+        <strong>{{ (billData.gross_amount + billData.round_off) | number:'1.0-0' }}</strong>
+      </div>
+    </footer>
+
+    <div class="bill-auth">Auth.Sign</div>
+
+    <div class="bill-print-actions no-print">
+      <button type="button" (click)="printBillPreview()">Print</button>
+      <button #billPrintCloseButton type="button" (click)="closeBillPrintPreview()">Close</button>
+    </div>
   </div>
 </section>
 

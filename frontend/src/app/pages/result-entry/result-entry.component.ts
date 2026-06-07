@@ -4,7 +4,7 @@ import { Component, DestroyRef, EventEmitter, Input, OnChanges, Output, SimpleCh
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../services/clock.service';
-import { ResultEntryPayload, ResultEntryTest, VisitService } from '../../services/visit.service';
+import { LabPrintConfig, ResultEntryPayload, ResultEntryTest, VisitService } from '../../services/visit.service';
 
 interface ResultEntryDisplayChild {
   test_id: number;
@@ -44,10 +44,17 @@ export class ResultEntryComponent implements OnChanges {
   isSaving = false;
   errorMessage = '';
   infoMessage = '';
+  showEntryDialog = false;
+  entryDialogMode: 'general' | 'group' = 'general';
+  showPrintPreview = false;
+  labPrintConfig: LabPrintConfig | null = null;
+  isLoadingLabPrintConfig = false;
 
   resultData: ResultEntryPayload | null = null;
   resultTests: ResultEntryDisplayTest[] = [];
   selectedTest: ResultEntryDisplayTest | null = null;
+  dialogGeneralTests: ResultEntryDisplayTest[] = [];
+  dialogGroupChildren: ResultEntryDisplayChild[] = [];
   showPreview = false;
 
   constructor() {
@@ -56,6 +63,8 @@ export class ResultEntryComponent implements OnChanges {
       .subscribe((currentTime) => {
         this.currentTime = currentTime;
       });
+
+    this.loadLabPrintConfig();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -88,7 +97,7 @@ export class ResultEntryComponent implements OnChanges {
   }
 
   selectTest(test: ResultEntryDisplayTest): void {
-    this.selectedTest = test;
+    this.openEntryDialog(test);
   }
 
   selectPreviousTest(): void {
@@ -101,7 +110,7 @@ export class ResultEntryComponent implements OnChanges {
       return;
     }
 
-    this.selectedTest = this.resultTests[currentIndex - 1];
+    this.openEntryDialog(this.resultTests[currentIndex - 1]);
   }
 
   selectNextTest(): void {
@@ -114,7 +123,7 @@ export class ResultEntryComponent implements OnChanges {
       return;
     }
 
-    this.selectedTest = this.resultTests[currentIndex + 1];
+    this.openEntryDialog(this.resultTests[currentIndex + 1]);
   }
 
   saveResults(): void {
@@ -151,6 +160,7 @@ export class ResultEntryComponent implements OnChanges {
       next: () => {
         this.infoMessage = 'Result saved.';
         this.isSaving = false;
+        this.openPrintPreview();
       },
       error: () => {
         this.errorMessage = 'Unable to save result.';
@@ -160,11 +170,20 @@ export class ResultEntryComponent implements OnChanges {
   }
 
   openPrintPreview(): void {
-    this.showPreview = true;
+    this.showEntryDialog = false;
+    this.showPrintPreview = true;
   }
 
   closePrintPreview(): void {
-    this.showPreview = false;
+    this.showPrintPreview = false;
+  }
+
+  printResultPreview(): void {
+    window.print();
+  }
+
+  closeEntryDialog(): void {
+    this.showEntryDialog = false;
   }
 
   private loadByVisitId(visitId: number): void {
@@ -197,6 +216,80 @@ export class ResultEntryComponent implements OnChanges {
       }))
     }));
     this.selectedTest = this.resultTests[0] || null;
-    this.showPreview = false;
+    this.showEntryDialog = false;
+    this.dialogGeneralTests = [];
+    this.dialogGroupChildren = [];
+    this.showPrintPreview = false;
+  }
+
+  private openEntryDialog(test: ResultEntryDisplayTest): void {
+    this.selectedTest = test;
+    this.showEntryDialog = true;
+    this.entryDialogMode = test.type === 'group' ? 'group' : 'general';
+
+    if (this.entryDialogMode === 'group') {
+      this.dialogGroupChildren = test.children || [];
+      this.dialogGeneralTests = [];
+      return;
+    }
+
+    this.dialogGeneralTests = this.resultTests.filter((item) => item.type === 'general');
+    this.dialogGroupChildren = [];
+  }
+
+  private loadLabPrintConfig(): void {
+    this.isLoadingLabPrintConfig = true;
+    this.visitService.getLabPrintConfig().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (config) => {
+        this.labPrintConfig = config;
+        this.isLoadingLabPrintConfig = false;
+      },
+      error: () => {
+        this.labPrintConfig = null;
+        this.isLoadingLabPrintConfig = false;
+      }
+    });
+  }
+
+  getPrintableResultRows(): Array<{ type: 'group' | 'general'; displayNo: number | null; name: string; result: string; reference: string; unit: string; }> {
+    const rows: Array<{ type: 'group' | 'general'; displayNo: number | null; name: string; result: string; reference: string; unit: string; }> = [];
+    let displayNo = 0;
+
+    for (const test of this.resultTests) {
+      if (test.type === 'group') {
+        rows.push({
+          type: 'group',
+          displayNo: null,
+          name: test.test_name,
+          result: '',
+          reference: '',
+          unit: ''
+        });
+        for (const child of test.children || []) {
+          displayNo += 1;
+          rows.push({
+            type: 'general',
+            displayNo,
+            name: `  ${child.test_name}`,
+            result: child.result_value || '',
+            reference: child.reference_range || '',
+            unit: child.unit || ''
+          });
+        }
+        continue;
+      }
+
+      displayNo += 1;
+      rows.push({
+        type: 'general',
+        displayNo,
+        name: test.test_name,
+        result: test.result_value || '',
+        reference: test.reference_range || '',
+        unit: test.unit || ''
+      });
+    }
+
+    return rows;
   }
 }

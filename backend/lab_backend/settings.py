@@ -101,6 +101,15 @@ PAYMENT_UPI_CURRENCY = os.getenv("UPI_CURRENCY", "INR").strip() or "INR"
 PAYMENT_UPI_NOTE = os.getenv("UPI_NOTE", "Lab bill payment").strip()
 PAYMENT_UPI_MCC = os.getenv("UPI_MCC", "").strip()
 
+LAB_NAME = os.getenv("LAB_NAME", "Neethi Clinical Lab").strip()
+LAB_SUBTITLE = os.getenv(
+    "LAB_SUBTITLE",
+    "A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929",
+).strip()
+LAB_ADDRESS = os.getenv("LAB_ADDRESS", "Eraviperoor, Pin: 689542").strip()
+LAB_PHONE = os.getenv("LAB_PHONE", "0469 2956315, 9037148251").strip()
+LAB_LOGO_URL = os.getenv("LAB_LOGO_URL", "").strip()
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
