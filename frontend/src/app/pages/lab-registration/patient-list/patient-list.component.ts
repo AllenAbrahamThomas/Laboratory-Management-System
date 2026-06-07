@@ -52,12 +52,15 @@ export class PatientListComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
+    const labNo = this.labNoSearch.trim();
+    const hasLabNo = labNo.length > 0;
+
     this.visitService.getVisits({
-      labNo: this.labNoSearch,
+      labNo,
       patient: this.patientSearch,
       pendingOnly: this.mode === 'pending',
-      fromDate: this.fromDate,
-      toDate: this.toDate,
+      fromDate: hasLabNo ? undefined : this.fromDate,
+      toDate: hasLabNo ? undefined : this.toDate,
     }).subscribe({
       next: (visits) => {
         this.patients = visits.map((visit) => ({
