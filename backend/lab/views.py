@@ -1,5 +1,5 @@
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
@@ -170,6 +170,20 @@ def _to_decimal(value, default: str = "0") -> Decimal:
         return Decimal(default)
 
 
+def _round_whole(value) -> Decimal:
+    amount = _to_decimal(value)
+    if amount <= 0:
+        return Decimal("0")
+    return amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+
+
+def _round_bill_amount(value) -> Decimal:
+    amount = _to_decimal(value)
+    if amount <= 0:
+        return Decimal("0")
+    return (amount / Decimal("10")).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * Decimal("10")
+
+
 def _to_int(value, default: int = 0) -> int:
     try:
         return int(str(value).strip())
@@ -220,8 +234,8 @@ def _save_visit_tests(visit: Visit, tests_data) -> None:
             test=test,
             test_name_snapshot=test_name or test.test_name,
             rate=_to_decimal(raw_test.get("rate", test.rate)),
-            discount_percent=_to_decimal(raw_test.get("discount", raw_test.get("discount_percent", 0))),
-            amount=_to_decimal(raw_test.get("amount", 0)),
+            discount_percent=_round_whole(raw_test.get("discount", raw_test.get("discount_percent", 0))),
+            amount=_round_bill_amount(raw_test.get("amount", 0)),
             line_order=_to_int(raw_test.get("line_order", index)),
         )
 
@@ -266,7 +280,7 @@ def visit_create(request):
                 corporate_name=str(data.get("corporate_name", "")).strip(),
                 pay_mode=str(data.get("pay_mode", "cash")).strip().lower(),
                 discount_mode=str(data.get("discount_mode", "normal")).strip().lower(),
-                discount_percent=_to_decimal(data.get("discount_percent", "0")),
+                discount_percent=_round_whole(data.get("discount_percent", "0")),
                 discount_reason=str(data.get("discount_reason", "")).strip(),
                 note=str(data.get("note", "")).strip(),
                 round_off=_to_decimal(data.get("round_off", "0")),
@@ -286,7 +300,7 @@ def visit_create(request):
                 corporate_name=str(data.get("corporate_name", "")).strip(),
                 pay_mode=str(data.get("pay_mode", "cash")).strip().lower(),
                 discount_mode=str(data.get("discount_mode", "normal")).strip().lower(),
-                discount_percent=_to_decimal(data.get("discount_percent", "0")),
+                discount_percent=_round_whole(data.get("discount_percent", "0")),
                 discount_reason=str(data.get("discount_reason", "")).strip(),
                 note=str(data.get("note", "")).strip(),
                 round_off=_to_decimal(data.get("round_off", "0")),
@@ -333,7 +347,7 @@ def visit_update(request, visit_id: int):
         visit.corporate_name = str(data.get("corporate_name", visit.corporate_name)).strip()
         visit.pay_mode = str(data.get("pay_mode", visit.pay_mode)).strip().lower()
         visit.discount_mode = str(data.get("discount_mode", visit.discount_mode)).strip().lower()
-        visit.discount_percent = _to_decimal(data.get("discount_percent", visit.discount_percent))
+        visit.discount_percent = _round_whole(data.get("discount_percent", visit.discount_percent))
         visit.discount_reason = str(data.get("discount_reason", visit.discount_reason)).strip()
         visit.note = str(data.get("note", visit.note)).strip()
         visit.round_off = _to_decimal(data.get("round_off", visit.round_off))

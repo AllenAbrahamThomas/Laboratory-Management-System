@@ -134,12 +134,13 @@
               <input type="number" name="rate{{ currentTest.slNo }}" [(ngModel)]="currentTest.rate" readonly tabindex="-1">
             </td>
             <td>
-              <input type="number" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount" readonly tabindex="-1">
+              <input type="number" step="1" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount" readonly tabindex="-1">
             </td>
             <td>
               <input 
                 #amountInput
-                type="number" 
+                type="number"
+                step="1" 
                 name="amount{{ currentTest.slNo }}" 
                 [(ngModel)]="currentTest.amount" 
                 (keydown.enter)="onCurrentTestAmountEnter($event)"
@@ -152,8 +153,8 @@
             <td><input [name]="'testCode' + test.slNo" [ngModel]="test.testCode" readonly tabindex="-1"></td>
             <td><input [name]="'testName' + test.slNo" [ngModel]="test.testName" readonly tabindex="-1"></td>
             <td><input type="number" [name]="'rate' + test.slNo" [ngModel]="test.rate" readonly tabindex="-1"></td>
-            <td><input type="number" [name]="'discount' + test.slNo" [ngModel]="test.discount" readonly tabindex="-1"></td>
-            <td><input type="number" [name]="'amount' + test.slNo" [ngModel]="test.amount" readonly tabindex="-1"></td>
+            <td><input type="number" step="1" [name]="'discount' + test.slNo" [ngModel]="test.discount" readonly tabindex="-1"></td>
+            <td><input type="number" step="1" [name]="'amount' + test.slNo" [ngModel]="test.amount" readonly tabindex="-1"></td>
           </tr>
         </tbody>
       </table>
@@ -167,7 +168,7 @@
           </select>
         </label>
         <label>Discount % <span>:</span>
-          <input #discPercentInput name="discountPercent" [(ngModel)]="discountPercent" (keydown.enter)="onBottomFieldEnter($event, 'discPercent')">
+          <input #discPercentInput type="number" step="1" inputmode="numeric" name="discountPercent" [(ngModel)]="discountPercent" (keydown.enter)="onBottomFieldEnter($event, 'discPercent')">
           <input tabindex="-1" readonly style="visibility: hidden; width: 0; padding: 0; border: 0;">
         </label>
         <label>Rcvd.Amt <span>:</span>
@@ -188,11 +189,11 @@
 
       <div class="payment-right">
         <label>Gross Amount <span>:</span>
-          <input [value]="totalRate.toFixed(2)" readonly tabindex="-1" title="Total Rate">
-          <input [value]="totalDiscountAmount.toFixed(2)" readonly tabindex="-1" title="Total Discount Amount">
-          <input [value]="grossAmount.toFixed(2)" readonly title="Net Amount" (keydown.enter)="onBottomFieldEnter($event, 'grossAmt')">
+          <input [value]="totalRate.toFixed(0)" readonly tabindex="-1" title="Total Rate">
+          <input [value]="totalDiscountAmount.toFixed(0)" readonly tabindex="-1" title="Total Discount Amount">
+          <input [value]="grossAmount.toFixed(0)" readonly title="Net Amount" (keydown.enter)="onBottomFieldEnter($event, 'grossAmt')">
         </label>
-        <div class="grand-total">{{ grossAmount.toFixed(2) }}</div>
+        <div class="grand-total">{{ grossAmount.toFixed(0) }}</div>
         <div class="payment-status">Status: {{ getPaymentStatus() }}</div>
       </div>
     </section>
