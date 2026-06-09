@@ -66,18 +66,25 @@
 
 .patient-details {
   display: grid;
-  grid-template-columns: 650px 1fr;
-  gap: 18px;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
   align-items: start;
   min-height: 160px;
   padding: 6px;
 }
 
-.compact-left,
+.compact-left {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+}
+
 .compact-right {
   display: grid;
   gap: 4px;
   align-content: start;
+  justify-self: end;
+  width: 380px;
 }
 
 .form-row {
@@ -89,7 +96,7 @@
 
 .field {
   display: grid;
-  grid-template-columns: auto 10px auto;
+  grid-template-columns: 75px 10px 1fr;
   align-items: center;
   gap: 2px;
   white-space: nowrap;
@@ -98,6 +105,11 @@
 .field > span,
 .row-label + span {
   text-align: center;
+}
+
+.field input,
+.field select {
+  width: 100%;
 }
 
 input,
@@ -115,12 +127,12 @@ textarea {
   resize: none;
 }
 
-.lab-no input {
-  width: 152px;
+.lab-no {
+  width: 220px;
 }
 
-.pay-mode select {
-  width: 154px;
+.pay-mode {
+  width: 220px;
 }
 
 .adv-search {
@@ -130,31 +142,63 @@ textarea {
   font-size: 11px;
 }
 
-.name-field input {
+.salutation-field {
+  width: 220px;
+}
+
+.name-field {
+  flex: 1 1 auto;
+}
+
+.gender-selector {
+  display: flex;
+  align-items: center;
+  width: 220px;
+}
+
+.gender-selector .row-label {
+  width: 75px;
+}
+
+.gender-selector > span:not(.row-label):not(.radio-group) {
+  width: 10px;
+  text-align: center;
+}
+
+.gender-selector .radio-group {
+  flex: 1;
+}
+
+.age-field {
   width: 120px;
 }
 
-.salutation-field select {
-  width: 84px;
+.phone-field {
+  width: 220px;
 }
 
-.phone-field input,
-.address-field input,
-.ip-field input,
-.corporate-field input {
-  width: 154px;
+.address-field {
+  flex: 1 1 auto;
 }
 
-.sample-field input {
-  width: 155px;
+.sample-field {
+  width: 220px;
 }
 
-.corporate-field input {
-  width: 298px;
+.ip-field {
+  flex: 1 1 auto;
 }
 
-.age-field input {
-  width: 30px;
+.corporate-field {
+  flex: 1 1 auto;
+}
+
+.pay-mode,
+.name-field,
+.age-field,
+.address-field,
+.ip-field {
+  margin-left: 16px;
 }
 
 .gender-row {
@@ -169,16 +213,16 @@ textarea {
   width: 30px;
 }
 
-.date-field input {
-  width: 145px;
+.date-field {
+  width: 175px;
 }
 
-.time-field input {
-  width: 134px;
+.time-field {
+  width: 175px;
 }
 
-.doctor-field input {
-  width: min(330px, 100%);
+.doctor-field {
+  width: 100%;
 }
 
 .compact-right .form-row {
