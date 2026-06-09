@@ -16,23 +16,23 @@
         <div class="form-row top-row">
           <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo" readonly></label>
           <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode"><option *ngFor="let mode of paymentModes">{{ mode }}</option></select></label>
-          <button type="button" class="adv-search" (click)="openEditInvoiceLookup()">Edit Invoice</button>
           <button type="button" class="adv-search" (click)="advanceSearch.emit()">Adv. Search</button>
         </div>
 
         <div class="form-row">
           <label class="field salutation-field">Salutation <span>:</span><select name="salutation" [(ngModel)]="salutation"><option *ngFor="let item of salutations" [value]="item">{{ item }}</option></select></label>
           <label class="field name-field">Name <span>:</span><input name="patientName" [(ngModel)]="patientName" (keydown.enter)="onPatientNameEnter($event)"></label>
-          <button type="button" class="small-add">+</button>
         </div>
 
         <div class="form-row gender-row">
-          <span class="row-label">Gender</span>
-          <span>:</span>
-          <span class="radio-group">
-            <label><input type="radio" name="gender" value="Male" [(ngModel)]="gender"> Male</label>
-            <label><input type="radio" name="gender" value="Female" [(ngModel)]="gender"> Female</label>
-          </span>
+          <div class="gender-selector">
+            <span class="row-label">Gender</span>
+            <span>:</span>
+            <span class="radio-group">
+              <label><input type="radio" name="gender" value="Male" [(ngModel)]="gender"> Male</label>
+              <label><input type="radio" name="gender" value="Female" [(ngModel)]="gender"> Female</label>
+            </span>
+          </div>
           <label class="field age-field">Age <span>:</span><input name="age" [(ngModel)]="age"></label>
           <select name="ageType" [(ngModel)]="ageType"><option>Years</option><option>Months</option><option>Days</option></select>
           <input name="month" [(ngModel)]="month">
@@ -62,7 +62,6 @@
 
         <div class="form-row">
           <label class="field doctor-field">Doctor <span>:</span><input name="doctor" [(ngModel)]="doctor"></label>
-          <button type="button" class="small-add">+</button>
         </div>
 
         <div class="form-row">
@@ -71,7 +70,6 @@
 
         <div class="form-row">
           <label class="field doctor-field">Hospital <span>:</span><input name="hospital" [(ngModel)]="hospital"></label>
-          <button type="button" class="small-add">+</button>
         </div>
       </div>
     </section>
