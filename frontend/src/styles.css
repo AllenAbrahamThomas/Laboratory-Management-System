@@ -1,3 +1,5 @@
+@import './theme.css';
+
 * {
   box-sizing: border-box;
 }
@@ -10,7 +12,7 @@ body {
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #0a4f94;
+  background: var(--deep-twilight);
   color: #111;
 }
 

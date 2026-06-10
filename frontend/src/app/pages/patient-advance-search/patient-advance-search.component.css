@@ -5,9 +5,11 @@
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   min-width: 780px;
-  border: 1px solid #0aa600;
-  background: #fff;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+  border: 1px solid var(--bright-teal-blue);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
+    url('/assets/Bachelor of Medical Laboratory.jpg') no-repeat center center / cover;
+  box-shadow: 0 8px 18px rgba(3, 4, 94, 0.25);
   color: #000;
   font-size: 12px;
 }
@@ -16,16 +18,19 @@
   height: 31px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
-  background: #fbfbfb;
+  padding: 0 12px;
+  background: var(--light-cyan);
+  color: var(--deep-twilight);
+  font-weight: bold;
+  border-bottom: 1px solid var(--frosted-blue);
 }
 
 .window-title button {
   margin-left: auto;
   width: 20px;
   height: 20px;
-  border: 1px solid #bb3d3d;
-  background: #c94d4d;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
   color: #fff;
   line-height: 1;
   cursor: pointer;
@@ -38,7 +43,8 @@
   align-items: stretch;
   margin: 0 7px 8px;
   padding: 8px;
-  border: 1px solid #20aa25;
+  border: 1px solid var(--frosted-blue);
+  background: var(--light-cyan);
 }
 
 .search-options,
@@ -75,15 +81,16 @@ input[type="checkbox"] {
 }
 
 .query-fields .active-query {
-  background: #43ff5b;
-  border-color: #4788d3;
+  background: #fff;
+  border-color: var(--bright-teal-blue);
+  outline: 2px solid var(--turquoise-surf);
 }
 
 .open-type {
   min-height: 72px;
   margin: 0;
   padding: 2px 8px 6px;
-  border: 1px solid #8a8a8a;
+  border: 1px solid var(--frosted-blue);
 }
 
 .open-type legend {
@@ -93,16 +100,19 @@ input[type="checkbox"] {
 .search-button {
   width: 86px;
   height: 24px;
-  border: 1px solid #aaa;
-  background: #e8e8e8;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
   cursor: pointer;
   align-self: start;
+  border-radius: 4px;
 }
 
 .result-grid {
   margin: 0 7px;
   overflow: auto;
-  border: 1px solid #7fb53c;
+  border: 1px solid var(--frosted-blue);
 }
 
 table {
@@ -115,15 +125,16 @@ th,
 td {
   height: 23px;
   padding: 2px 4px;
-  border-right: 1px solid #83bf1b;
-  border-bottom: 1px solid #83bf1b;
+  border-right: 1px solid var(--frosted-blue);
+  border-bottom: 1px solid var(--frosted-blue);
   text-align: left;
   white-space: nowrap;
 }
 
 th {
-  background: #d9f28a;
-  font-weight: 400;
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
+  font-weight: 700;
 }
 
 tbody tr {
@@ -131,7 +142,7 @@ tbody tr {
 }
 
 tbody tr.selected-row td {
-  background: #dbf4b5;
+  background: var(--light-cyan);
 }
 
 .status-message {
@@ -150,15 +161,19 @@ tbody tr.selected-row td {
   gap: 8px;
   margin: 8px 7px 7px;
   padding: 9px;
-  border: 1px solid #20aa25;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--light-cyan);
 }
 
 .window-footer button {
   width: 94px;
   height: 31px;
-  border: 1px solid #aaa;
-  background: #e8e8e8;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 @media (max-width: 900px) {

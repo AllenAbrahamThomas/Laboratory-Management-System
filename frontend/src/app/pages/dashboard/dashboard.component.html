@@ -63,15 +63,12 @@
         </button>
 
         <div class="side-logo">
-          <div class="care-mark">i</div>
-          <strong>CARE</strong>
+          <img src="assets/logo.png" alt="Neethi Lab Logo" class="side-logo-img">
         </div>
       </aside>
 
       <div class="hero-panel">
-        <div class="pulse-line"></div>
         <div class="lab-figure"></div>
-        <div class="tagline">Simplify your needs..</div>
 
         <app-patient-list
           *ngIf="activeRegistrationView === 'patients' || activeRegistrationView === 'pending-collection'"
@@ -116,8 +113,8 @@
       <span>Work Station : LOCALHOST</span>
       <span>Login time : {{ session.login_at | date:'hh:mm:ss a' }}</span>
       <span>USER : {{ session.username }}</span>
-      <span>{{ currentTime | date:'dd-MMM-yy' }}</span>
-      <span>{{ currentTime | date:'h:mm a' }}</span>
+      <span class="status-date">{{ currentTime | date:'dd-MMM-yy' }}</span>
+      <span class="status-time">{{ currentTime | date:'h:mm a' }}</span>
     </footer>
   </ng-container>
 </main>

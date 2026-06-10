@@ -170,7 +170,7 @@
           <input tabindex="-1" readonly style="visibility: hidden; width: 0; padding: 0; border: 0;">
         </label>
         <label>Rcvd.Amt <span>:</span>
-          <input #receivedAmtInput name="receivedAmount" [(ngModel)]="receivedAmount" (ngModelChange)="onReceivedAmountChange()" (keydown.enter)="onBottomFieldEnter($event, 'receivedAmt')">
+          <input #receivedAmtInput name="receivedAmount" [(ngModel)]="receivedAmount" readonly tabindex="-1">
         </label>
         <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount" readonly tabindex="-1"></label>
       </div>
@@ -198,7 +198,7 @@
 
     <footer class="action-bar">
       <button type="button" (click)="openResultEntry()">Result</button>
-      <button type="button" (click)="addTestLine()"><span class="action-icon">+</span>New</button>
+      <button type="button" (click)="addTestLine()">New</button>
       <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
       <button type="button" (click)="openBillPrintPreview()">Print</button>
       <button #saveButton name="saveButton" type="button" (click)="promptSave($event)" (keydown.enter)="promptSave($event)" [disabled]="isSaving">Save</button>
@@ -259,7 +259,7 @@
   <div class="bill-print-sheet" *ngIf="billPrintData as billData">
     <header class="bill-print-header">
       <div class="bill-brand">
-        <img *ngIf="labPrintConfig?.logo_url" [src]="labPrintConfig?.logo_url" alt="Lab logo" class="bill-logo">
+        <img [src]="labPrintConfig?.logo_url || '/assets/logo.png'" alt="Lab logo" class="bill-logo">
         <div class="bill-brand-text">
           <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
           <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
@@ -307,12 +307,11 @@
 
     <footer class="bill-summary">
       <div class="bill-summary-left">
-        <div>You have Saved Amount: <strong>{{ getSavedAmount(billData) | number:'1.0-0' }}</strong></div>
-        <div>Collected: <strong>{{ billData.received_amount | number:'1.0-0' }}</strong></div>
+        <span>You have Saved Amount:</span> <strong>{{ getSavedAmount(billData) | number:'1.0-0' }}</strong>
+        <span>Collected:</span> <strong>{{ billData.received_amount | number:'1.0-0' }}</strong>
       </div>
       <div class="bill-summary-right">
-        <div>Net Amount :</div>
-        <strong>{{ (billData.gross_amount + billData.round_off) | number:'1.0-0' }}</strong>
+        <span>Net Amount :</span> <strong>{{ getNetAmount(billData) | number:'1.0-0' }}</strong>
       </div>
     </footer>
 
@@ -326,93 +325,83 @@
 </section>
 
 <section class="edit-invoice-backdrop" *ngIf="showEditInvoiceDialog">
-  <div class="edit-invoice-dialog" [class.lookup-mode]="editInvoiceMode === 'lookup'" [class.form-mode]="editInvoiceMode === 'form'">
+  <div class="edit-invoice-dialog">
     <header class="edit-invoice-header">
       <span>Edit invoice</span>
       <button type="button" class="edit-close-button" (click)="closeEditInvoiceLookup()">X</button>
     </header>
 
-    <ng-container *ngIf="editInvoiceMode === 'lookup'; else editInvoiceForm">
-      <div class="edit-lookup-grid">
-        <label>Lab No <span>:</span><input #editLabNoInput name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()"></label>
-        <label>Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'" readonly></label>
-      </div>
-      <p class="status-message error" *ngIf="editLookupError">{{ editLookupError }}</p>
-      <footer class="edit-invoice-footer lookup-footer">
-        <button type="button" class="edit-action-button" (click)="searchEditInvoiceByLabNo()" [disabled]="isLookingUpLabNo">Open</button>
-        <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Close</button>
-      </footer>
-    </ng-container>
+    <div class="edit-form-shell">
+      <section class="edit-top-grid">
+        <label class="edit-top-lab-no">Lab No <span>:</span>
+          <input #editLabNoInput name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()" placeholder="Enter Lab No">
+        </label>
+        <label class="edit-top-date">Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'" readonly></label>
+      </section>
 
-    <ng-template #editInvoiceForm>
-      <div class="edit-form-shell">
-        <section class="edit-top-grid">
-          <label class="edit-top-lab-no">Lab No <span>:</span><input name="editDisplayLabNo" [value]="labNo" readonly></label>
-          <label class="edit-top-date">Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'" readonly></label>
-        </section>
+      <p class="status-message error edit-lookup-error" *ngIf="editLookupError">{{ editLookupError }}</p>
 
-        <section class="edit-body-grid">
-          <div class="edit-column left-column">
-            <label class="wide-field">Name <span>:</span>
-              <div class="name-composite">
-                <select name="editSalutation" [(ngModel)]="salutation">
-                  <option *ngFor="let item of salutations" [value]="item">{{ item }}</option>
-                </select>
-                <input name="editPatientName" [(ngModel)]="patientName">
-              </div>
-            </label>
-
-            <label>Gender <span>:</span>
-              <span class="radio-group">
-                <label><input type="radio" name="editGenderMale" value="Male" [(ngModel)]="gender"> Male</label>
-                <label><input type="radio" name="editGenderFemale" value="Female" [(ngModel)]="gender"> Female</label>
-              </span>
-            </label>
-
-            <label>Age <span>:</span>
-              <div class="age-composite">
-                <input name="editAge" [(ngModel)]="age">
-                <select name="editAgeType" [(ngModel)]="ageType">
-                  <option>Years</option>
-                  <option>Months</option>
-                  <option>Days</option>
-                </select>
-              </div>
-            </label>
-
-            <label>Phone <span>:</span><input name="editPhone" [(ngModel)]="phone"></label>
-            <label>IP/OP No <span>:</span><input name="editIpNo" [(ngModel)]="ipNo"></label>
-            <label>Address <span>:</span><input name="editAddress" [(ngModel)]="address"></label>
-            <label>Doctor <span>:</span><input name="editDoctor" [(ngModel)]="doctor"></label>
-          </div>
-
-          <div class="edit-column right-column">
-            <label>Out.Dr <span>:</span><input name="editOutDoctor" [(ngModel)]="outDoctor"></label>
-            <label>Hospital <span>:</span><input name="editHospital" [(ngModel)]="hospital"></label>
-            <label>Collected by <span>:</span><input name="editCollectedBy" [(ngModel)]="editCollectedBy"></label>
-            <label>Area <span>:</span><input name="editArea" [(ngModel)]="editArea"></label>
-
-            <div class="checkbox-row">
-              <label><input type="checkbox" name="urgentReport" [(ngModel)]="urgentReport"> Urgent Report</label>
-              <label><input type="checkbox" name="emailToPatient" [(ngModel)]="emailToPatient"> Email to Patient</label>
+      <section class="edit-body-grid">
+        <div class="edit-column left-column">
+          <label class="wide-field">Name <span>:</span>
+            <div class="name-composite">
+              <select name="editSalutation" [(ngModel)]="salutation">
+                <option *ngFor="let item of salutations" [value]="item">{{ item }}</option>
+              </select>
+              <input name="editPatientName" [(ngModel)]="patientName">
             </div>
+          </label>
 
-            <label class="report-release-row">Report Releasing <span>:</span>
-              <input name="editSampleOn" [(ngModel)]="sampleOn">
-            </label>
+          <label>Gender <span>:</span>
+            <span class="radio-group">
+              <label><input type="radio" name="editGenderMale" value="Male" [(ngModel)]="gender"> Male</label>
+              <label><input type="radio" name="editGenderFemale" value="Female" [(ngModel)]="gender"> Female</label>
+            </span>
+          </label>
 
-            <label class="note-row">Note <span>:</span>
-              <textarea name="editNote" [(ngModel)]="note"></textarea>
-            </label>
+          <label>Age <span>:</span>
+            <div class="age-composite">
+              <input name="editAge" [(ngModel)]="age">
+              <select name="editAgeType" [(ngModel)]="ageType">
+                <option>Years</option>
+                <option>Months</option>
+                <option>Days</option>
+              </select>
+            </div>
+          </label>
+
+          <label>Phone <span>:</span><input name="editPhone" [(ngModel)]="phone"></label>
+          <label>IP/OP No <span>:</span><input name="editIpNo" [(ngModel)]="ipNo"></label>
+          <label>Address <span>:</span><input name="editAddress" [(ngModel)]="address"></label>
+          <label>Doctor <span>:</span><input name="editDoctor" [(ngModel)]="doctor"></label>
+        </div>
+
+        <div class="edit-column right-column">
+          <label>Out.Dr <span>:</span><input name="editOutDoctor" [(ngModel)]="outDoctor"></label>
+          <label>Hospital <span>:</span><input name="editHospital" [(ngModel)]="hospital"></label>
+          <label>Collected by <span>:</span><input name="editCollectedBy" [(ngModel)]="editCollectedBy"></label>
+          <label>Area <span>:</span><input name="editArea" [(ngModel)]="editArea"></label>
+
+          <div class="checkbox-row">
+            <label><input type="checkbox" name="urgentReport" [(ngModel)]="urgentReport"> Urgent Report</label>
+            <label><input type="checkbox" name="emailToPatient" [(ngModel)]="emailToPatient"> Email to Patient</label>
           </div>
-        </section>
 
-        <footer class="edit-invoice-footer">
-          <button type="button" class="edit-action-button new-button" (click)="startEditInvoiceLookup()">New</button>
-          <button type="button" class="edit-action-button save-button" (click)="promptSave($event)" [disabled]="isSaving">Save</button>
-          <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Exit</button>
-        </footer>
-      </div>
-    </ng-template>
+          <label class="report-release-row">Report Releasing <span>:</span>
+            <input name="editSampleOn" [(ngModel)]="sampleOn">
+          </label>
+
+          <label class="note-row">Note <span>:</span>
+            <textarea name="editNote" [(ngModel)]="note"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <footer class="edit-invoice-footer">
+        <button type="button" class="edit-action-button new-button" (click)="startEditInvoiceLookup()">New</button>
+        <button type="button" class="edit-action-button save-button" (click)="promptSave($event)" [disabled]="isSaving">Save</button>
+        <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Exit</button>
+      </footer>
+    </div>
   </div>
 </section>

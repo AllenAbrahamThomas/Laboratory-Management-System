@@ -1,0 +1,41 @@
+/* ==========================================================================
+   COLOR PALETTE THEME DEFINITIONS
+   ========================================================================== */
+
+:root {
+  /* Active Theme Colors (Default: Deep Twilight Palette) */
+  --deep-twilight: #03045e;
+  --bright-teal-blue: #0077b6;
+  --turquoise-surf: #00b4d8;
+  --frosted-blue: #90e0ef;
+  --light-cyan: #caf0f8;
+}
+
+/* 
+   --------------------------------------------------------------------------
+   PRESETS / ALTERNATE PALETTES REFERENCE
+   --------------------------------------------------------------------------
+   To change the color palette, simply replace the active theme values above
+   with any of the hex colors listed below or your own custom hex codes.
+   
+   1. Emerald / Mint Palette:
+      --deep-twilight: #064e3b;      (Dark Green)
+      --bright-teal-blue: #047857;   (Emerald Green)
+      --turquoise-surf: #059669;      (Medium Emerald)
+      --frosted-blue: #a7f3d0;        (Soft Green)
+      --light-cyan: #ecfdf5;          (Light Mint)
+
+   2. Royal Violet Palette:
+      --deep-twilight: #2e1065;      (Dark Purple)
+      --bright-teal-blue: #5b21b6;   (Purple)
+      --turquoise-surf: #7c3aed;      (Violet)
+      --frosted-blue: #ddd6fe;        (Lavender)
+      --light-cyan: #f5f3ff;          (Soft White-Purple)
+
+   3. Crimson / Coral Palette:
+      --deep-twilight: #7f1d1d;      (Dark Red/Wine)
+      --bright-teal-blue: #b91c1c;   (Crimson Red)
+      --turquoise-surf: #dc2626;      (Red)
+      --frosted-blue: #fecaca;        (Light Red/Coral)
+      --light-cyan: #fef2f2;          (Soft Pinkish White)
+*/

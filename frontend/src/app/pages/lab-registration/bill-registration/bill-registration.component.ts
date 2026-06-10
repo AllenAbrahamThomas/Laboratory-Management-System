@@ -529,9 +529,6 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
         this.discPercentInput?.nativeElement.focus();
         break;
       case 'discPercent':
-        this.receivedAmtInput?.nativeElement.focus();
-        break;
-      case 'receivedAmt':
         this.roundOffInput?.nativeElement.focus();
         break;
       case 'roundOff':
@@ -612,7 +609,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
 
   openEditInvoiceLookup(): void {
     this.showEditInvoiceDialog = true;
-    this.editInvoiceMode = 'lookup';
+    this.editInvoiceMode = 'form';
     this.editLabNo = '';
     this.editLookupError = '';
     setTimeout(() => this.editLabNoInput?.nativeElement.focus(), 0);
@@ -621,12 +618,16 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   closeEditInvoiceLookup(): void {
     this.showEditInvoiceDialog = false;
     this.editLookupError = '';
-    this.editInvoiceMode = 'lookup';
+    this.editInvoiceMode = 'form';
   }
 
   openBillPrintPreview(): void {
     if (!this.billPrintData) {
       return;
+    }
+
+    if (!this.labPrintConfig) {
+      this.loadLabPrintConfig();
     }
 
     this.showBillPrintPreview = true;
@@ -642,9 +643,28 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   startEditInvoiceLookup(): void {
-    this.editInvoiceMode = 'lookup';
+    this.editInvoiceMode = 'form';
     this.editLabNo = '';
     this.editLookupError = '';
+    this.patientName = '';
+    this.gender = 'Male';
+    this.age = '';
+    this.month = '';
+    this.phone = '';
+    this.address = '';
+    this.doctor = '';
+    this.outDoctor = '';
+    this.hospital = '';
+    this.editCollectedBy = '';
+    this.editArea = '';
+    this.urgentReport = false;
+    this.emailToPatient = false;
+    this.note = '';
+    this.tests = [];
+    this.grossAmount = 0;
+    this.roundOff = '';
+    this.receivedAmount = '';
+    this.balanceAmount = '';
     setTimeout(() => this.editLabNoInput?.nativeElement.focus(), 0);
   }
 
@@ -745,11 +765,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   }
 
   private updateBalanceAmount(): void {
-    const received = Number(this.receivedAmount) || 0;
     const roundOff = Number(this.roundOff) || 0;
     const netPayable = this.grossAmount + roundOff;
-    const balance = Math.max(netPayable - received, 0);
-    this.balanceAmount = balance.toFixed(0);
+    this.receivedAmount = netPayable.toFixed(0);
+    this.balanceAmount = '0';
   }
 
   private loadLabPrintConfig(): void {
@@ -771,10 +790,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     return Math.max((Number(this.grossAmount) || 0) + roundOff, 0);
   }
 
-  private getSavedAmount(visit: VisitDetail): number {
+  getSavedAmount(visit: VisitDetail): number {
     const totalRate = (visit.tests || []).reduce((total, test) => total + (Number(test.rate) || 0), 0);
     const billedAmount = (visit.tests || []).reduce((total, test) => total + (Number(test.amount) || 0), 0);
     return Math.max(totalRate - billedAmount, 0);
+  }
+
+  getNetAmount(visit: VisitDetail): number {
+    return (Number(visit.gross_amount) || 0) + (Number(visit.round_off) || 0);
   }
 
   private buildUpiQrCode(): void {
@@ -835,6 +858,7 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.saveMessageIsError = false;
     this.billPrintData = visit;
     this.labNo = visit.lab_no;
+    this.editLabNo = visit.lab_no;
     this.visitDate = visit.visit_date || this.today;
     this.payMode = this.toTitleCase(visit.pay_mode);
     const parsedName = this.parsePatientName(visit.patient_name);
@@ -1084,6 +1108,9 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     this.saveMessage = '';
     this.saveMessageIsError = false;
     const persistableTests = this.getPersistableTests();
+    const computedGrossAmount = persistableTests.reduce((total, test) => total + (Number(test.amount) || 0), 0);
+    const roundOff = Number(this.roundOff) || 0;
+    const netPayable = computedGrossAmount + roundOff;
 
     const payload = {
       lab_no: this.labNo.trim(),
@@ -1101,10 +1128,10 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       discount_mode: this.discountMode.toLowerCase(),
       discount_percent: this.roundDiscountPercent(Number(this.discountPercent) || 0),
       discount_reason: this.discountReason.trim(),
-      received_amount: Number(this.receivedAmount) || 0,
-      balance_amount: Number(this.balanceAmount) || 0,
-      gross_amount: this.roundBillAmount(Number(this.grossAmount) || 0),
-      round_off: Number(this.roundOff) || 0,
+      received_amount: netPayable,
+      balance_amount: 0,
+      gross_amount: computedGrossAmount,
+      round_off: roundOff,
       note: this.note.trim(),
       tests: persistableTests.map((test, index) => ({
         test_id: test.testId,
@@ -1164,14 +1191,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   private parsePatientName(value: string): { salutation: string; name: string } {
     const trimmed = (value || '').trim();
     if (!trimmed) {
-      return { salutation: 'Mr', name: '' };
+      return { salutation: 'Mr.', name: '' };
     }
 
     const parts = trimmed.split(/\s+/);
-    const firstToken = parts[0].replace('.', '');
-    const matched = this.salutations.find((item) => item.toLowerCase() === firstToken.toLowerCase());
+    const firstToken = parts[0].replace(/\./g, '');
+    const matched = this.salutations.find((item) => item.replace(/\./g, '').toLowerCase() === firstToken.toLowerCase());
     if (!matched) {
-      return { salutation: 'Mr', name: trimmed };
+      return { salutation: 'Mr.', name: trimmed };
     }
 
     return {
