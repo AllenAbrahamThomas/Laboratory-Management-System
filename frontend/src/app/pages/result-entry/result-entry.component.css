@@ -2,8 +2,10 @@
   position: absolute;
   inset: 8px 2% 12px;
   z-index: 26;
-  background: #f4f7ea;
-  border: 1px solid #53a80f;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
+    url('/assets/Bachelor of Medical Laboratory.jpg') no-repeat center center / cover;
+  border: 1px solid var(--bright-teal-blue);
   display: flex;
   flex-direction: column;
   font-size: 12px;
@@ -16,8 +18,9 @@
   align-items: center;
   gap: 6px;
   padding: 0 8px;
-  background: linear-gradient(180deg, #f6fff0, #e4efcb);
-  border-bottom: 1px solid #79aa45;
+  background: var(--light-cyan);
+  color: var(--deep-twilight);
+  border-bottom: 1px solid var(--frosted-blue);
   font-weight: 700;
 }
 
@@ -25,8 +28,11 @@
   margin-left: auto;
   width: 22px;
   height: 22px;
-  border: 1px solid #999;
-  background: #fff;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .app-icon {
@@ -34,8 +40,8 @@
   height: 18px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid #8bc34a;
-  color: #118f18;
+  border: 1px solid var(--frosted-blue);
+  color: var(--bright-teal-blue);
   font-weight: 800;
   background: #fff;
 }
@@ -45,20 +51,26 @@
   gap: 8px;
   align-items: center;
   padding: 8px;
-  border: 1px solid #79aa45;
+  border: 1px solid var(--frosted-blue);
   margin: 8px;
-  background: #fff;
+  background: var(--light-cyan);
 }
 
 .lookup-strip input {
   height: 24px;
-  border: 1px solid #9d9d9d;
+  border: 1px solid var(--bright-teal-blue);
   padding: 0 6px;
 }
 
 .lookup-strip button {
   min-width: 74px;
   height: 26px;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .status {
@@ -76,12 +88,14 @@
 .patient-head {
   margin: 8px;
   padding: 6px 8px;
-  border: 1px solid #79aa45;
-  background: #fff;
+  border: 1px solid var(--frosted-blue);
+  background: var(--light-cyan);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px 18px;
   align-items: center;
+  color: var(--deep-twilight);
+  font-weight: 600;
 }
 
 .patient-head div {
@@ -91,7 +105,8 @@
 }
 
 .patient-head span {
-  color: #6f6f6f;
+  color: #555;
+  font-weight: normal;
 }
 
 .result-body {
@@ -111,13 +126,14 @@
 
 th,
 td {
-  border: 1px solid #88b94f;
+  border: 1px solid var(--frosted-blue);
   padding: 4px 6px;
   vertical-align: middle;
 }
 
 .test-list th {
-  background: #d8ef95;
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
   font-weight: 700;
 }
 
@@ -149,7 +165,7 @@ td {
 }
 
 .test-list tr.active td {
-  background: #5eb4f5;
+  background: var(--bright-teal-blue);
   color: #fff;
 }
 
@@ -161,7 +177,7 @@ td {
 .action-bar {
   margin: 8px;
   padding-top: 6px;
-  border-top: 1px solid #79aa45;
+  border-top: 1px solid var(--frosted-blue);
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -172,8 +188,12 @@ td {
 .action-bar button {
   min-width: 82px;
   height: 30px;
-  border: 1px solid #8c8c8c;
-  background: #ececec;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .entry-dialog-backdrop {
@@ -192,8 +212,8 @@ td {
   display: grid;
   grid-template-rows: auto 1fr auto;
   background: #fff;
-  border: 2px solid #7fa43f;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.35);
+  border: 2px solid var(--bright-teal-blue);
+  box-shadow: 0 18px 44px rgba(3, 4, 94, 0.35);
   overflow: hidden;
 }
 
@@ -203,8 +223,8 @@ td {
   gap: 12px;
   align-items: start;
   padding: 8px 10px;
-  background: linear-gradient(180deg, #f7ffe8 0%, #ebf5c8 100%);
-  border-bottom: 1px solid #97b65b;
+  background: var(--light-cyan);
+  border-bottom: 1px solid var(--frosted-blue);
 }
 
 .entry-dialog-title {
@@ -213,7 +233,7 @@ td {
 }
 
 .entry-dialog-title strong {
-  color: #143b8a;
+  color: var(--deep-twilight);
   font-size: 14px;
 }
 
@@ -237,8 +257,11 @@ td {
 .entry-dialog-close {
   width: 26px;
   height: 26px;
-  border: 1px solid #949494;
-  background: #fff;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .entry-dialog-body {
@@ -255,12 +278,13 @@ td {
 
 .entry-dialog-body th,
 .entry-dialog-body td {
-  border: 1px solid #88b94f;
+  border: 1px solid var(--frosted-blue);
   padding: 4px 6px;
 }
 
 .entry-dialog-body th {
-  background: #d8ef95;
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
   font-weight: 700;
 }
 
@@ -285,7 +309,7 @@ td {
   width: 100%;
   height: 24px;
   box-sizing: border-box;
-  border: 1px solid #9d9d9d;
+  border: 1px solid var(--bright-teal-blue);
   padding: 0 6px;
 }
 
@@ -294,20 +318,25 @@ td {
   justify-content: flex-end;
   gap: 8px;
   padding: 8px 10px 10px;
-  border-top: 1px solid #97b65b;
-  background: #f9fcf0;
+  border-top: 1px solid var(--frosted-blue);
+  background: var(--light-cyan);
 }
 
 .entry-dialog-footer button {
   min-width: 82px;
   height: 30px;
-  border: 1px solid #8c8c8c;
-  background: #ececec;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .entry-dialog-footer .primary {
-  border-color: #2f7f2f;
-  background: #66df66;
+  border-color: var(--deep-twilight);
+  background: var(--bright-teal-blue);
+  color: #fff;
   font-weight: 700;
 }
 
@@ -457,6 +486,7 @@ td {
   padding-right: 20px;
   font-size: 14px;
   font-weight: 700;
+  color: #000;
 }
 
 .print-actions {
@@ -464,14 +494,18 @@ td {
   justify-content: flex-end;
   gap: 8px;
   padding: 8px 12px 12px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--frosted-blue);
 }
 
 .print-actions button {
   min-width: 84px;
   height: 32px;
-  border: 1px solid #8c8c8c;
-  background: #ececec;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .no-print {

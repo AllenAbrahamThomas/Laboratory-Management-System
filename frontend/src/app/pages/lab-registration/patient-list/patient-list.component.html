@@ -61,7 +61,6 @@
 
   <footer class="window-footer">
     <button type="button" class="new-button" (click)="newRegistration.emit()" *ngIf="mode === 'all' && purpose === 'registration'">
-      <span>+</span>
       New Registration
     </button>
     <strong>{{ purpose === 'result' ? 'Result entry' : 'Patient registration' }}</strong>

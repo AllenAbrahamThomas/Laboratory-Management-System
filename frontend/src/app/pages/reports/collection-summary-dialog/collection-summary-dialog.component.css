@@ -4,9 +4,11 @@
   left: 50%;
   transform: translateX(-50%);
   width: min(96vw, 980px);
-  border: 1px solid #467f1a;
-  background: #f4f4f4;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--bright-teal-blue);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
+    url('/assets/Bachelor of Medical Laboratory.jpg') no-repeat center center / cover;
+  box-shadow: 0 8px 18px rgba(3, 4, 94, 0.35);
   z-index: 30;
   font-size: 12px;
 }
@@ -16,18 +18,21 @@
   display: flex;
   align-items: center;
   padding: 0 8px;
-  background: #ecf7de;
-  border-bottom: 1px solid #79aa45;
+  background: var(--light-cyan);
+  color: var(--deep-twilight);
+  border-bottom: 1px solid var(--frosted-blue);
+  font-weight: 700;
 }
 
 .summary-title button {
   margin-left: auto;
   width: 22px;
   height: 22px;
-  border: 1px solid #9c2c2c;
-  background: #cc4e4e;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
   color: #fff;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .summary-body {
@@ -37,11 +42,12 @@
 }
 
 .criteria-box {
-  border: 1px solid #6ca532;
+  border: 1px solid var(--frosted-blue);
   padding: 8px;
   display: grid;
   grid-template-columns: repeat(2, minmax(180px, 1fr));
   gap: 8px;
+  background: var(--light-cyan);
 }
 
 .criteria-box label {
@@ -49,12 +55,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  font-weight: 700;
+  color: var(--deep-twilight);
 }
 
 .criteria-box input,
 .criteria-box select {
   height: 24px;
-  border: 1px solid #969696;
+  border: 1px solid var(--bright-teal-blue);
   background: #fff;
   width: 140px;
 }
@@ -69,13 +77,16 @@
 .criteria-actions button {
   min-width: 84px;
   height: 28px;
-  border: 1px solid #8e8e8e;
-  background: #e7e7e7;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .report-sheet {
-  border: 1px solid #6ca532;
+  border: 1px solid var(--frosted-blue);
   background: #fff;
   padding: 10px;
   max-height: 56vh;
@@ -85,9 +96,13 @@
 .report-header {
   text-align: center;
   margin-bottom: 8px;
+  color: var(--deep-twilight);
 }
 
-.report-header h3,
+.report-header h3 {
+  font-weight: 700;
+}
+
 .report-header p {
   margin: 2px 0;
   font-weight: 400;
@@ -104,15 +119,17 @@
 .main-table td,
 .pending-table th,
 .pending-table td {
-  border-bottom: 1px solid #777;
-  padding: 3px 4px;
+  border-bottom: 1px solid var(--frosted-blue);
+  padding: 4px 6px;
   text-align: left;
   white-space: nowrap;
 }
 
 .main-table th,
 .pending-table th {
-  border-top: 1px solid #777;
+  border-top: 1px solid var(--frosted-blue);
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
   font-weight: 700;
 }
 
@@ -136,11 +153,15 @@
   display: flex;
   justify-content: flex-end;
   gap: 18px;
+  color: var(--deep-twilight);
+  font-weight: 700;
 }
 
 .pending-title {
   margin: 12px 0 6px;
-  border-bottom: 1px solid #777;
+  border-bottom: 2px solid var(--bright-teal-blue);
+  color: var(--deep-twilight);
+  font-weight: 700;
 }
 
 .summary-footer {
@@ -149,6 +170,8 @@
   justify-content: end;
   gap: 4px;
   text-align: right;
+  color: var(--deep-twilight);
+  font-weight: 700;
 }
 
 .status {

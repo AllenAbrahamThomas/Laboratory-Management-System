@@ -170,6 +170,9 @@ export class ResultEntryComponent implements OnChanges {
   }
 
   openPrintPreview(): void {
+    if (!this.labPrintConfig) {
+      this.loadLabPrintConfig();
+    }
     this.showEntryDialog = false;
     this.showPrintPreview = true;
   }

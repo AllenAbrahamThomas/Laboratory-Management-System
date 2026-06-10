@@ -5,9 +5,11 @@
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   min-width: 760px;
-  border: 1px solid #089600;
-  background: #fff;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+  border: 1px solid var(--bright-teal-blue);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
+    url('/assets/Bachelor of Medical Laboratory.jpg') no-repeat center center / cover;
+  box-shadow: 0 8px 18px rgba(3, 4, 94, 0.25);
   color: #000;
   font-size: 12px;
 }
@@ -17,9 +19,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 8px 0 4px;
-  background: #fbfbfb;
-  color: #1b1652;
+  padding: 0 12px;
+  background: var(--light-cyan);
+  color: var(--deep-twilight);
+  font-weight: bold;
+  border-bottom: 1px solid var(--frosted-blue);
 }
 
 .window-title button {
@@ -35,8 +39,8 @@
   height: 19px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid #7fbe7c;
-  color: #0a9b17;
+  border: 1px solid var(--frosted-blue);
+  color: var(--bright-teal-blue);
   font-weight: 800;
 }
 
@@ -46,7 +50,8 @@
   gap: 14px;
   margin: 0 7px 8px;
   padding: 8px 14px;
-  border: 1px solid #1db32b;
+  border: 1px solid var(--frosted-blue);
+  background: var(--light-cyan);
 }
 
 .search-strip label {
@@ -76,9 +81,12 @@
 .search-button {
   min-width: 86px;
   height: 27px;
-  border: 1px solid #888;
-  background: #ececec;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .spacer {
@@ -88,7 +96,7 @@
 .status-message {
   margin: 0 10px 8px;
   font-size: 12px;
-  color: #234c00;
+  color: var(--deep-twilight);
 }
 
 .status-message.error {
@@ -98,8 +106,8 @@
 .patient-grid {
   margin: 0 7px;
   overflow: auto;
-  border-top: 1px solid #79ac0b;
-  border-bottom: 1px solid #79ac0b;
+  border-top: 1px solid var(--frosted-blue);
+  border-bottom: 1px solid var(--frosted-blue);
 }
 
 table {
@@ -112,14 +120,15 @@ th,
 td {
   height: 24px;
   padding: 2px 4px;
-  border-right: 1px solid #83bf1b;
-  border-bottom: 1px solid #83bf1b;
+  border-right: 1px solid var(--frosted-blue);
+  border-bottom: 1px solid var(--frosted-blue);
   text-align: left;
   white-space: nowrap;
 }
 
 th {
-  background: #d9f28a;
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
   font-weight: 700;
 }
 
@@ -129,16 +138,20 @@ th {
   align-items: center;
   gap: 8px;
   padding: 8px;
-  border: 1px solid #213dff;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--light-cyan);
   margin: 0 7px 7px;
 }
 
 .window-footer button {
   min-width: 86px;
   height: 32px;
-  border: 1px solid #aaa;
-  background: #e8e8e8;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .new-button {
@@ -153,7 +166,7 @@ th {
   display: inline-grid;
   place-items: center;
   border-radius: 4px;
-  background: #16a51d;
+  background: var(--turquoise-surf);
   color: #fff;
   font-size: 22px;
   font-weight: 800;
@@ -163,8 +176,10 @@ th {
   height: 32px;
   display: grid;
   place-items: center;
-  background: #d9f28a;
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
   font-size: 16px;
+  padding: 0 8px;
 }
 
 .patient-count {

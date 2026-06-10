@@ -108,7 +108,7 @@ LAB_SUBTITLE = os.getenv(
 ).strip()
 LAB_ADDRESS = os.getenv("LAB_ADDRESS", "Eraviperoor, Pin: 689542").strip()
 LAB_PHONE = os.getenv("LAB_PHONE", "0469 2956315, 9037148251").strip()
-LAB_LOGO_URL = os.getenv("LAB_LOGO_URL", "").strip()
+LAB_LOGO_URL = os.getenv("LAB_LOGO_URL", "/assets/logo.png").strip()
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],

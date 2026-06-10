@@ -149,7 +149,7 @@
       <div class="print-preview" id="resultPrintSheet">
         <header class="print-header">
           <div class="print-brand">
-            <img *ngIf="labPrintConfig?.logo_url" [src]="labPrintConfig?.logo_url" alt="Lab logo" class="print-logo">
+            <img [src]="labPrintConfig?.logo_url || '/assets/logo.png'" alt="Lab logo" class="print-logo">
             <div class="print-brand-text">
               <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
               <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
