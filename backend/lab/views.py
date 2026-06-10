@@ -364,8 +364,8 @@ def visit_create(request):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         visit.gross_amount = sum((Decimal(vt.amount or 0) for vt in visit.visit_tests.all()), Decimal("0"))
         visit.net_amount = visit.gross_amount + _to_decimal(data.get("round_off", "0"))
-        visit.received_amount = _to_decimal(data.get("received_amount", "0"))
-        visit.balance_amount = max(visit.net_amount - visit.received_amount, Decimal("0"))
+        visit.received_amount = visit.net_amount
+        visit.balance_amount = Decimal("0")
         visit.save(update_fields=["gross_amount", "net_amount", "received_amount", "balance_amount", "updated_at"])
 
     return Response(VisitDetailSerializer(visit).data, status=status.HTTP_201_CREATED)
@@ -407,7 +407,8 @@ def visit_update(request, visit_id: int):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         visit.gross_amount = sum((Decimal(vt.amount or 0) for vt in visit.visit_tests.all()), Decimal("0"))
         visit.net_amount = visit.gross_amount + visit.round_off
-        visit.balance_amount = max(visit.net_amount - visit.received_amount, Decimal("0"))
+        visit.received_amount = visit.net_amount
+        visit.balance_amount = Decimal("0")
         visit.save()
 
     return Response(VisitDetailSerializer(visit).data)

@@ -8,3 +8,6 @@ frontend/.angular/
 frontend/ng-serve.*.log
 
 backend/staticfiles/
+backend/.venv/
+.vscode/
+

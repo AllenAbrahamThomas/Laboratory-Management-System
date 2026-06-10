@@ -5,30 +5,20 @@
     <div class="login-body">
       <aside class="module-panel">
         <div class="module-title">
-          <span class="selected-dot"></span>
           Lab management system
         </div>
 
         <div class="logo-placeholder" aria-label="Logo placeholder">
-          <div class="logo-icon"></div>
-          <div>
-            <div class="brand-name">Lab Logo</div>
-            <p>Place your logo here</p>
-          </div>
+          <img src="assets/logo.png" alt="Neethi Lab Logo" class="brand-logo-img">
+          <div class="brand-name">Neethi Lab</div>
         </div>
       </aside>
 
       <section class="credential-panel">
         <div class="visual-strip" aria-hidden="true">
-          <div class="people-icon">
-            <span></span>
-            <span></span>
-          </div>
           <div class="care-logo">
-            <div class="care-mark">i</div>
-            <strong>CARE</strong>
+            <img src="assets/logo.png" alt="Neethi Lab Logo" class="login-brand-logo">
           </div>
-          <div class="key-icon"></div>
         </div>
 
         <form class="login-form" (ngSubmit)="login()" *ngIf="currentTime$ | async as currentTime">

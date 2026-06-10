@@ -1,13 +1,13 @@
 .bill-window {
   position: absolute;
-  inset: 0 0 10px 0;
+  inset: 8px 2% 12px;
   z-index: 4;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid #0aa600;
+  border: 1px solid var(--bright-teal-blue);
   background: #fff;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 8px 18px rgba(3, 4, 94, 0.25);
   color: #000;
   font-size: 12px;
 }
@@ -17,9 +17,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 8px 0 4px;
-  background: #fbfbfb;
-  color: #1b1652;
+  padding: 0 12px;
+  background: var(--light-cyan);
+  color: var(--deep-twilight);
+  font-weight: bold;
+  border-bottom: 1px solid var(--frosted-blue);
 }
 
 .window-title button {
@@ -44,8 +46,8 @@
   height: 19px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid #7fbe7c;
-  color: #0a9b17;
+  border: 1px solid var(--frosted-blue);
+  color: var(--bright-teal-blue);
   font-weight: 800;
 }
 
@@ -60,7 +62,7 @@
 
 .patient-details,
 .payment-details {
-  border: 1px solid #16b524;
+  border: 1px solid var(--frosted-blue);
   flex: 0 0 auto;
 }
 
@@ -271,9 +273,9 @@ textarea {
   min-height: 180px;
   overflow-y: auto;
   overflow-x: hidden;
-  background: #d8e9b5;
-  border-left: 1px solid #8fb426;
-  border-right: 1px solid #8fb426;
+  background: var(--light-cyan);
+  border-left: 1px solid var(--frosted-blue);
+  border-right: 1px solid var(--frosted-blue);
 }
 
 table {
@@ -309,29 +311,30 @@ table {
 th,
 td {
   height: 24px;
-  border: 1px solid #9aa58a;
+  border: 1px solid var(--frosted-blue);
   padding: 0;
   text-align: center;
 }
 
 th {
   height: 28px;
-  background: #c8e389;
+  background: var(--frosted-blue);
+  color: var(--deep-twilight);
   font-size: 14px;
   font-weight: 700;
 }
 
 td {
-  background: #f4f0be;
-  font-weight: 600;
+  background: #fff;
+  font-weight: 500;
 }
 
 .new-entry-row td {
-  background: #f6f7cc;
+  background: var(--light-cyan);
 }
 
 .new-entry-row .test-code-cell input {
-  background: #62f35c;
+  background: #fff;
 }
 
 .selected-row td,
@@ -474,7 +477,7 @@ td input {
 .edit-invoice-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.24);
+  background: rgba(3, 4, 94, 0.25);
   display: grid;
   place-items: center;
   z-index: 20;
@@ -483,7 +486,7 @@ td input {
 .save-confirm-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(3, 4, 94, 0.45);
   display: grid;
   place-items: center;
   z-index: 999;
@@ -491,19 +494,19 @@ td input {
 
 .save-confirm-dialog {
   width: min(320px, calc(100vw - 32px));
-  border: 2px solid #1e7d24;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fff5 100%);
+  border: 2px solid var(--bright-teal-blue);
+  background: linear-gradient(180deg, #ffffff 0%, var(--light-cyan) 100%);
   border-radius: 10px;
   padding: 16px 18px 14px;
   display: grid;
   gap: 12px;
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 18px 38px rgba(3, 4, 94, 0.25);
 }
 
 .save-confirm-dialog header {
   font-weight: 700;
   font-size: 15px;
-  color: #15511b;
+  color: var(--deep-twilight);
 }
 
 .save-confirm-dialog p {
@@ -521,19 +524,22 @@ td input {
 .save-confirm-dialog button {
   min-width: 74px;
   height: 32px;
-  border: 1px solid #8a8a8a;
+  border: 1px solid var(--bright-teal-blue);
   background: #efefef;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .save-confirm-dialog .confirm-yes {
-  border-color: #1e7d24;
-  background: #5fe15f;
+  border-color: var(--bright-teal-blue);
+  background: var(--turquoise-surf);
+  color: #fff;
   font-weight: 700;
 }
 
 .save-confirm-dialog .confirm-no {
   background: #f1f1f1;
+  border-color: var(--frosted-blue);
 }
 
 .save-confirm-dialog button:disabled {
@@ -606,12 +612,15 @@ td input {
 }
 
 .bill-print-meta div,
-.bill-patient div,
-.bill-summary-left div {
+.bill-patient div {
   display: grid;
   grid-template-columns: 112px 1fr;
   gap: 8px;
   align-items: baseline;
+}
+
+.bill-summary-left span {
+  white-space: nowrap;
 }
 
 .bill-print-meta span,
@@ -670,16 +679,19 @@ td input {
 
 .bill-summary-left {
   display: grid;
-  gap: 4px;
+  grid-template-columns: max-content auto;
+  gap: 4px 12px;
+  align-items: baseline;
 }
 
 .bill-summary-right {
-  display: grid;
-  justify-items: end;
-  gap: 4px;
-  align-content: end;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .bill-auth {
@@ -735,7 +747,7 @@ td input {
 .upi-payment-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(5, 32, 14, 0.56);
+  background: rgba(3, 4, 94, 0.45);
   display: grid;
   place-items: center;
   z-index: 1000;
@@ -743,13 +755,13 @@ td input {
 
 .upi-payment-dialog {
   width: min(620px, calc(100vw - 32px));
-  border: 2px solid #1d8f33;
-  background: linear-gradient(180deg, #f7fff7 0%, #effaea 100%);
+  border: 2px solid var(--bright-teal-blue);
+  background: linear-gradient(180deg, #ffffff 0%, var(--light-cyan) 100%);
   border-radius: 14px;
   padding: 14px 16px 16px;
   display: grid;
   gap: 10px;
-  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 20px 44px rgba(3, 4, 94, 0.25);
 }
 
 .upi-payment-dialog header {
@@ -759,23 +771,24 @@ td input {
   gap: 8px;
   font-weight: 800;
   font-size: 16px;
-  color: #15511b;
+  color: var(--deep-twilight);
 }
 
 .upi-close-button {
   width: 26px;
   height: 26px;
-  border: 1px solid #a5a5a5;
+  border: 1px solid var(--frosted-blue);
   background: #f0f0f0;
   cursor: pointer;
   line-height: 1;
   padding: 0;
+  border-radius: 4px;
 }
 
 .upi-payment-note,
 .upi-payment-message {
   margin: 0;
-  color: #273227;
+  color: #333;
   line-height: 1.4;
 }
 
@@ -787,7 +800,7 @@ td input {
   margin: 0;
   font-size: 24px;
   font-weight: 800;
-  color: #0a6b1d;
+  color: var(--bright-teal-blue);
 }
 
 .upi-payment-shell {
@@ -800,7 +813,7 @@ td input {
 .upi-payment-qr {
   width: 280px;
   height: 280px;
-  border: 1px solid #7db36f;
+  border: 1px solid var(--frosted-blue);
   background: #fff;
   padding: 10px;
   box-sizing: border-box;
@@ -816,8 +829,8 @@ td input {
   display: grid;
   gap: 4px;
   padding: 10px 12px;
-  border: 1px solid #c6d8bf;
-  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--frosted-blue);
+  background: rgba(255, 255, 255, 0.85);
   border-radius: 10px;
 }
 
@@ -825,7 +838,7 @@ td input {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #45624a;
+  color: var(--bright-teal-blue);
 }
 
 .upi-payment-details strong {
@@ -843,19 +856,22 @@ td input {
 .upi-payment-dialog button {
   min-width: 112px;
   height: 34px;
-  border: 1px solid #8a8a8a;
+  border: 1px solid var(--bright-teal-blue);
   background: #efefef;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .upi-payment-dialog .upi-save-button {
-  border-color: #1d8f33;
-  background: #53dc69;
+  border-color: var(--bright-teal-blue);
+  background: var(--turquoise-surf);
+  color: #fff;
   font-weight: 800;
 }
 
 .upi-payment-dialog .upi-cancel-button {
   background: #f4f4f4;
+  border-color: var(--frosted-blue);
 }
 
 .upi-payment-dialog button:disabled {
@@ -864,13 +880,14 @@ td input {
 }
 
 .edit-invoice-dialog {
-  width: min(620px, calc(100vw - 32px));
-  border: 1px solid #6abf4b;
-  background: linear-gradient(180deg, #ffffff 0%, #f6fff0 100%);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
+  width: min(760px, calc(100vw - 32px));
+  border: 2px solid var(--bright-teal-blue);
+  background: linear-gradient(180deg, #ffffff 0%, var(--light-cyan) 100%);
+  box-shadow: 0 18px 40px rgba(3, 4, 94, 0.25);
   padding: 10px 10px 12px;
   display: grid;
   gap: 10px;
+  border-radius: 12px;
 }
 
 .edit-invoice-header {
@@ -879,23 +896,26 @@ td input {
   justify-content: space-between;
   font-weight: 700;
   font-size: 15px;
-  color: #1b1b1b;
+  color: var(--deep-twilight);
 }
 
 .edit-close-button {
   width: 24px;
   height: 24px;
-  border: 1px solid #a0a0a0;
+  border: 1px solid var(--frosted-blue);
   background: #f0f0f0;
   cursor: pointer;
   line-height: 1;
   padding: 0;
+  border-radius: 4px;
 }
 
-.edit-lookup-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 18px;
+.edit-lookup-error {
+  margin: 4px 0;
+  font-size: 12px;
+  text-align: center;
+  color: #b00020;
+  font-weight: bold;
 }
 
 .edit-invoice-dialog label {
@@ -903,20 +923,22 @@ td input {
   grid-template-columns: 108px 10px 1fr;
   align-items: center;
   gap: 4px;
+  font-size: 11px;
 }
 
 .edit-invoice-dialog label input,
 .edit-invoice-dialog label select,
 .edit-invoice-dialog label textarea {
-  min-height: 26px;
-  border: 1px solid #9f9f9f;
+  min-height: 24px;
+  border: 1px solid var(--frosted-blue);
   background: #fff;
   padding: 2px 6px;
   font: inherit;
+  font-size: 11px;
 }
 
 .edit-invoice-dialog label textarea {
-  min-height: 66px;
+  min-height: 56px;
   resize: none;
 }
 
@@ -939,9 +961,10 @@ td input {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 10px 16px;
-  border: 1px solid #46cb3f;
+  border: 1px solid var(--frosted-blue);
   padding: 8px;
   background: #fff;
+  border-radius: 6px;
 }
 
 .edit-column {
@@ -1016,19 +1039,21 @@ td input {
 .edit-action-button {
   min-width: 82px;
   height: 32px;
-  border: 1px solid #8a8a8a;
+  border: 1px solid var(--bright-teal-blue);
   background: #efefef;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .edit-action-button.save-button {
-  border-color: #1e7d24;
-  background: #5fe15f;
+  border-color: var(--bright-teal-blue);
+  background: var(--turquoise-surf);
+  color: #fff;
   font-weight: 700;
 }
 
 .edit-action-button.new-button {
-  border-color: #909090;
+  border-color: var(--frosted-blue);
 }
 
 .payment-right label {
@@ -1047,7 +1072,7 @@ td input {
 .payment-status {
   justify-self: end;
   padding-right: 10px;
-  color: #1f5f00;
+  color: var(--bright-teal-blue);
   font-size: 14px;
   font-weight: 700;
 }
@@ -1060,15 +1085,19 @@ td input {
   flex: 0 0 auto;
   min-height: 49px;
   padding: 6px;
-  border: 2px solid #213dff;
+  border: 2px solid var(--bright-teal-blue);
+  background: var(--light-cyan);
 }
 
 .action-bar button {
   min-width: 64px;
   height: 32px;
-  border: 1px solid #aaa;
-  background: #e8e8e8;
+  border: 1px solid var(--bright-teal-blue);
+  background: var(--deep-twilight);
+  color: #fff;
+  font-weight: bold;
   cursor: pointer;
+  border-radius: 4px;
 }
 
 .action-bar button:disabled {
@@ -1083,15 +1112,15 @@ td input {
   place-items: center;
   margin-right: 6px;
   border-radius: 50%;
-  background: #5ebd44;
+  background: var(--turquoise-surf);
   color: #fff;
   font-size: 24px;
   font-weight: 800;
 }
 
 .new-entry-row input:focus {
-  background: #fff200 !important;
-  outline: 2px solid #0aa600;
+  background: var(--light-cyan) !important;
+  outline: 2px solid var(--bright-teal-blue);
   color: #000;
 }
 
@@ -1103,15 +1132,15 @@ td input {
 .payment-details input:focus,
 .payment-details select:focus,
 .payment-details textarea:focus {
-  background: #fff200 !important;
-  outline: 2px solid #0aa600;
+  background: var(--light-cyan) !important;
+  outline: 2px solid var(--bright-teal-blue);
   color: #000;
 }
 
 .action-bar button:focus {
-  outline: 3px solid #ff0000 !important;
-  background: #fff200 !important;
-  color: #000;
+  outline: 3px solid var(--turquoise-surf) !important;
+  background: var(--bright-teal-blue) !important;
+  color: #fff;
 }
 
 @media (max-width: 980px) {
