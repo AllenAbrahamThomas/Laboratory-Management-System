@@ -8,18 +8,24 @@ import { CollectionSummaryDialogComponent } from '../reports/collection-summary-
 import { ResultEntryComponent } from '../result-entry/result-entry.component';
 import { AuthService, LoginSession } from '../../services/auth.service';
 import { ClockService } from '../../services/clock.service';
+import { AccountsHeadsComponent } from '../accounts/accounts-heads/accounts-heads.component';
+import { CashVoucherComponent } from '../accounts/cash-voucher/cash-voucher.component';
+import { DayBookComponent } from '../accounts/day-book/day-book.component';
+import { JournalComponent } from '../accounts/journal/journal.component';
+import { ReagentItemsComponent } from '../stock/reagent-items/reagent-items.component';
+import { StockTransactionComponent } from '../stock/stock-transaction/stock-transaction.component';
+import { StockReportComponent } from '../stock/stock-report/stock-report.component';
 
 type EntryAction =
   | 'invoice-entry'
   | 'edit-invoice'
   | 'patient-advance-search'
   | 'pending-collection'
-  | 'pending-collection-group-wise'
   | 'result-entry'
   | 'remove-report-authorization'
   | 'exit';
 
-type TopMenuKey = 'entries' | 'accounts' | 'master-settings' | 'reports' | 'help';
+type TopMenuKey = 'entries' | 'accounts' | 'master-settings' | 'reports' | 'stock' | 'help';
 
 type TopMenuAction =
   | EntryAction
@@ -28,6 +34,10 @@ type TopMenuAction =
   | 'cash-receipts'
   | 'day-book'
   | 'journal'
+  | 'reagent-items'
+  | 'stock-inward'
+  | 'stock-outward'
+  | 'stock-report'
   | 'test'
   | 'department'
   | 'unit'
@@ -114,7 +124,22 @@ type TopMenu = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DatePipe, PatientListComponent, BillRegistrationComponent, PatientAdvanceSearchComponent, CollectionSummaryDialogComponent, ResultEntryComponent],
+  imports: [
+    CommonModule,
+    DatePipe,
+    PatientListComponent,
+    BillRegistrationComponent,
+    PatientAdvanceSearchComponent,
+    CollectionSummaryDialogComponent,
+    ResultEntryComponent,
+    AccountsHeadsComponent,
+    CashVoucherComponent,
+    DayBookComponent,
+    JournalComponent,
+    ReagentItemsComponent,
+    StockTransactionComponent,
+    StockReportComponent
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -133,7 +158,6 @@ export class DashboardComponent implements OnInit {
         { label: 'Edit Invoice', action: 'edit-invoice', badge: 'E' },
         { label: 'Patient Advance search', action: 'patient-advance-search', badge: 'P' },
         { label: 'Pending Collection', action: 'pending-collection', badge: 'C' },
-        { label: 'Pending Collection (Group wise)', action: 'pending-collection-group-wise', badge: 'G' },
         { label: 'Result Entry', action: 'result-entry', badge: 'R' },
         { label: 'Remove report Authorization', action: 'remove-report-authorization', badge: 'A' },
         { label: 'Exit', action: 'exit', badge: 'X' },
@@ -254,6 +278,17 @@ export class DashboardComponent implements OnInit {
       ],
     },
     {
+      key: 'stock',
+      label: 'Stock',
+      width: 210,
+      items: [
+        { label: 'Reagent Items', action: 'reagent-items', badge: 'R' },
+        { label: 'Stock Inward (Receipt)', action: 'stock-inward', badge: 'I' },
+        { label: 'Stock Outward (Consumption)', action: 'stock-outward', badge: 'C' },
+        { label: 'Current Stock Report', action: 'stock-report', badge: 'S' },
+      ],
+    },
+    {
       key: 'help',
       label: 'Help',
       width: 175,
@@ -265,7 +300,22 @@ export class DashboardComponent implements OnInit {
   ];
 
   activeSession: LoginSession | null = null;
-  activeRegistrationView: 'patients' | 'pending-collection' | 'new-registration' | 'patient-advance-search' | 'result-entry' | null = null;
+  activeRegistrationView:
+    | 'patients'
+    | 'pending-collection'
+    | 'new-registration'
+    | 'patient-advance-search'
+    | 'result-entry'
+    | 'accounts-heads'
+    | 'cash-payments'
+    | 'cash-receipts'
+    | 'day-book'
+    | 'journal'
+    | 'reagent-items'
+    | 'stock-inward'
+    | 'stock-outward'
+    | 'stock-report'
+    | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
   patientListPurpose: 'registration' | 'result' = 'registration';
@@ -422,6 +472,51 @@ export class DashboardComponent implements OnInit {
 
     if (action === 'monthly-collection-summary-division-wise') {
       this.openCollectionSummary('department-wise-monthly', 'Department Wise Monthly Collection Summary');
+      return;
+    }
+
+    if (action === 'accounts-heads') {
+      this.activeRegistrationView = 'accounts-heads';
+      return;
+    }
+
+    if (action === 'cash-payments') {
+      this.activeRegistrationView = 'cash-payments';
+      return;
+    }
+
+    if (action === 'cash-receipts') {
+      this.activeRegistrationView = 'cash-receipts';
+      return;
+    }
+
+    if (action === 'day-book') {
+      this.activeRegistrationView = 'day-book';
+      return;
+    }
+
+    if (action === 'journal') {
+      this.activeRegistrationView = 'journal';
+      return;
+    }
+
+    if (action === 'reagent-items') {
+      this.activeRegistrationView = 'reagent-items';
+      return;
+    }
+
+    if (action === 'stock-inward') {
+      this.activeRegistrationView = 'stock-inward';
+      return;
+    }
+
+    if (action === 'stock-outward') {
+      this.activeRegistrationView = 'stock-outward';
+      return;
+    }
+
+    if (action === 'stock-report') {
+      this.activeRegistrationView = 'stock-report';
       return;
     }
 

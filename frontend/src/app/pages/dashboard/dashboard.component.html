@@ -106,6 +106,43 @@
           [title]="activeCollectionSummaryTitle"
           (closed)="closeCollectionSummary()"
         ></app-collection-summary-dialog>
+
+        <app-accounts-heads
+          *ngIf="activeRegistrationView === 'accounts-heads'"
+          (closed)="closeRegistration()"
+        ></app-accounts-heads>
+
+        <app-cash-voucher
+          *ngIf="activeRegistrationView === 'cash-payments' || activeRegistrationView === 'cash-receipts'"
+          [type]="activeRegistrationView === 'cash-payments' ? 'payment' : 'receipt'"
+          (closed)="closeRegistration()"
+        ></app-cash-voucher>
+
+        <app-day-book
+          *ngIf="activeRegistrationView === 'day-book'"
+          (closed)="closeRegistration()"
+        ></app-day-book>
+
+        <app-journal
+          *ngIf="activeRegistrationView === 'journal'"
+          (closed)="closeRegistration()"
+        ></app-journal>
+
+        <app-reagent-items
+          *ngIf="activeRegistrationView === 'reagent-items'"
+          (closed)="closeRegistration()"
+        ></app-reagent-items>
+
+        <app-stock-transaction
+          *ngIf="activeRegistrationView === 'stock-inward' || activeRegistrationView === 'stock-outward'"
+          [mode]="activeRegistrationView === 'stock-inward' ? 'inward' : 'outward'"
+          (closed)="closeRegistration()"
+        ></app-stock-transaction>
+
+        <app-stock-report
+          *ngIf="activeRegistrationView === 'stock-report'"
+          (closed)="closeRegistration()"
+        ></app-stock-report>
       </div>
     </section>
 
