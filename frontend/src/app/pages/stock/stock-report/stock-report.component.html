@@ -1,0 +1,135 @@
+<section class="advance-search-window" aria-label="Stock Alert Report">
+  <header class="window-title">
+    Stock Audit & Alert Report
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <!-- Control panel -->
+  <section class="search-panel" style="grid-template-columns: 1fr auto auto;">
+    <div class="status-message error" style="margin:0;" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div *ngIf="!errorMessage"></div>
+    <button type="button" class="search-button" (click)="loadReport()">Refresh</button>
+    <button type="button" class="search-button" (click)="printReport()" [disabled]="!report">Print Alert PDF</button>
+  </section>
+
+  <!-- Report Body -->
+  <div style="margin: 0 8px 8px; overflow: auto; display: flex; flex-direction: column; gap: 15px; flex: 1;" *ngIf="report">
+    <!-- Low Stock Section -->
+    <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; border-radius: 4px; overflow: hidden;">
+      <div class="window-title" style="height: 25px; font-size: 11px; background: #fdf2e9; color: #ba2121;">
+        ⚠️ Low Stock Alerts (Stock &lt;= Min Level)
+      </div>
+      <div style="overflow: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #fdf2e9; border-bottom: 1px solid #ddd;">
+              <th style="padding: 6px; text-align: left;">Code</th>
+              <th style="padding: 6px; text-align: left;">Item Name</th>
+              <th style="padding: 6px; text-align: right;">Current Stock</th>
+              <th style="padding: 6px; text-align: right;">Minimum Level</th>
+              <th style="padding: 6px; text-align: center;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of report.low_stock">
+              <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ item.code || '-' }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; font-weight: bold;">{{ item.name }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; color: red; font-weight: bold;">
+                <ng-container *ngIf="item.reagent_type === 'liquid'; else stdStock">
+                  <div>{{ item.quantity_in_stock }} bottle<span *ngIf="item.quantity_in_stock !== 1">s</span> ({{ item.quantity }} ml)</div>
+                  <div style="font-size: 10px; color: #555; font-weight: normal; margin-top: 2px;" *ngIf="item.quantity_in_use">
+                    In Use: {{ item.quantity_in_use }} bottle<span *ngIf="item.quantity_in_use !== 1">s</span>
+                  </div>
+                </ng-container>
+                <ng-template #stdStock>
+                  {{ item.quantity }} {{ item.unit }}
+                </ng-template>
+              </td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">
+                {{ item.min_level }} {{ item.reagent_type === 'liquid' ? 'ml' : item.unit }}
+              </td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: center;">
+                <span style="background: red; color: #fff; padding: 2px 6px; border-radius: 2px; font-size: 9px; font-weight: bold;">REORDER</span>
+              </td>
+            </tr>
+            <tr *ngIf="report.low_stock.length === 0">
+              <td colspan="5" style="text-align: center; color: green; font-weight: bold; padding: 15px;">All items are above safety stock levels.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Expired batches Section -->
+    <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; border-radius: 4px; overflow: hidden;">
+      <div class="window-title" style="height: 25px; font-size: 11px; background: #fadbd8; color: #78281f;">
+        ❌ Expired Batches (Remove from service immediately)
+      </div>
+      <div style="overflow: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #fadbd8; border-bottom: 1px solid #ddd;">
+              <th style="padding: 6px; text-align: left;">Item Name</th>
+              <th style="padding: 6px; text-align: left;">Batch No</th>
+              <th style="padding: 6px; text-align: left;">Expiry Date</th>
+              <th style="padding: 6px; text-align: right;">Batch Quantity</th>
+              <th style="padding: 6px; text-align: left;">Supplier</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of report.expired">
+              <td style="padding: 6px; border-bottom: 1px solid #eee; font-weight: bold;">{{ item.reagent_name }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ item.batch_no || '-' }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; color: red; font-weight: bold;">{{ item.expiry_date }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">{{ item.quantity }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ item.supplier || '-' }}</td>
+            </tr>
+            <tr *ngIf="report.expired.length === 0">
+              <td colspan="5" style="text-align: center; color: green; font-weight: bold; padding: 15px;">No expired batches found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Expiring Soon Section -->
+    <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; border-radius: 4px; overflow: hidden;">
+      <div class="window-title" style="height: 25px; font-size: 11px; background: #fcf3cf; color: #7e5109;">
+        ⚠️ Expiring Within 30 Days
+      </div>
+      <div style="overflow: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+          <thead>
+            <tr style="background: #fcf3cf; border-bottom: 1px solid #ddd;">
+              <th style="padding: 6px; text-align: left;">Item Name</th>
+              <th style="padding: 6px; text-align: left;">Batch No</th>
+              <th style="padding: 6px; text-align: left;">Expiry Date</th>
+              <th style="padding: 6px; text-align: right;">Batch Quantity</th>
+              <th style="padding: 6px; text-align: left;">Supplier</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of report.expiring_soon">
+              <td style="padding: 6px; border-bottom: 1px solid #eee; font-weight: bold;">{{ item.reagent_name }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ item.batch_no || '-' }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; color: #7e5109; font-weight: bold;">{{ item.expiry_date }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right;">{{ item.quantity }}</td>
+              <td style="padding: 6px; border-bottom: 1px solid #eee;">{{ item.supplier || '-' }}</td>
+            </tr>
+            <tr *ngIf="report.expiring_soon.length === 0">
+              <td colspan="5" style="text-align: center; color: green; font-weight: bold; padding: 15px;">No batches expiring within 30 days.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-message" *ngIf="isLoading" style="margin: 20px;">
+    Loading stock audit reports...
+  </div>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+</section>

@@ -1,0 +1,163 @@
+<section class="advance-search-window" aria-label="Stock Transaction">
+  <header class="window-title">
+    Stock {{ mode === 'inward' ? 'Inward / Arrivals (Receipt)' : 'Outward / Consumption' }}
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <div style="display: grid; grid-template-columns: 360px 1fr; gap: 10px; margin: 8px; overflow: hidden; flex: 1;">
+    <!-- Entry Form -->
+    <section class="search-panel" style="grid-template-columns: 1fr; display: flex; flex-direction: column; margin: 0; padding: 10px; overflow-x: hidden; overflow-y: auto;">
+      <div class="form-title" style="font-weight: bold; font-size: 13px; border-bottom: 1px solid var(--frosted-blue); padding-bottom: 5px; margin-bottom: 10px;">
+        Log {{ mode === 'inward' ? 'Arrival' : 'Consumption' }}
+      </div>
+      
+      <div class="status-message error" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="status-message success" style="color: green; font-weight: bold;" *ngIf="successMessage">{{ successMessage }}</div>
+
+      <div class="form-grid" style="display: grid; gap: 8px; font-size: 11px;">
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+          <label>Reagent Item:</label>
+          <select [(ngModel)]="selectedReagentId" name="selectedReagentId" (change)="onReagentChange()" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+            <option [ngValue]="null">-- Select Reagent --</option>
+            <option *ngFor="let r of reagents" [ngValue]="r.id">
+              {{ getReagentStockLabel(r) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+          <label>Log Date:</label>
+          <input type="date" [(ngModel)]="transactionDate" name="transactionDate" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+        </div>
+
+        <ng-container *ngIf="selectedReagent?.reagent_type === 'liquid'; else standardQuantity">
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;" *ngIf="mode === 'outward'">
+            <label>Select Batch:</label>
+            <select [(ngModel)]="selectedBatchNo" name="selectedBatchNo" (change)="onBatchChange()" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+              <option [ngValue]="null">-- Select Batch --</option>
+              <option *ngFor="let b of activeBatches" [value]="b.batch_no">
+                Batch: {{ b.batch_no || 'Default' }} (Stock: {{ b.unopened_stock }} bottles)
+              </option>
+            </select>
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Bottle Size (ml):</label>
+            <input type="number" [(ngModel)]="bottleSize" name="bottleSize" min="0" [disabled]="mode === 'outward'" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>No. of Bottles:</label>
+            <input type="number" [(ngModel)]="numberOfBottles" name="numberOfBottles" min="0" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center; color: #555; font-style: italic; font-weight: bold;">
+            <div></div>
+            <div>Total Volume: {{ bottleSize * numberOfBottles }} ml</div>
+          </div>
+        </ng-container>
+
+        <ng-template #standardQuantity>
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Quantity:</label>
+            <input type="number" [(ngModel)]="quantity" name="quantity" min="0" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+        </ng-template>
+
+        <!-- Inward only fields -->
+        <ng-container *ngIf="mode === 'inward'">
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Batch Number:</label>
+            <input type="text" [(ngModel)]="batchNo" name="batchNo" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Expiry Date:</label>
+            <input type="date" [(ngModel)]="expiryDate" name="expiryDate" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Unit Cost (INR):</label>
+            <input type="number" [(ngModel)]="unitPrice" name="unitPrice" min="0" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Supplier Name:</label>
+            <input type="text" [(ngModel)]="supplierName" name="supplierName" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+
+          <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+            <label>Invoice No:</label>
+            <input type="text" [(ngModel)]="invoiceNo" name="invoiceNo" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+          </div>
+        </ng-container>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: start;">
+          <label>Narration:</label>
+          <textarea [(ngModel)]="narration" name="narration" rows="2" style="border:1px solid #ccc; padding:6px; font-family:inherit; font-size:11px;"></textarea>
+        </div>
+      </div>
+
+      <button type="button" class="search-button" style="margin-top: 15px; width: 100%; height: 30px;" (click)="saveTransaction()">
+        Save Entry
+      </button>
+    </section>
+
+    <!-- History Grid -->
+    <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; overflow: hidden;">
+      <div class="window-title" style="height: 25px; font-size: 11px;">
+        Recent {{ mode === 'inward' ? 'Inward Vouchers' : 'Consumption Logs' }}
+      </div>
+      
+      <section class="result-grid" style="margin: 0; flex: 1; overflow: auto;">
+        <table style="min-width: 600px;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Reagent Item</th>
+              <th>Quantity</th>
+              <th *ngIf="mode === 'inward'">Batch / Expiry</th>
+              <th *ngIf="mode === 'inward'">Cost</th>
+              <th *ngIf="mode === 'inward'">Supplier / Invoice</th>
+              <th>Narration</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of transactions">
+              <td>{{ tx.received_date }}</td>
+              <td>{{ tx.reagent_item_name }}</td>
+              <td>
+                <strong>
+                  {{ tx.quantity }}
+                  <span *ngIf="tx.bottle_size">bottle<span *ngIf="tx.quantity !== 1">s</span> ({{ tx.bottle_size }} ml)</span>
+                  <span *ngIf="!tx.bottle_size">{{ tx.reagent_item_unit }}</span>
+                </strong>
+              </td>
+              <td *ngIf="mode === 'inward'">
+                <span>Batch: {{ tx.batch_no || '-' }}</span><br>
+                <span [style.color]="tx.expiry_date ? '#555' : 'inherit'">Exp: {{ tx.expiry_date || '-' }}</span>
+              </td>
+              <td *ngIf="mode === 'inward'">INR {{ tx.unit_price | number:'1.2-2' }}</td>
+              <td *ngIf="mode === 'inward'">
+                <span>{{ tx.supplier_name || '-' }}</span><br>
+                <span>Inv: {{ tx.invoice_no || '-' }}</span>
+              </td>
+              <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">{{ tx.narration }}</td>
+              <td>
+                <button type="button" (click)="deleteTransaction(tx.id!)" style="background: red; color: #fff; border: 1px solid red; padding: 1px 6px; cursor: pointer; font-size: 10px; border-radius: 2px; font-weight: bold;">
+                  Delete
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="transactions.length === 0">
+              <td [attr.colspan]="mode === 'inward' ? 8 : 5" style="text-align: center; color: #777;">No transaction history found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+</section>
