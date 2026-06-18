@@ -108,3 +108,62 @@ class VisitDetailSerializer(serializers.ModelSerializer):
         if obj.doctor_id:
             return obj.doctor.name
         return obj.out_doctor_name
+
+
+from .models import ReagentItem, StockTransaction
+
+
+class ReagentItemSerializer(serializers.ModelSerializer):
+    reagent_type_display = serializers.CharField(source="get_reagent_type_display", read_only=True)
+
+    class Meta:
+        model = ReagentItem
+        fields = [
+            "id",
+            "name",
+            "item_code",
+            "reagent_type",
+            "reagent_type_display",
+            "bottle_size",
+            "unit_of_measure",
+            "min_stock_level",
+            "quantity_in_stock",
+            "quantity_in_use",
+            "active_open_bottles",
+            "created_at",
+            "updated_at"
+        ]
+        read_only_fields = ["id", "quantity_in_stock", "quantity_in_use", "active_open_bottles", "created_at", "updated_at"]
+
+
+class StockTransactionSerializer(serializers.ModelSerializer):
+    reagent_item_name = serializers.CharField(source="reagent_item.name", read_only=True)
+    reagent_item_unit = serializers.CharField(source="reagent_item.unit_of_measure", read_only=True)
+
+    class Meta:
+        model = StockTransaction
+        fields = [
+            "id",
+            "reagent_item",
+            "reagent_item_name",
+            "reagent_item_unit",
+            "tx_type",
+            "quantity",
+            "bottle_size",
+            "batch_no",
+            "expiry_date",
+            "received_date",
+            "unit_price",
+            "supplier_name",
+            "invoice_no",
+            "narration",
+            "test_result",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_quantity(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be greater than zero.")
+        return value

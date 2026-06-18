@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from .views import (
     result_entry_by_lab_no,
@@ -13,8 +14,14 @@ from .views import (
     visit_detail_by_lab_no,
     visit_list,
     visit_update,
+    ReagentItemViewSet,
+    StockTransactionViewSet,
+    stock_report_view,
 )
 
+
+router = DefaultRouter()
+router.register("reagents", ReagentItemViewSet, basename="reagent")
 
 urlpatterns = [
     path("visits/", visit_list, name="visit-list"),
@@ -29,4 +36,8 @@ urlpatterns = [
     path("result-entry/visit/<int:visit_id>/", result_entry_by_visit, name="result-entry-by-visit"),
     path("result-entry/lab/<str:lab_no>/", result_entry_by_lab_no, name="result-entry-by-lab"),
     path("result-entry/visit/<int:visit_id>/save/", result_entry_save, name="result-entry-save"),
+    path("reagents/transactions/", StockTransactionViewSet.as_view({'get': 'list', 'post': 'create'}), name="reagent-transaction-list"),
+    path("reagents/transactions/<int:pk>/", StockTransactionViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name="reagent-transaction-detail"),
+    path("reagents/report/", stock_report_view, name="reagent-report"),
+    path("", include(router.urls)),
 ]
