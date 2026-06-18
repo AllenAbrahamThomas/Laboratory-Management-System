@@ -102,6 +102,12 @@
           (closed)="closeRegistration()"
         ></app-result-entry>
 
+        <app-bill-cancellation
+          *ngIf="activeRegistrationView === 'bill-cancellation'"
+          (closed)="closeRegistration()"
+        ></app-bill-cancellation>
+
+
         <app-patient-advance-search
           *ngIf="activeRegistrationView === 'patient-advance-search'"
           (openRequested)="openFromAdvanceSearch($event)"

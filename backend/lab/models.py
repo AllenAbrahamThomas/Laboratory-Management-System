@@ -204,6 +204,15 @@ class Visit(TimestampedModel):
     received_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     balance_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.REGISTERED)
+    cancel_reason = models.TextField(blank=True)
+    cancelled_by = models.ForeignKey(
+        "accounts.LabUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="cancelled_visits",
+    )
+
 
     class Meta:
         db_table = "visits"

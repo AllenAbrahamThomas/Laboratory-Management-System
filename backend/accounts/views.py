@@ -166,14 +166,15 @@ def daybook_view(request):
         return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
 
     # 1. Calculate opening balance (cumulative cash receipts/collections minus payments prior to target_date)
-    cash_coll_before = Visit.objects.filter(visit_date__lt=target_date, pay_mode='cash').aggregate(total=Sum('received_amount'))['total'] or 0
+    cash_coll_before = Visit.objects.filter(visit_date__lt=target_date, pay_mode='cash').exclude(status=Visit.Status.CANCELLED).aggregate(total=Sum('received_amount'))['total'] or 0
     receipts_before = CashTransaction.objects.filter(transaction_date__lt=target_date, tx_type='receipt').aggregate(total=Sum('amount'))['total'] or 0
     payments_before = CashTransaction.objects.filter(transaction_date__lt=target_date, tx_type='payment').aggregate(total=Sum('amount'))['total'] or 0
 
     opening_balance = float(cash_coll_before + receipts_before - payments_before)
 
     # 2. Get transactions on date
-    visits_on_date = Visit.objects.filter(visit_date=target_date)
+    visits_on_date = Visit.objects.filter(visit_date=target_date).exclude(status=Visit.Status.CANCELLED)
+
 
     receipt_items = []
     

@@ -63,7 +63,14 @@ def visit_list(request):
         billing_perms = {"invoice-entry", "edit-invoice", "patient-advance-search", "pending-collection"}
         if not any(perm in user.permissions for perm in billing_perms):
             raise PermissionDenied("You do not have permission to view this list.")
+
+    status_filter = request.query_params.get("status", "").strip().lower()
     queryset = Visit.objects.select_related("patient", "doctor").all()
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+    else:
+        queryset = queryset.exclude(status=Visit.Status.CANCELLED)
+
 
     lab_no = request.query_params.get("lab_no", "").strip()
     patient = request.query_params.get("patient", "").strip()
@@ -454,6 +461,81 @@ def visit_update(request, visit_id: int):
         visit.save()
 
     return Response(VisitDetailSerializer(visit).data)
+
+
+@api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def visit_cancel_lookup(request):
+    user = request.user
+    if user.role not in [LabUser.Role.ADMIN, LabUser.Role.SUPERVISOR]:
+        raise PermissionDenied("You do not have permission to access bill cancellation.")
+
+    lab_no = request.query_params.get("lab_no", "").strip()
+    if not lab_no:
+        return Response({"detail": "Invoice number is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    normalized_lab_no = _normalize_lab_no(lab_no)
+    lookup = Q(lab_no=normalized_lab_no.zfill(5)) if normalized_lab_no.isdigit() else Q(lab_no=lab_no.strip())
+    
+    visit = Visit.objects.select_related("patient").filter(lookup).first()
+    if not visit:
+        return Response({"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({
+        "id": visit.id,
+        "lab_no": visit.lab_no,
+        "patient_name": visit.patient.full_name,
+        "visit_date": visit.visit_date.isoformat(),
+        "net_amount": str(visit.net_amount),
+        "received_amount": str(visit.received_amount),
+        "status": visit.status,
+        "cancel_reason": visit.cancel_reason,
+        "cancelled_by": visit.cancelled_by.username if visit.cancelled_by else None
+    })
+
+
+@api_view(["POST"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def visit_cancel(request, visit_id: int):
+    user = request.user
+    if user.role not in [LabUser.Role.ADMIN, LabUser.Role.SUPERVISOR]:
+        raise PermissionDenied("You do not have permission to cancel bills.")
+
+    visit = get_object_or_404(Visit, id=visit_id)
+    reason = request.data.get("reason", "").strip()
+    if not reason:
+        return Response({"detail": "Cancellation reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    visit.status = Visit.Status.CANCELLED
+    visit.cancel_reason = reason
+    visit.cancelled_by = user
+    visit.save(update_fields=["status", "cancel_reason", "cancelled_by", "updated_at"])
+
+    return Response({"detail": "Invoice cancelled successfully."})
+
+
+@api_view(["POST"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def visit_revoke_cancel(request, visit_id: int):
+    user = request.user
+    if user.role != LabUser.Role.ADMIN:
+        raise PermissionDenied("Only Administrators can revoke bill cancellation.")
+
+    visit = get_object_or_404(Visit, id=visit_id)
+    if visit.status != Visit.Status.CANCELLED:
+        return Response({"detail": "This invoice is not cancelled."}, status=status.HTTP_400_BAD_REQUEST)
+
+    has_results = TestResult.objects.filter(visit=visit, status=TestResult.Status.ENTERED).exists()
+    visit.status = Visit.Status.RESULT_ENTERED if has_results else Visit.Status.REGISTERED
+    visit.cancel_reason = ""
+    visit.cancelled_by = None
+    visit.save(update_fields=["status", "cancel_reason", "cancelled_by", "updated_at"])
+
+    return Response({"detail": "Invoice cancellation revoked successfully."})
+
 
 
 def _build_result_entry_payload(visit: Visit) -> dict:

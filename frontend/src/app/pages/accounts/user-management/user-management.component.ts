@@ -44,7 +44,9 @@ export class UserManagementComponent implements OnInit {
         { value: 'edit-invoice', label: 'Edit Invoice' },
         { value: 'patient-advance-search', label: 'Patient Adv. Search' },
         { value: 'pending-collection', label: 'Pending Collection' },
-        { value: 'remove-report-authorization', label: 'Remove Report Authorization' }
+        { value: 'bill-cancellation', label: 'Bill Cancellation' }
+
+
       ]
     },
     {

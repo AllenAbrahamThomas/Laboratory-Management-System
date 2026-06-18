@@ -14,10 +14,14 @@ from .views import (
     visit_detail_by_lab_no,
     visit_list,
     visit_update,
+    visit_cancel_lookup,
+    visit_cancel,
+    visit_revoke_cancel,
     ReagentItemViewSet,
     StockTransactionViewSet,
     stock_report_view,
 )
+
 
 
 router = DefaultRouter()
@@ -27,9 +31,13 @@ urlpatterns = [
     path("visits/", visit_list, name="visit-list"),
     path("visits/next-lab-no/", next_visit_lab_no, name="visit-next-lab-no"),
     path("visits/create/", visit_create, name="visit-create"),
+    path("visits/cancel-lookup/", visit_cancel_lookup, name="visit-cancel-lookup"),
+    path("visits/<int:visit_id>/cancel/", visit_cancel, name="visit-cancel"),
+    path("visits/<int:visit_id>/revoke-cancel/", visit_revoke_cancel, name="visit-revoke-cancel"),
     path("visits/<int:visit_id>/", visit_detail, name="visit-detail"),
     path("visits/lab/<str:lab_no>/", visit_detail_by_lab_no, name="visit-detail-by-lab"),
     path("visits/<int:visit_id>/update/", visit_update, name="visit-update"),
+
     path("tests/", test_lookup, name="test-lookup"),
     path("print-config/", lab_print_config, name="lab-print-config"),
     path("payments/upi-config/", upi_payment_config, name="upi-payment-config"),

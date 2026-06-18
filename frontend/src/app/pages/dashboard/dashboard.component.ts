@@ -16,6 +16,7 @@ import { ReagentItemsComponent } from '../stock/reagent-items/reagent-items.comp
 import { StockTransactionComponent } from '../stock/stock-transaction/stock-transaction.component';
 import { StockReportComponent } from '../stock/stock-report/stock-report.component';
 import { UserManagementComponent } from '../accounts/user-management/user-management.component';
+import { BillCancellationComponent } from '../lab-registration/bill-cancellation/bill-cancellation.component';
 
 type EntryAction =
   | 'invoice-entry'
@@ -23,7 +24,7 @@ type EntryAction =
   | 'patient-advance-search'
   | 'pending-collection'
   | 'result-entry'
-  | 'remove-report-authorization'
+  | 'bill-cancellation'
   | 'exit';
 
 type TopMenuKey = 'entries' | 'accounts' | 'master-settings' | 'reports' | 'stock' | 'help';
@@ -140,7 +141,8 @@ type TopMenu = {
     ReagentItemsComponent,
     StockTransactionComponent,
     StockReportComponent,
-    UserManagementComponent
+    UserManagementComponent,
+    BillCancellationComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -161,7 +163,7 @@ export class DashboardComponent implements OnInit {
         { label: 'Patient Advance search', action: 'patient-advance-search', badge: 'P' },
         { label: 'Pending Collection', action: 'pending-collection', badge: 'C' },
         { label: 'Result Entry', action: 'result-entry', badge: 'R' },
-        { label: 'Remove report Authorization', action: 'remove-report-authorization', badge: 'A' },
+        { label: 'Bill Cancellation', action: 'bill-cancellation', badge: 'B' },
         { label: 'Exit', action: 'exit', badge: 'X' },
       ],
     },
@@ -318,6 +320,7 @@ export class DashboardComponent implements OnInit {
     | 'stock-outward'
     | 'stock-report'
     | 'user-management'
+    | 'bill-cancellation'
     | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
@@ -455,6 +458,11 @@ export class DashboardComponent implements OnInit {
       this.selectedVisitId = null;
       this.patientListPurpose = 'result';
       this.activeRegistrationView = 'patients';
+      return;
+    }
+
+    if (action === 'bill-cancellation') {
+      this.activeRegistrationView = 'bill-cancellation';
       return;
     }
 
@@ -598,6 +606,9 @@ export class DashboardComponent implements OnInit {
   }
 
   hasActionPermission(action: TopMenuAction): boolean {
+    if (this.authService.activeSession?.user_group === 'admin') {
+      return true;
+    }
     if (action === 'exit' || action === 'about-us' || action === 'our-features') {
       return true;
     }
@@ -605,8 +616,8 @@ export class DashboardComponent implements OnInit {
     if (action === 'edit-invoice') return this.authService.hasPermission('edit-invoice');
     if (action === 'patient-advance-search') return this.authService.hasPermission('patient-advance-search');
     if (action === 'pending-collection') return this.authService.hasPermission('pending-collection');
-    if (action === 'remove-report-authorization') return this.authService.hasPermission('remove-report-authorization');
     if (action === 'result-entry') return this.authService.hasPermission('result-entry');
+    if (action === 'bill-cancellation') return this.authService.hasPermission('bill-cancellation');
     if (action === 'accounts-heads') return this.authService.hasPermission('accounts-heads');
     if (action === 'cash-payments') return this.authService.hasPermission('cash-payments');
     if (action === 'cash-receipts') return this.authService.hasPermission('cash-receipts');
@@ -622,6 +633,24 @@ export class DashboardComponent implements OnInit {
     if (action === 'collection-summary') return this.authService.hasPermission('collection-summary');
     if (action === 'daily-collection-summary-division-wise') return this.authService.hasPermission('daily-collection-summary-division-wise');
     if (action === 'monthly-collection-summary-division-wise') return this.authService.hasPermission('monthly-collection-summary-division-wise');
+
+    if (action === 'statments') {
+      return this.authService.hasPermission('daily-collection-statement') ||
+             this.authService.hasPermission('collection-summary') ||
+             this.authService.hasPermission('daily-collection-summary-division-wise') ||
+             this.authService.hasPermission('monthly-collection-summary-division-wise') ||
+             this.authService.hasPermission('general-reports') ||
+             this.authService.hasPermission('accounts-statements');
+    }
+
+    if (action === 'master-values') {
+      return this.authService.hasPermission('general-reports');
+    }
+
+    if (action === 'accounts-statements') {
+      return this.authService.hasPermission('accounts-statements');
+    }
+
 
     const generalReportActions = [
       'credit-client-invoice-summary', 'credit-client-invoice', 'user-wise-collection', 
@@ -659,6 +688,9 @@ export class DashboardComponent implements OnInit {
   }
 
   hasMenuGroupPermission(menuKey: TopMenuKey): boolean {
+    if (this.authService.activeSession?.user_group === 'admin') {
+      return true;
+    }
     if (menuKey === 'help') return true;
     const menu = this.dropdownMenus.find((m) => m.key === menuKey);
     if (!menu) return false;
@@ -666,6 +698,9 @@ export class DashboardComponent implements OnInit {
   }
 
   hasSidebarItemPermission(item: string): boolean {
+    if (this.authService.activeSession?.user_group === 'admin') {
+      return true;
+    }
     if (item === 'About us' || item === 'Log off') return true;
     if (item === 'Lab registration') return this.authService.hasPermission('invoice-entry');
     if (item === 'Result entry') return this.authService.hasPermission('result-entry');

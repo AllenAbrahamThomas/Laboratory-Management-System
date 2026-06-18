@@ -40,13 +40,14 @@ class LoginSessionSerializer(serializers.ModelSerializer):
         if user.role == LabUser.Role.ADMIN:
             all_permissions = [
                 'invoice-entry', 'edit-invoice', 'patient-advance-search', 
-                'pending-collection', 'remove-report-authorization',
+                'pending-collection',
                 'result-entry', 'accounts-heads', 'cash-payments', 
                 'cash-receipts', 'day-book', 'journal', 'reagent-items', 
                 'stock-inward', 'stock-outward', 'stock-report', 
                 'daily-collection-statement', 'collection-summary', 
                 'daily-collection-summary-division-wise', 'monthly-collection-summary-division-wise', 
-                'general-reports', 'accounts-statements', 'master-settings', 'user-management'
+                'general-reports', 'accounts-statements', 'master-settings', 'user-management',
+                'bill-cancellation'
             ]
             permissions_list = all_permissions
         else:
@@ -68,13 +69,14 @@ class LoginSessionSerializer(serializers.ModelSerializer):
                 if user.role == LabUser.Role.ADMIN:
                     ret['permissions'] = [
                         'invoice-entry', 'edit-invoice', 'patient-advance-search', 
-                        'pending-collection', 'remove-report-authorization',
+                        'pending-collection',
                         'result-entry', 'accounts-heads', 'cash-payments', 
                         'cash-receipts', 'day-book', 'journal', 'reagent-items', 
                         'stock-inward', 'stock-outward', 'stock-report', 
                         'daily-collection-statement', 'collection-summary', 
                         'daily-collection-summary-division-wise', 'monthly-collection-summary-division-wise', 
-                        'general-reports', 'accounts-statements', 'master-settings', 'user-management'
+                        'general-reports', 'accounts-statements', 'master-settings', 'user-management',
+                        'bill-cancellation'
                     ]
                 else:
                     ret['permissions'] = user.permissions
@@ -111,7 +113,8 @@ class LabUserSerializer(serializers.ModelSerializer):
             elif role == LabUser.Role.SUPERVISOR:
                 validated_data["permissions"] = [
                     'invoice-entry', 'edit-invoice', 'patient-advance-search', 
-                    'pending-collection', 'result-entry', 'user-management'
+                    'pending-collection', 'result-entry', 'user-management',
+                    'bill-cancellation'
                 ]
         
         return super().create(validated_data)

@@ -1,0 +1,124 @@
+<section class="cancel-window" aria-label="Bill cancellation window">
+  <header class="cancel-title">
+    Bill Cancellation
+    <button type="button" (click)="closed.emit()" aria-label="Close">X</button>
+  </header>
+
+  <div class="cancel-body">
+    <!-- Search Box -->
+    <fieldset class="criteria-box">
+      <legend>Search Invoice</legend>
+      <div class="search-row">
+        <label for="invoice-num">Invoice Number:</label>
+        <input 
+          id="invoice-num" 
+          type="text" 
+          [(ngModel)]="searchLabNo" 
+          (input)="onInvoiceNumberChange()" 
+          (keyup.enter)="lookupInvoice()"
+          placeholder="Enter Inv. No."
+        >
+        <button type="button" class="btn-primary btn-lookup" (click)="lookupInvoice()">
+          Lookup
+        </button>
+      </div>
+    </fieldset>
+
+    <!-- Details and Form (Always Visible) -->
+    <fieldset class="details-box">
+      <legend>Invoice Details</legend>
+      
+      <!-- Details Card -->
+      <div class="details-card">
+        <div class="details-grid">
+          <!-- Row 1 -->
+          <div class="detail-cell">
+            <span class="label-text">INV. NO:</span>
+            <span class="value-text">{{ visitDetails?.lab_no || '-----' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="label-text">PATIENT NAME:</span>
+            <span class="value-text patient-name">{{ visitDetails?.patient_name || '-----' }}</span>
+          </div>
+          
+          <!-- Row 2 -->
+          <div class="detail-cell">
+            <span class="label-text">VISIT DATE:</span>
+            <span class="value-text">{{ visitDetails?.visit_date || '-----' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="label-text">NET AMOUNT:</span>
+            <span class="value-text net-amount">{{ visitDetails ? '₹' + visitDetails.net_amount : '-----' }}</span>
+          </div>
+          
+          <!-- Row 3 -->
+          <div class="detail-cell">
+            <span class="label-text">RECEIVED AMOUNT:</span>
+            <span class="value-text">{{ visitDetails ? '₹' + visitDetails.received_amount : '-----' }}</span>
+          </div>
+          <div class="detail-cell">
+            <span class="label-text">STATUS:</span>
+            <div class="value-text">
+              <span 
+                *ngIf="visitDetails" 
+                class="status-badge" 
+                [class.status-cancelled]="visitDetails.status === 'cancelled'"
+                [class.status-entered]="visitDetails.status !== 'cancelled'"
+              >
+                {{ visitDetails.status | uppercase }}
+              </span>
+              <span *ngIf="!visitDetails">-----</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cancellation details if already cancelled -->
+        <div class="cancellation-info-box" *ngIf="visitDetails && visitDetails.status === 'cancelled'">
+          <div><strong>Cancelled by:</strong> {{ visitDetails.cancelled_by || 'Unknown' }}</div>
+          <div><strong>Reason:</strong> {{ visitDetails.cancel_reason }}</div>
+        </div>
+      </div>
+
+      <!-- Reason for Cancellation input -->
+      <div class="reason-section">
+        <label class="reason-label-text">Reason for Cancellation:</label>
+        <div class="required-asterisk">*</div>
+        <textarea 
+          [(ngModel)]="cancelReason" 
+          placeholder="Enter reason for cancelling this bill..."
+          [disabled]="!visitDetails || visitDetails.status === 'cancelled' || !canCancel()"
+        ></textarea>
+      </div>
+
+      <!-- Feedback Messages -->
+      <p class="status-msg error" *ngIf="errorMessage">{{ errorMessage }}</p>
+      <p class="status-msg success" *ngIf="successMessage">{{ successMessage }}</p>
+    </fieldset>
+
+    <!-- Footer Actions -->
+    <footer class="cancel-footer">
+      <!-- Show cancel button if not cancelled -->
+      <button 
+        type="button" 
+        class="btn-danger btn-action" 
+        *ngIf="!visitDetails || visitDetails.status !== 'cancelled'" 
+        [disabled]="!visitDetails || !cancelReason.trim() || !canCancel()"
+        (click)="cancelBill()"
+      >
+        Cancel Bill
+      </button>
+
+      <!-- Show revoke button if already cancelled and user is Admin -->
+      <button 
+        type="button" 
+        class="btn-warn btn-action" 
+        *ngIf="visitDetails && visitDetails.status === 'cancelled' && canRevoke()" 
+        (click)="revokeCancellation()"
+      >
+        Revoke Cancellation
+      </button>
+
+      <button type="button" class="btn-secondary btn-exit" (click)="closed.emit()">Exit</button>
+    </footer>
+  </div>
+</section>

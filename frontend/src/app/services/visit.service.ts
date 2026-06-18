@@ -279,5 +279,18 @@ export class VisitService {
   saveResultEntry(visitId: number, entries: Array<{ visit_test_id: number; test_id: number; result_value: string; note: string }>): Observable<{ detail: string }> {
     return this.http.post<{ detail: string }>(`${this.apiUrl}/result-entry/visit/${visitId}/save/`, { entries });
   }
-}
 
+  cancelLookup(labNo: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/visits/cancel-lookup/`, {
+      params: new HttpParams().set('lab_no', labNo)
+    });
+  }
+
+  cancelVisit(visitId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/visits/${visitId}/cancel/`, { reason });
+  }
+
+  revokeCancelVisit(visitId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/visits/${visitId}/revoke-cancel/`, {});
+  }
+}
