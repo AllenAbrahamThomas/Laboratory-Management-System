@@ -1,0 +1,109 @@
+<section class="advance-search-window" aria-label="Day Book">
+  <header class="window-title">
+    Day Book Statement
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <!-- Filter Band -->
+  <section class="search-panel" style="grid-template-columns: auto 150px auto 1fr auto;">
+    <label style="font-weight: bold; align-self: center;">Select Day Book Date:</label>
+    <input type="date" [(ngModel)]="selectedDate" name="selectedDate" (change)="loadDayBook()" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+    <div></div>
+    <div class="status-message error" style="margin: 0; align-self: center;" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <button type="button" class="search-button" (click)="printDayBook()" [disabled]="!dayBook">Print Book</button>
+  </section>
+
+  <!-- Content Workspace -->
+  <div style="margin: 0 8px 8px; display: flex; flex-direction: column; overflow: hidden; flex: 1;" *ngIf="dayBook">
+    <!-- Opening / Closing Summary Band -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px;">
+      <div style="background: var(--light-cyan); border: 1px solid var(--bright-teal-blue); padding: 8px; border-radius: 4px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; color: #555;">Opening Cash Balance</div>
+        <div style="font-size: 14px; font-weight: bold; color: var(--deep-twilight);">INR {{ dayBook.opening_balance | number:'1.2-2' }}</div>
+      </div>
+      <div style="background: var(--light-cyan); border: 1px solid var(--bright-teal-blue); padding: 8px; border-radius: 4px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; color: #555;">Daily Receipts (Cash)</div>
+        <div style="font-size: 14px; font-weight: bold; color: green;">+ INR {{ dayBook.total_cash_receipts | number:'1.2-2' }}</div>
+      </div>
+      <div style="background: var(--light-cyan); border: 1px solid var(--bright-teal-blue); padding: 8px; border-radius: 4px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; color: #555;">Daily Payments (Cash)</div>
+        <div style="font-size: 14px; font-weight: bold; color: #ba2121;">- INR {{ dayBook.total_cash_payments | number:'1.2-2' }}</div>
+      </div>
+      <div style="background: var(--light-cyan); border: 1px solid var(--bright-teal-blue); padding: 8px; border-radius: 4px; text-align: center;">
+        <div style="font-size: 10px; text-transform: uppercase; color: #555;">Closing Cash Balance</div>
+        <div style="font-size: 14px; font-weight: bold; color: var(--deep-twilight);">INR {{ dayBook.closing_balance | number:'1.2-2' }}</div>
+      </div>
+    </div>
+
+    <!-- Double-entry tabular layout -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1; overflow: hidden;">
+      <!-- Receipts Panel (Debit) -->
+      <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; overflow: hidden;">
+        <div class="window-title" style="height: 25px; font-size: 11px; background: #ebf5fb;">
+          Inflows / Receipts (Debit)
+        </div>
+        <div style="flex: 1; overflow: auto; padding: 2px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+              <tr style="background: #f2f2f2;">
+                <th style="padding: 4px; border-bottom: 1px solid #ddd; text-align: left;">Particulars</th>
+                <th style="padding: 4px; border-bottom: 1px solid #ddd; text-align: left;">Ref No</th>
+                <th style="padding: 4px; border-bottom: 1px solid #ddd; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of dayBook.receipts">
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">{{ item.label }}</td>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">{{ item.reference }}</td>
+                <td style="padding: 5px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold;">
+                  INR {{ item.amount | number:'1.2-2' }}
+                </td>
+              </tr>
+              <tr *ngIf="dayBook.receipts.length === 0">
+                <td colspan="3" style="text-align: center; color: #888; padding: 10px;">No receipts recorded today.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payments Panel (Credit) -->
+      <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; overflow: hidden;">
+        <div class="window-title" style="height: 25px; font-size: 11px; background: #fdf2e9;">
+          Outflows / Payments (Credit)
+        </div>
+        <div style="flex: 1; overflow: auto; padding: 2px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+              <tr style="background: #f2f2f2;">
+                <th style="padding: 4px; border-bottom: 1px solid #ddd; text-align: left;">Particulars</th>
+                <th style="padding: 4px; border-bottom: 1px solid #ddd; text-align: left;">Ref No</th>
+                <th style="padding: 4px; border-bottom: 1px solid #ddd; text-align: right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of dayBook.payments">
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">{{ item.label }}</td>
+                <td style="padding: 5px; border-bottom: 1px solid #eee;">{{ item.reference }}</td>
+                <td style="padding: 5px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: #ba2121;">
+                  INR {{ item.amount | number:'1.2-2' }}
+                </td>
+              </tr>
+              <tr *ngIf="dayBook.payments.length === 0">
+                <td colspan="3" style="text-align: center; color: #888; padding: 10px;">No payments recorded today.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-message" *ngIf="isLoading" style="margin: 20px;">
+    Loading Day Book details...
+  </div>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+</section>

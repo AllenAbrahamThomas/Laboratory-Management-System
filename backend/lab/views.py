@@ -11,7 +11,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 
-from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest
+from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest, ReagentItem, StockTransaction
 from .serializers import VisitDetailSerializer, VisitListSerializer
 
 
@@ -540,7 +540,146 @@ def result_entry_save(request, visit_id: int):
         tr.entered_at = timezone.now() if result_value else None
         tr.save()
 
+        # Reagent auto-reduction logic
+        test_obj = tr.test
+        if test_obj.reagent_item:
+            reagent = test_obj.reagent_item
+            if test_obj.reagent_auto_reduce or reagent.reagent_type == 'card':
+                if result_value:
+                    tx = StockTransaction.objects.filter(test_result=tr).first()
+                    if not tx:
+                        StockTransaction.objects.create(
+                            reagent_item=reagent,
+                            tx_type='outward',
+                            quantity=test_obj.reagent_quantity or 1,
+                            received_date=timezone.now().date(),
+                            narration=f"Auto card consume: Lab No {visit.lab_no}, Test {test_obj.test_name}",
+                            test_result=tr
+                        )
+                else:
+                    StockTransaction.objects.filter(test_result=tr).delete()
+
     visit.status = Visit.Status.RESULT_ENTERED
     visit.save(update_fields=["status", "updated_at"])
     return Response({"detail": "Saved"})
+
+
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from .models import ReagentItem, StockTransaction
+from .serializers import ReagentItemSerializer, StockTransactionSerializer
+import datetime as dt
+
+
+class ReagentItemViewSet(viewsets.ModelViewSet):
+    queryset = ReagentItem.objects.all()
+    serializer_class = ReagentItemSerializer
+    authentication_classes = []
+    permission_classes = []
+
+    @action(detail=True, methods=['get'])
+    def batches(self, request, pk=None):
+        reagent = self.get_object()
+        txs = StockTransaction.objects.filter(reagent_item=reagent)
+        batches_map = {}
+        for tx in txs:
+            batch = tx.batch_no or ""
+            if batch not in batches_map:
+                batches_map[batch] = {
+                    "batch_no": batch,
+                    "expiry_date": tx.expiry_date.isoformat() if tx.expiry_date else None,
+                    "bottle_size": float(tx.bottle_size) if tx.bottle_size else (float(reagent.bottle_size) if reagent.bottle_size else None),
+                    "inward_qty": 0.0,
+                    "outward_qty": 0.0
+                }
+            if tx.tx_type == 'inward':
+                batches_map[batch]["inward_qty"] += float(tx.quantity)
+                if tx.expiry_date:
+                    batches_map[batch]["expiry_date"] = tx.expiry_date.isoformat()
+            elif tx.tx_type == 'outward':
+                batches_map[batch]["outward_qty"] += float(tx.quantity)
+        
+        active_batches = []
+        for batch, data in batches_map.items():
+            unopened_stock = data["inward_qty"] - data["outward_qty"]
+            if unopened_stock > 0:
+                data["unopened_stock"] = unopened_stock
+                active_batches.append(data)
+                
+        return Response(active_batches)
+
+
+class StockTransactionViewSet(viewsets.ModelViewSet):
+    queryset = StockTransaction.objects.all()
+    serializer_class = StockTransactionSerializer
+    authentication_classes = []
+    permission_classes = []
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        reagent_id = self.request.query_params.get('reagent')
+        tx_type = self.request.query_params.get('tx_type')
+        if reagent_id:
+            queryset = queryset.filter(reagent_item_id=reagent_id)
+        if tx_type:
+            queryset = queryset.filter(tx_type=tx_type)
+        return queryset
+
+
+@api_view(["GET"])
+def stock_report_view(request):
+    all_items = ReagentItem.objects.all()
+    today_dt = dt.date.today()
+    thirty_days_later = today_dt + dt.timedelta(days=30)
+
+    low_stock = []
+    expiring_soon = []
+    expired = []
+
+    for item in all_items:
+        current_qty = item.quantity_in_stock
+        if item.reagent_type == 'liquid' and item.bottle_size:
+            current_qty = item.quantity_in_stock * item.bottle_size
+
+        if current_qty <= item.min_stock_level:
+            low_stock.append({
+                "id": item.id,
+                "name": item.name,
+                "code": item.item_code,
+                "quantity": float(current_qty),
+                "min_level": float(item.min_stock_level),
+                "unit": item.unit_of_measure,
+                "reagent_type": item.reagent_type,
+                "bottle_size": float(item.bottle_size) if item.bottle_size else None,
+                "quantity_in_stock": float(item.quantity_in_stock),
+                "quantity_in_use": float(item.quantity_in_use),
+            })
+
+    inward_txs = StockTransaction.objects.filter(tx_type='inward', expiry_date__isnull=False)
+    for tx in inward_txs:
+        if tx.expiry_date <= today_dt:
+            expired.append({
+                "id": tx.id,
+                "reagent_name": tx.reagent_item.name,
+                "batch_no": tx.batch_no,
+                "expiry_date": tx.expiry_date.isoformat(),
+                "quantity": float(tx.quantity),
+                "supplier": tx.supplier_name
+            })
+        elif tx.expiry_date <= thirty_days_later:
+            expiring_soon.append({
+                "id": tx.id,
+                "reagent_name": tx.reagent_item.name,
+                "batch_no": tx.batch_no,
+                "expiry_date": tx.expiry_date.isoformat(),
+                "quantity": float(tx.quantity),
+                "supplier": tx.supplier_name
+            })
+
+    return Response({
+        "low_stock": low_stock,
+        "expiring_soon": expiring_soon,
+        "expired": expired,
+        "total_items_tracked": all_items.count()
+    })
 

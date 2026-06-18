@@ -1,0 +1,10 @@
+@import '../../accounts/cash-voucher/cash-voucher.component.css';
+
+/* Prevent horizontal overflow of form inputs and selects inside the grid */
+.form-grid select,
+.form-grid input,
+.form-grid textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}

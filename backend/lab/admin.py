@@ -12,6 +12,8 @@ from .models import (
     TestResult,
     Visit,
     VisitTest,
+    ReagentItem,
+    StockTransaction,
 )
 
 
@@ -57,14 +59,13 @@ class TestAdmin(admin.ModelAdmin):
         "test_name",
         "department",
         "rate",
-        "default_discount_percent",
-        "default_amount",
-        "result_type",
-        "is_group",
+        "reagent_item",
+        "reagent_quantity",
+        "reagent_auto_reduce",
         "is_active",
     )
     search_fields = ("test_code", "test_name", "short_name")
-    list_filter = ("department", "result_type", "is_group", "is_active")
+    list_filter = ("department", "result_type", "is_group", "is_active", "reagent_item", "reagent_auto_reduce")
 
 
 @admin.register(TestGroupItem)
@@ -99,3 +100,16 @@ class TestResultAdmin(admin.ModelAdmin):
     search_fields = ("visit__lab_no", "test__test_name", "result_value", "result_text")
     list_filter = ("status",)
 
+
+@admin.register(ReagentItem)
+class ReagentItemAdmin(admin.ModelAdmin):
+    list_display = ("name", "item_code", "reagent_type", "bottle_size", "unit_of_measure", "quantity_in_stock", "quantity_in_use")
+    search_fields = ("name", "item_code")
+    list_filter = ("reagent_type",)
+
+
+@admin.register(StockTransaction)
+class StockTransactionAdmin(admin.ModelAdmin):
+    list_display = ("reagent_item", "tx_type", "quantity", "bottle_size", "batch_no", "expiry_date", "received_date")
+    list_filter = ("tx_type", "reagent_item", "received_date")
+    search_fields = ("reagent_item__name", "batch_no")

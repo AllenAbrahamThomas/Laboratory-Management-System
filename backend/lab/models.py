@@ -113,6 +113,17 @@ class Test(TimestampedModel):
     )
     is_group = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    reagent_item = models.ForeignKey(
+        "ReagentItem",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tests",
+    )
+    reagent_quantity = models.DecimalField(
+        max_digits=12, decimal_places=4, default=1
+    )
+    reagent_auto_reduce = models.BooleanField(default=False)
 
     class Meta:
         db_table = "tests"
@@ -283,3 +294,119 @@ class TestResult(TimestampedModel):
     def __str__(self) -> str:
         return f"{self.visit.lab_no} - {self.test.test_name}"
 
+
+class ReagentItem(TimestampedModel):
+    class ReagentType(models.TextChoices):
+        LIQUID = 'liquid', 'Liquid Reagent'
+        CARD = 'card', 'Card / Rapid Test'
+        OTHER = 'other', 'Other General Item'
+
+    name = models.CharField(max_length=150, unique=True)
+    item_code = models.CharField(max_length=30, unique=True, null=True, blank=True)
+    reagent_type = models.CharField(max_length=20, choices=ReagentType.choices, default=ReagentType.OTHER)
+    bottle_size = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Bottle size in ml, e.g. 500")
+    unit_of_measure = models.CharField(max_length=50, help_text="e.g. ml, Box, Packet, Vial")
+    min_stock_level = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quantity_in_stock = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quantity_in_use = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    class Meta:
+        db_table = "reagent_items"
+        ordering = ["name"]
+
+    @property
+    def active_open_bottles(self):
+        if self.reagent_type != 'liquid':
+            return []
+        
+        open_bottles = []
+        batches = self.transactions.values_list('batch_no', flat=True).order_by().distinct()
+        for batch in batches:
+            latest_tx = self.transactions.filter(
+                batch_no=batch,
+                tx_type__in=['outward', 'open_bottle', 'discard_in_use']
+            ).order_by('-received_date', '-id').first()
+            
+            if latest_tx and latest_tx.tx_type in ['outward', 'open_bottle']:
+                inward_tx = self.transactions.filter(
+                    batch_no=batch,
+                    tx_type='inward'
+                ).order_by('-received_date', '-id').first()
+                expiry = inward_tx.expiry_date.isoformat() if (inward_tx and inward_tx.expiry_date) else None
+                open_bottles.append({
+                    "batch_no": batch,
+                    "expiry_date": expiry
+                })
+        return open_bottles
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.quantity_in_stock} {self.unit_of_measure})"
+
+
+class StockTransaction(TimestampedModel):
+    class TxType(models.TextChoices):
+        INWARD = 'inward', 'Inward (Receipt)'
+        OUTWARD = 'outward', 'Outward (Consumption)'
+        OPEN_BOTTLE = 'open_bottle', 'Open Bottle'
+        DISCARD_IN_USE = 'discard_in_use', 'Discard Empty Bottle'
+
+    reagent_item = models.ForeignKey(ReagentItem, on_delete=models.PROTECT, related_name="transactions")
+    tx_type = models.CharField(max_length=15, choices=TxType.choices)
+    quantity = models.DecimalField(max_digits=12, decimal_places=2)
+    bottle_size = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    batch_no = models.CharField(max_length=50, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    received_date = models.DateField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    supplier_name = models.CharField(max_length=150, blank=True)
+    invoice_no = models.CharField(max_length=50, blank=True)
+    narration = models.TextField(blank=True)
+    test_result = models.ForeignKey(TestResult, on_delete=models.CASCADE, null=True, blank=True, related_name="stock_transactions")
+
+    class Meta:
+        db_table = "stock_transactions"
+        ordering = ["-received_date", "-id"]
+
+    def __str__(self) -> str:
+        return f"{self.tx_type} - {self.reagent_item.name} - {self.quantity}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        stock_qty, in_use_qty = self.calculate_current_stock()
+        self.reagent_item.quantity_in_stock = stock_qty
+        self.reagent_item.quantity_in_use = in_use_qty
+        self.reagent_item.save()
+
+    def delete(self, *args, **kwargs):
+        item = self.reagent_item
+        super().delete(*args, **kwargs)
+        stock_qty, in_use_qty = self.calculate_current_stock_for_item(item)
+        item.quantity_in_stock = stock_qty
+        item.quantity_in_use = in_use_qty
+        item.save()
+
+    def calculate_current_stock(self):
+        return self.calculate_current_stock_for_item(self.reagent_item)
+
+    @staticmethod
+    def calculate_current_stock_for_item(item):
+        inward_sum = StockTransaction.objects.filter(reagent_item=item, tx_type='inward').aggregate(total=models.Sum('quantity'))['total'] or 0
+        outward_sum = StockTransaction.objects.filter(reagent_item=item, tx_type='outward').aggregate(total=models.Sum('quantity'))['total'] or 0
+        
+        quantity_in_stock = inward_sum - outward_sum
+        
+        if item.reagent_type == 'liquid':
+            quantity_in_use = 0
+            batches = StockTransaction.objects.filter(reagent_item=item).values_list('batch_no', flat=True).order_by().distinct()
+            for batch in batches:
+                latest_tx = StockTransaction.objects.filter(
+                    reagent_item=item,
+                    batch_no=batch,
+                    tx_type__in=['outward', 'open_bottle', 'discard_in_use']
+                ).order_by('-received_date', '-id').first()
+                if latest_tx and latest_tx.tx_type in ['outward', 'open_bottle']:
+                    quantity_in_use += 1
+        else:
+            quantity_in_use = 0
+            
+        return quantity_in_stock, quantity_in_use
