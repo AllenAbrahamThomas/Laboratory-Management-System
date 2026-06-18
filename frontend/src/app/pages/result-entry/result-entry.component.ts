@@ -259,6 +259,10 @@ export class ResultEntryComponent implements OnChanges {
     let displayNo = 0;
 
     for (const test of this.resultTests) {
+      if (!test.printEnabled) {
+        continue;
+      }
+
       if (test.type === 'group') {
         rows.push({
           type: 'group',

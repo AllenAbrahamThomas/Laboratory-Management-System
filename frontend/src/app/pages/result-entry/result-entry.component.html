@@ -147,73 +147,103 @@
 
     <section class="print-preview-backdrop" *ngIf="showPrintPreview">
       <div class="print-preview" id="resultPrintSheet">
-        <header class="print-header">
-          <div class="print-brand">
-            <img [src]="labPrintConfig?.logo_url || '/assets/logo.png'" alt="Lab logo" class="print-logo">
-            <div class="print-brand-text">
-              <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
-              <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
-              <p>{{ labPrintConfig?.address || 'Eraviperoor, Pin: 689542' }} | Ph: {{ labPrintConfig?.phone || '0469 2956315, 9037148251' }}</p>
-            </div>
-          </div>
-          <div class="print-meta">
-            <div><span>DATE</span><strong>{{ data.date | date:'dd-MMM-yyyy' }}</strong></div>
-            <div><span>TIME</span><strong>{{ data.sample_on | date:'hh:mm:ss a' }}</strong></div>
-            <div><span>BILL NO</span><strong>{{ data.lab_no }}</strong></div>
-          </div>
-        </header>
+        <table class="print-layout-table">
+          <thead>
+            <tr>
+              <td>
+                <header class="print-header">
+                  <div class="print-brand">
+                    <img [src]="labPrintConfig?.logo_url || '/assets/logo.png'" alt="Lab logo" class="print-logo">
+                    <div class="print-brand-text">
+                      <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
+                      <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
+                      <p>{{ labPrintConfig?.address || 'Eraviperoor, Pin: 689542' }} | Ph: {{ labPrintConfig?.phone || '0469 2956315, 9037148251' }}</p>
+                    </div>
+                  </div>
+                </header>
 
-        <section class="print-patient">
-          <div><span>NAME</span><strong>{{ data.patient_name }}</strong></div>
-          <div><span>PH.NO</span><strong>{{ data.phone || '-' }}</strong></div>
-          <div><span>REF.BY</span><strong>{{ data.doctor || data.out_doctor_name || 'SELF' }}</strong></div>
-          <div><span>HOSPITAL</span><strong>{{ data.hospital || '-' }}</strong></div>
-          <div><span>AGE & GENDER</span><strong>{{ data.age_years }} Years / {{ data.gender }}</strong></div>
-          <div><span>ADDRESS</span><strong>{{ data.address || '-' }}</strong></div>
-        </section>
+                <div class="result-print-meta-box">
+                  <div class="meta-col col-1">
+                    <div class="meta-title">Examinee Details:</div>
+                    <div class="patient-name-large">{{ data.patient_name }}</div>
+                    <div class="meta-row"><span>Age & Gender</span><span class="colon">:</span><strong>{{ data.age_years }} Years/{{ data.gender }}</strong></div>
+                    <div class="meta-row"><span>Telephone</span><span class="colon">:</span><strong>{{ data.phone || '-' }}</strong></div>
+                    <div class="meta-row"><span>Area</span><span class="colon">:</span><strong>{{ data.address || '-' }}</strong></div>
+                  </div>
+                  <div class="meta-col col-2">
+                    <div class="meta-title">Referred by:</div>
+                    <div class="doctor-name-large">{{ data.doctor || data.out_doctor_name || 'SELF' }}</div>
+                    <br>
+                    <div class="meta-row"><span>IP/OP No</span><span class="colon">:</span><strong>{{ data.ip_no || '-' }}</strong></div>
+                  </div>
+                  <div class="meta-col col-3">
+                    <div class="meta-title">Sample Details:</div>
+                    <div class="meta-row"><span>Sample Date</span><span class="colon">:</span><strong>{{ data.sample_on | date:'dd-MMM-yyyy' }}</strong></div>
+                    <div class="meta-row"><span>Lab No</span><span class="colon">:</span><strong>{{ data.lab_no }}</strong></div>
+                    <div class="meta-row"><span>Hospital</span><span class="colon">:</span><strong>{{ data.hospital || '-' }}</strong></div>
+                    <div class="meta-row"><span>Sample ID</span><span class="colon">:</span><strong>{{ data.lab_no }}</strong></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <section class="print-table-shell">
+                  <table class="print-table">
+                    <thead>
+                      <tr>
+                        <th style="text-align: left;">Description of Test</th>
+                        <th style="text-align: center;">Observation and Remarks</th>
+                        <th style="text-align: right;">Reference range</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ng-container *ngFor="let row of getPrintableResultRows()">
+                        <tr *ngIf="row.type === 'group'" class="group-row">
+                          <td colspan="3" style="text-align: center; font-weight: bold; text-decoration: underline; text-transform: uppercase;">{{ row.name }}</td>
+                        </tr>
+                        <tr *ngIf="row.type === 'general'">
+                          <td style="text-align: left;">{{ row.name }}</td>
+                          <td class="result-value-cell" style="font-weight: bold;">
+                            <div class="result-value-wrap" *ngIf="row.result">
+                              <span class="colon">:</span>
+                              <span class="val">{{ row.result }}{{ row.unit ? ' ' + row.unit : '' }}</span>
+                            </div>
+                          </td>
+                          <td style="text-align: right;">{{ row.reference || '-' }}</td>
+                        </tr>
+                      </ng-container>
+                    </tbody>
+                  </table>
+                </section>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>
+                <div class="print-footer-spacer"></div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
 
-        <section class="print-table-shell">
-          <table class="print-table">
-            <thead>
-              <tr>
-                <th>SL NO</th>
-                <th>TEST NAME</th>
-                <th>OBSERVATION</th>
-                <th>REFERENCE RANGE</th>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngFor="let row of getPrintableResultRows()">
-                <tr *ngIf="row.type === 'group'" class="group-row">
-                  <td colspan="4">{{ row.name }}</td>
-                </tr>
-                <tr *ngIf="row.type === 'general'">
-                  <td class="center">{{ row.displayNo }}</td>
-                  <td>{{ row.name }}</td>
-                  <td class="center">{{ row.result || '-' }}</td>
-                  <td>{{ row.reference || '-' }}</td>
-                </tr>
-              </ng-container>
-            </tbody>
-          </table>
-        </section>
-
-        <footer class="print-footer">
-          <div class="print-footer-left">
-            <div>Pay Mode: <strong>{{ data.pay_mode | titlecase }}</strong></div>
-            <div>Gross Amount: <strong>{{ data.gross_amount }}</strong></div>
-            <div>Received: <strong>{{ data.received_amount }}</strong></div>
-            <div>Balance: <strong>{{ data.balance_amount }}</strong></div>
+        <footer class="print-result-page-footer">
+          <div class="footer-page-num">Page 1 of 1</div>
+          <div class="footer-signature-wrap">
+            <div class="signature-line"></div>
+            <div class="signature-label">Lab Technician</div>
           </div>
-          <div class="print-footer-right">
-            <span>Auth.Sign</span>
+          <div class="footer-gov-strip">
+            ഒരു കേരള സർക്കാർ സംരംഭം
           </div>
         </footer>
-
-        <div class="print-actions no-print">
-          <button type="button" (click)="printResultPreview()">Print</button>
-          <button type="button" (click)="closePrintPreview()">Close</button>
-        </div>
+      </div>
+      <div class="print-actions no-print">
+        <button type="button" (click)="printResultPreview()">Print</button>
+        <button type="button" (click)="closePrintPreview()">Close</button>
       </div>
     </section>
   </ng-container>

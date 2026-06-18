@@ -15,13 +15,19 @@
       <div class="compact-left">
         <div class="form-row top-row">
           <label class="field lab-no">Lab No <span>:</span><input name="labNo" [(ngModel)]="labNo" readonly></label>
-          <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode"><option *ngFor="let mode of paymentModes">{{ mode }}</option></select></label>
+          <label class="field pay-mode">PayMode <span>:</span><select name="payMode" [(ngModel)]="payMode">
+              <option *ngFor="let mode of paymentModes">{{ mode }}</option>
+            </select></label>
           <button type="button" class="adv-search" (click)="advanceSearch.emit()">Adv. Search</button>
         </div>
 
         <div class="form-row">
-          <label class="field salutation-field">Salutation <span>:</span><select name="salutation" [(ngModel)]="salutation"><option *ngFor="let item of salutations" [value]="item">{{ item }}</option></select></label>
-          <label class="field name-field">Name <span>:</span><input name="patientName" [(ngModel)]="patientName" (keydown.enter)="onPatientNameEnter($event)"></label>
+          <label class="field salutation-field">Salutation <span>:</span><select name="salutation"
+              [(ngModel)]="salutation">
+              <option *ngFor="let item of salutations" [value]="item">{{ item }}</option>
+            </select></label>
+          <label class="field name-field">Name <span>:</span><input name="patientName" [(ngModel)]="patientName"
+              (keydown.enter)="onPatientNameEnter($event)"></label>
         </div>
 
         <div class="form-row gender-row">
@@ -34,9 +40,15 @@
             </span>
           </div>
           <label class="field age-field">Age <span>:</span><input name="age" [(ngModel)]="age"></label>
-          <select name="ageType" [(ngModel)]="ageType"><option>Years</option><option>Months</option><option>Days</option></select>
+          <select name="ageType" [(ngModel)]="ageType">
+            <option>Years</option>
+            <option>Months</option>
+            <option>Days</option>
+          </select>
           <input name="month" [(ngModel)]="month">
-          <select><option>Month</option></select>
+          <select>
+            <option>Month</option>
+          </select>
         </div>
 
         <div class="form-row double-row">
@@ -45,19 +57,22 @@
         </div>
 
         <div class="form-row double-row">
-          <label class="field sample-field">Sample on <span>:</span><input name="sampleOn" [(ngModel)]="sampleOn"></label>
+          <label class="field sample-field">Sample on <span>:</span><input name="sampleOn"
+              [(ngModel)]="sampleOn"></label>
           <label class="field ip-field">IP. No <span>:</span><input name="ipNo" [(ngModel)]="ipNo"></label>
         </div>
 
         <div class="form-row">
-          <label class="field corporate-field">Corporate <span>:</span><input name="corporate" [(ngModel)]="corporate"></label>
+          <label class="field corporate-field">Corporate <span>:</span><input name="corporate"
+              [(ngModel)]="corporate"></label>
         </div>
       </div>
 
       <div class="compact-right">
         <div class="form-row date-time-row">
           <label class="field date-field">Date <span>:</span><input name="date" [value]="today" readonly></label>
-          <label class="field time-field">Time <span>:</span><input name="time" [value]="currentTime | date:'hh:mm:ss a'" readonly></label>
+          <label class="field time-field">Time <span>:</span><input name="time"
+              [value]="currentTime | date:'hh:mm:ss a'" readonly></label>
         </div>
 
         <div class="form-row">
@@ -65,11 +80,13 @@
         </div>
 
         <div class="form-row">
-          <label class="field doctor-field">Out.Dr <span>:</span><input name="outDoctor" [(ngModel)]="outDoctor"></label>
+          <label class="field doctor-field">Out.Dr <span>:</span><input name="outDoctor"
+              [(ngModel)]="outDoctor"></label>
         </div>
 
         <div class="form-row">
-          <label class="field doctor-field">Hospital <span>:</span><input name="hospital" [(ngModel)]="hospital"></label>
+          <label class="field doctor-field">Hospital <span>:</span><input name="hospital"
+              [(ngModel)]="hospital"></label>
         </div>
       </div>
     </section>
@@ -98,61 +115,51 @@
           <tr class="new-entry-row" *ngIf="showCurrentEntryRow">
             <td class="sl-no-cell"></td>
             <td class="test-code-cell">
-              <input
-                #testCodeInput
-                name="testCode{{ currentTest.slNo }}"
-                [(ngModel)]="currentTest.testCode"
-                (focus)="onTestCodeInput(currentTest)"
-                (input)="onTestCodeInput(currentTest)"
-                (keydown)="onTestCodeKeyDown(currentTest, $event)"
-                (keydown.enter)="onCurrentTestCodeEnter($event)"
-                autocomplete="off"
-              >
-              <div #suggestionBoxElement class="test-suggestion-box" *ngIf="activeSuggestionSlNo === currentTest.slNo" [style.width.px]="suggestionWidthPx || null">
+              <input #testCodeInput name="testCode{{ currentTest.slNo }}" [(ngModel)]="currentTest.testCode"
+                (focus)="onTestCodeInput(currentTest)" (input)="onTestCodeInput(currentTest)"
+                (keydown)="onTestCodeKeyDown(currentTest, $event)" (keydown.enter)="onCurrentTestCodeEnter($event)"
+                autocomplete="off">
+              <div #suggestionBoxElement class="test-suggestion-box" *ngIf="activeSuggestionSlNo === currentTest.slNo"
+                [style.width.px]="suggestionWidthPx || null">
                 <div class="suggestion-state" *ngIf="isLoadingTestSuggestions">Loading...</div>
-                <button
-                  type="button"
-                  class="suggestion-row"
-                  [class.active]="index === activeSuggestionIndex"
+                <button type="button" class="suggestion-row" [class.active]="index === activeSuggestionIndex"
                   [style.gridTemplateColumns]="suggestionGridTemplate || null"
                   *ngFor="let option of testSuggestions; let index = index"
-                  (mousedown)="selectTestSuggestion(currentTest, option); $event.preventDefault();"
-                >
+                  (mousedown)="selectTestSuggestion(currentTest, option); $event.preventDefault();">
                   <span class="suggestion-code">{{ option.short_name || option.test_code }}</span>
                   <span class="suggestion-name">{{ option.test_name }}</span>
                   <span class="suggestion-rate">{{ option.rate }}</span>
                 </button>
-                <div class="suggestion-state" *ngIf="!isLoadingTestSuggestions && testSuggestions.length === 0">No tests found</div>
+                <div class="suggestion-state" *ngIf="!isLoadingTestSuggestions && testSuggestions.length === 0">No tests
+                  found</div>
               </div>
             </td>
             <td>
               <input name="testName{{ currentTest.slNo }}" [(ngModel)]="currentTest.testName" readonly tabindex="-1">
             </td>
             <td>
-              <input type="number" name="rate{{ currentTest.slNo }}" [(ngModel)]="currentTest.rate" readonly tabindex="-1">
+              <input type="number" name="rate{{ currentTest.slNo }}" [(ngModel)]="currentTest.rate" readonly
+                tabindex="-1">
             </td>
             <td>
-              <input type="number" step="1" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount" readonly tabindex="-1">
+              <input type="number" step="1" name="discount{{ currentTest.slNo }}" [(ngModel)]="currentTest.discount"
+                readonly tabindex="-1">
             </td>
             <td>
-              <input 
-                #amountInput
-                type="number"
-                step="1" 
-                name="amount{{ currentTest.slNo }}" 
-                [(ngModel)]="currentTest.amount" 
-                (keydown.enter)="onCurrentTestAmountEnter($event)"
-                readonly
-              >
+              <input #amountInput type="number" step="1" name="amount{{ currentTest.slNo }}"
+                [(ngModel)]="currentTest.amount" (keydown.enter)="onCurrentTestAmountEnter($event)" readonly>
             </td>
           </tr>
           <tr *ngFor="let test of tests" [class.selected-row]="selectedTestSlNo === test.slNo">
-            <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}</td>
+            <td class="sl-no-cell" (dblclick)="selectTestLine(test)" title="Double-click to select row">{{ test.slNo }}
+            </td>
             <td><input [name]="'testCode' + test.slNo" [ngModel]="test.testCode" readonly tabindex="-1"></td>
             <td><input [name]="'testName' + test.slNo" [ngModel]="test.testName" readonly tabindex="-1"></td>
             <td><input type="number" [name]="'rate' + test.slNo" [ngModel]="test.rate" readonly tabindex="-1"></td>
-            <td><input type="number" step="1" [name]="'discount' + test.slNo" [ngModel]="test.discount" readonly tabindex="-1"></td>
-            <td><input type="number" step="1" [name]="'amount' + test.slNo" [ngModel]="test.amount" readonly tabindex="-1"></td>
+            <td><input type="number" step="1" [name]="'discount' + test.slNo" [ngModel]="test.discount" readonly
+                tabindex="-1"></td>
+            <td><input type="number" step="1" [name]="'amount' + test.slNo" [ngModel]="test.amount" readonly
+                tabindex="-1"></td>
           </tr>
         </tbody>
       </table>
@@ -161,27 +168,32 @@
     <section class="payment-details">
       <div class="payment-left">
         <label>Disc. Mode <span>:</span>
-          <select #discModeSelect name="discountMode" [(ngModel)]="discountMode" (keydown.enter)="onBottomFieldEnter($event, 'discMode')">
+          <select #discModeSelect name="discountMode" [(ngModel)]="discountMode"
+            (keydown.enter)="onBottomFieldEnter($event, 'discMode')">
             <option *ngFor="let mode of discountModes">{{ mode }}</option>
           </select>
         </label>
         <label>Discount % <span>:</span>
-          <input #discPercentInput type="number" step="1" inputmode="numeric" name="discountPercent" [(ngModel)]="discountPercent" (keydown.enter)="onBottomFieldEnter($event, 'discPercent')">
+          <input #discPercentInput type="number" step="1" inputmode="numeric" name="discountPercent"
+            [(ngModel)]="discountPercent" (keydown.enter)="onBottomFieldEnter($event, 'discPercent')">
           <input tabindex="-1" readonly style="visibility: hidden; width: 0; padding: 0; border: 0;">
         </label>
         <label>Rcvd.Amt <span>:</span>
           <input #receivedAmtInput name="receivedAmount" [(ngModel)]="receivedAmount" readonly tabindex="-1">
         </label>
-        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount" readonly tabindex="-1"></label>
+        <label>Bal.Amt <span>:</span><input name="balanceAmount" [(ngModel)]="balanceAmount" readonly
+            tabindex="-1"></label>
       </div>
 
       <div class="payment-middle">
         <label>Note <span>:</span><textarea name="note" [(ngModel)]="note"></textarea></label>
         <label>Round off <span>:</span>
-          <input #roundOffInput name="roundOff" [(ngModel)]="roundOff" (ngModelChange)="onRoundOffChange()" (keydown.enter)="onBottomFieldEnter($event, 'roundOff')">
+          <input #roundOffInput name="roundOff" [(ngModel)]="roundOff" (ngModelChange)="onRoundOffChange()"
+            (keydown.enter)="onBottomFieldEnter($event, 'roundOff')">
         </label>
         <label>Discount Reason <span>:</span>
-          <input #discReasonInput name="discountReason" [(ngModel)]="discountReason" (keydown.enter)="onBottomFieldEnter($event, 'discReason')">
+          <input #discReasonInput name="discountReason" [(ngModel)]="discountReason"
+            (keydown.enter)="onBottomFieldEnter($event, 'discReason')">
         </label>
       </div>
 
@@ -189,7 +201,8 @@
         <label>Gross Amount <span>:</span>
           <input [value]="totalRate.toFixed(0)" readonly tabindex="-1" title="Total Rate">
           <input [value]="totalDiscountAmount.toFixed(0)" readonly tabindex="-1" title="Total Discount Amount">
-          <input [value]="grossAmount.toFixed(0)" readonly title="Net Amount" (keydown.enter)="onBottomFieldEnter($event, 'grossAmt')">
+          <input [value]="grossAmount.toFixed(0)" readonly title="Net Amount"
+            (keydown.enter)="onBottomFieldEnter($event, 'grossAmt')">
         </label>
         <div class="grand-total">{{ grossAmount.toFixed(0) }}</div>
         <div class="payment-status">Status: {{ getPaymentStatus() }}</div>
@@ -201,7 +214,8 @@
       <button type="button" (click)="addTestLine()">New</button>
       <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
       <button type="button" (click)="openBillPrintPreview()">Print</button>
-      <button #saveButton name="saveButton" type="button" (click)="promptSave($event)" (keydown.enter)="promptSave($event)" [disabled]="isSaving">Save</button>
+      <button #saveButton name="saveButton" type="button" (click)="promptSave($event)"
+        (keydown.enter)="promptSave($event)" [disabled]="isSaving">Save</button>
       <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
     </footer>
   </form>
@@ -209,12 +223,16 @@
 
 <section class="save-confirm-backdrop" *ngIf="showSaveConfirmDialog">
   <div class="save-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="saveConfirmTitle">
-    <header id="saveConfirmTitle">{{ saveDialogMode === 'confirm' ? 'Save bill/registration' : 'Save required' }}</header>
+    <header id="saveConfirmTitle">{{ saveDialogMode === 'confirm' ? 'Save bill/registration' : 'Save required' }}
+    </header>
     <p>{{ saveDialogMessage }}</p>
     <footer>
-      <button #saveConfirmYesButton *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-yes" (click)="confirmSave()" [disabled]="isSaving">Yes</button>
-      <button #saveConfirmNoButton *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-no" (click)="cancelSaveConfirmation()">No</button>
-      <button #saveAlertOkButton *ngIf="saveDialogMode === 'alert'" type="button" class="confirm-yes" (click)="acknowledgeSaveAlert()">OK</button>
+      <button #saveConfirmYesButton *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-yes"
+        (click)="confirmSave()" [disabled]="isSaving">Yes</button>
+      <button #saveConfirmNoButton *ngIf="saveDialogMode === 'confirm'" type="button" class="confirm-no"
+        (click)="cancelSaveConfirmation()">No</button>
+      <button #saveAlertOkButton *ngIf="saveDialogMode === 'alert'" type="button" class="confirm-yes"
+        (click)="acknowledgeSaveAlert()">OK</button>
     </footer>
   </div>
 </section>
@@ -245,82 +263,89 @@
     </ng-template>
 
     <ng-template #noUpiConfig>
-      <p class="upi-payment-message error">{{ upiPaymentMessage || 'UPI payment details are missing from the backend .env file.' }}</p>
+      <p class="upi-payment-message error">{{ upiPaymentMessage || 'UPI payment details are missing from the backend
+        .env file.' }}</p>
     </ng-template>
 
     <footer>
-      <button #upiCancelButton type="button" class="upi-cancel-button" (click)="cancelUpiPaymentDialog()">Cancel</button>
-      <button #upiSaveButton type="button" class="upi-save-button" (click)="confirmUpiPaymentAndSave()" [disabled]="!upiPaymentQrUrl || isSaving || isLoadingUpiPaymentConfig">Payment received & Save</button>
+      <button #upiCancelButton type="button" class="upi-cancel-button"
+        (click)="cancelUpiPaymentDialog()">Cancel</button>
+      <button #upiSaveButton type="button" class="upi-save-button" (click)="confirmUpiPaymentAndSave()"
+        [disabled]="!upiPaymentQrUrl || isSaving || isLoadingUpiPaymentConfig">Payment received & Save</button>
     </footer>
   </div>
 </section>
 
 <section class="bill-print-backdrop" *ngIf="showBillPrintPreview">
-  <div class="bill-print-sheet" *ngIf="billPrintData as billData">
-    <header class="bill-print-header">
-      <div class="bill-brand">
-        <img [src]="labPrintConfig?.logo_url || '/assets/logo.png'" alt="Lab logo" class="bill-logo">
-        <div class="bill-brand-text">
-          <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
-          <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
-          <p>{{ labPrintConfig?.address || 'Eraviperoor, Pin: 689542' }} | Ph: {{ labPrintConfig?.phone || '0469 2956315, 9037148251' }}</p>
+  <div *ngIf="billPrintData as billData">
+    <div class="bill-print-sheet" *ngFor="let pageTests of getChunkedBillTests(billData.tests); let pageIdx = index; let isLast = last">
+      <header class="bill-print-header">
+        <div class="bill-brand">
+          <img [src]="labPrintConfig?.logo_url || '/assets/logo.png'" alt="Lab logo" class="bill-logo">
+          <div class="bill-brand-text">
+            <h1>{{ labPrintConfig?.lab_name || 'Neethi Clinical Lab' }}</h1>
+            <p>{{ labPrintConfig?.subtitle || 'A unit of Eraviperoor Service Co-operative Bank Ltd. No:1929' }}</p>
+            <p>{{ labPrintConfig?.address || 'Eraviperoor, Pin: 689542' }} | Ph: {{ labPrintConfig?.phone || '0469 2956315, 9037148251' }}</p>
+          </div>
         </div>
+      </header>
+
+      <section class="bill-patient">
+        <div class="patient-details-left">
+          <div><span>NAME</span><span class="colon">:</span><strong>{{ billData.patient_name }} [{{ billData.age_years }}Y/{{ billData.gender.slice(0,1).toUpperCase() }}]</strong></div>
+          <div><span>PH.NO</span><span class="colon">:</span><strong>{{ billData.phone || '-' }}</strong></div>
+          <div><span>REF.BY</span><span class="colon">:</span><strong>{{ billData.doctor || billData.out_doctor_name || 'SELF' }}</strong></div>
+          <div><span>HOSPITAL</span><span class="colon">:</span><strong>{{ billData.hospital || '-' }}</strong></div>
+        </div>
+        <div class="patient-details-right">
+          <div><span>DATE</span><span class="colon">:</span><strong>{{ billData.visit_date | date:'dd-MMM-yyyy' }}</strong></div>
+          <div><span>TIME</span><span class="colon">:</span><strong>{{ billData.sample_on | date:'hh:mm:ss a' }}</strong></div>
+          <div><span>BILL NO</span><span class="colon">:</span><strong>{{ billData.lab_no }}</strong></div>
+        </div>
+      </section>
+
+      <section class="bill-table-shell">
+        <table class="bill-table">
+          <thead>
+            <tr>
+              <th>SL NO</th>
+              <th>TEST NAME</th>
+              <th>RATE</th>
+              <th>DISC. %</th>
+              <th>AMOUNT</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let test of pageTests; let i = index">
+              <td class="center">{{ pageIdx * 8 + i + 1 }}</td>
+              <td>{{ test.test_name }}</td>
+              <td class="right">{{ test.rate | number:'1.0-0' }}</td>
+              <td class="right">{{ test.discount_percent | number:'1.0-0' }}</td>
+              <td class="right">{{ test.amount | number:'1.0-0' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Footer elements only on the final page card -->
+      <div class="bill-print-footer" *ngIf="isLast">
+        <footer class="bill-summary">
+          <div class="bill-summary-left">
+            <span>You have Saved Amount:</span> <strong>{{ getSavedAmount(billData) | number:'1.0-0' }}</strong>
+            <span>Collected:</span> <strong>{{ billData.received_amount | number:'1.0-0' }}</strong>
+          </div>
+          <div class="bill-summary-right">
+            <span>Net Amount :</span> <strong>{{ getNetAmount(billData) | number:'1.0-0' }}</strong>
+          </div>
+        </footer>
+
+        <div class="bill-auth">Auth.Sign</div>
       </div>
-      <div class="bill-print-meta">
-        <div><span>DATE</span><strong>{{ billData.visit_date | date:'dd-MMM-yyyy' }}</strong></div>
-        <div><span>TIME</span><strong>{{ billData.sample_on | date:'hh:mm:ss a' }}</strong></div>
-        <div><span>BILL NO</span><strong>{{ billData.lab_no }}</strong></div>
-      </div>
-    </header>
-
-    <section class="bill-patient">
-      <div><span>NAME</span><strong>{{ billData.patient_name }}</strong></div>
-      <div><span>PH.NO</span><strong>{{ billData.phone || '-' }}</strong></div>
-      <div><span>REF.BY</span><strong>{{ billData.doctor || billData.out_doctor_name || 'SELF' }}</strong></div>
-      <div><span>HOSPITAL</span><strong>{{ billData.hospital || '-' }}</strong></div>
-      <div><span>AGE & GENDER</span><strong>{{ billData.age_years }} Years / {{ billData.gender }}</strong></div>
-      <div><span>ADDRESS</span><strong>{{ billData.address || '-' }}</strong></div>
-    </section>
-
-    <section class="bill-table-shell">
-      <table class="bill-table">
-        <thead>
-          <tr>
-            <th>SL NO</th>
-            <th>TEST NAME</th>
-            <th>RATE</th>
-            <th>DISC. %</th>
-            <th>AMOUNT</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let test of billData.tests; let i = index">
-            <td class="center">{{ i + 1 }}</td>
-            <td>{{ test.test_name }}</td>
-            <td class="right">{{ test.rate | number:'1.0-0' }}</td>
-            <td class="right">{{ test.discount_percent | number:'1.0-0' }}</td>
-            <td class="right">{{ test.amount | number:'1.0-0' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <footer class="bill-summary">
-      <div class="bill-summary-left">
-        <span>You have Saved Amount:</span> <strong>{{ getSavedAmount(billData) | number:'1.0-0' }}</strong>
-        <span>Collected:</span> <strong>{{ billData.received_amount | number:'1.0-0' }}</strong>
-      </div>
-      <div class="bill-summary-right">
-        <span>Net Amount :</span> <strong>{{ getNetAmount(billData) | number:'1.0-0' }}</strong>
-      </div>
-    </footer>
-
-    <div class="bill-auth">Auth.Sign</div>
-
-    <div class="bill-print-actions no-print">
-      <button type="button" (click)="printBillPreview()">Print</button>
-      <button #billPrintCloseButton type="button" (click)="closeBillPrintPreview()">Close</button>
     </div>
+  </div>
+  <div class="bill-print-actions no-print">
+    <button type="button" (click)="printBillPreview()">Print</button>
+    <button #billPrintCloseButton type="button" (click)="closeBillPrintPreview()">Close</button>
   </div>
 </section>
 
@@ -334,9 +359,11 @@
     <div class="edit-form-shell">
       <section class="edit-top-grid">
         <label class="edit-top-lab-no">Lab No <span>:</span>
-          <input #editLabNoInput name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()" placeholder="Enter Lab No">
+          <input #editLabNoInput name="editLabNo" [(ngModel)]="editLabNo" (keydown.enter)="searchEditInvoiceByLabNo()"
+            placeholder="Enter Lab No">
         </label>
-        <label class="edit-top-date">Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'" readonly></label>
+        <label class="edit-top-date">Date <span>:</span><input [value]="visitDate | date:'dd/MMM/yyyy'"
+            readonly></label>
       </section>
 
       <p class="status-message error edit-lookup-error" *ngIf="editLookupError">{{ editLookupError }}</p>
@@ -399,7 +426,8 @@
 
       <footer class="edit-invoice-footer">
         <button type="button" class="edit-action-button new-button" (click)="startEditInvoiceLookup()">New</button>
-        <button type="button" class="edit-action-button save-button" (click)="promptSave($event)" [disabled]="isSaving">Save</button>
+        <button type="button" class="edit-action-button save-button" (click)="promptSave($event)"
+          [disabled]="isSaving">Save</button>
         <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Exit</button>
       </footer>
     </div>

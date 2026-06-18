@@ -800,6 +800,18 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     return (Number(visit.gross_amount) || 0) + (Number(visit.round_off) || 0);
   }
 
+  getChunkedBillTests(tests: any[] | undefined): any[][] {
+    if (!tests || tests.length === 0) {
+      return [[]];
+    }
+    const chunks: any[][] = [];
+    const chunkSize = 8;
+    for (let i = 0; i < tests.length; i += chunkSize) {
+      chunks.push(tests.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
   private buildUpiQrCode(): void {
     const config = this.upiPaymentConfig;
     if (!config?.upi_id) {
