@@ -1,0 +1,61 @@
+@import '../../patient-advance-search/patient-advance-search.component.css';
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  width: 380px;
+  background: #fff;
+  border: 1px solid var(--bright-teal-blue);
+  box-shadow: 0 8px 18px rgba(3, 4, 94, 0.25);
+}
+
+.form-body {
+  padding: 15px;
+  background: var(--light-cyan);
+  display: grid;
+  gap: 12px;
+}
+
+.form-group-item {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-group-item label {
+  font-weight: bold;
+}
+
+.form-group-item input[type="text"],
+.form-group-item select {
+  height: 25px;
+  padding: 0 6px;
+  border: 1px solid #b5b5b5;
+  background: #fff;
+}
+
+section.advance-search-window {
+  grid-template-rows: auto auto 1fr auto !important;
+}
+
+section.advance-search-window .result-grid {
+  margin-bottom: 0 !important;
+}
+
+section.advance-search-window .search-panel button.search-button {
+  width: auto !important;
+  min-width: 86px;
+  height: auto !important;
+  min-height: 24px;
+  padding: 3px 12px !important;
+  white-space: nowrap !important;
+}

@@ -1,0 +1,97 @@
+<section class="advance-search-window" aria-label="Cash Voucher">
+  <header class="window-title">
+    Cash {{ type === 'payment' ? 'Payments (Outflow)' : 'Receipts (Inflow)' }}
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <div style="display: grid; grid-template-columns: 360px 1fr; gap: 10px; margin: 8px; overflow: hidden; flex: 1;">
+    <!-- Entry Form -->
+    <section class="search-panel" style="grid-template-columns: 1fr; display: flex; flex-direction: column; margin: 0; padding: 10px;">
+      <div class="form-title" style="font-weight: bold; font-size: 13px; border-bottom: 1px solid var(--frosted-blue); padding-bottom: 5px; margin-bottom: 10px;">
+        Voucher Entry
+      </div>
+      
+      <div class="status-message error" *ngIf="errorMessage">{{ errorMessage }}</div>
+      <div class="status-message success" style="color: green; font-weight: bold;" *ngIf="successMessage">{{ successMessage }}</div>
+
+      <div class="form-grid" style="display: grid; gap: 8px; font-size: 11px;">
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+          <label>Voucher No:</label>
+          <input type="text" [(ngModel)]="voucherNo" name="voucherNo" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+        </div>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+          <label>Voucher Date:</label>
+          <input type="date" [(ngModel)]="transactionDate" name="transactionDate" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+        </div>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+          <label>Account Head:</label>
+          <select [(ngModel)]="selectedHeadId" name="selectedHeadId" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+            <option [ngValue]="null">-- Select Account Head --</option>
+            <option *ngFor="let head of heads" [ngValue]="head.id">
+              {{ head.name }} ({{ head.group_display }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: center;">
+          <label>Amount (INR):</label>
+          <input type="number" [(ngModel)]="amount" name="amount" min="0" style="height:23px; border:1px solid #ccc; padding:0 6px;">
+        </div>
+
+        <div class="form-row" style="display: grid; grid-template-columns: 100px 1fr; align-items: start;">
+          <label>Narration:</label>
+          <textarea [(ngModel)]="narration" name="narration" rows="3" style="border:1px solid #ccc; padding:6px; font-family:inherit; font-size:11px;"></textarea>
+        </div>
+      </div>
+
+      <button type="button" class="search-button" style="margin-top: 15px; width: 100%; height: 30px;" (click)="saveVoucher()">
+        Save Voucher
+      </button>
+    </section>
+
+    <!-- History Grid -->
+    <div style="display: flex; flex-direction: column; border: 1px solid var(--frosted-blue); background: #fff; overflow: hidden;">
+      <div class="window-title" style="height: 25px; font-size: 11px;">
+        Voucher History ({{ type === 'payment' ? 'Payments' : 'Receipts' }})
+      </div>
+      
+      <section class="result-grid" style="margin: 0; flex: 1; overflow: auto;">
+        <table style="min-width: 500px;">
+          <thead>
+            <tr>
+              <th>Voucher No</th>
+              <th>Date</th>
+              <th>Account Head</th>
+              <th>Amount</th>
+              <th>Narration</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let tx of transactions">
+              <td>{{ tx.voucher_no }}</td>
+              <td>{{ tx.transaction_date }}</td>
+              <td>{{ tx.account_head_name }}</td>
+              <td>INR {{ tx.amount | number:'1.2-2' }}</td>
+              <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">{{ tx.narration }}</td>
+              <td>
+                <button type="button" (click)="printVoucher(tx)" style="background: var(--deep-twilight); color: #fff; border: 1px solid var(--bright-teal-blue); padding: 1px 6px; cursor: pointer; font-size: 10px; border-radius: 2px;">
+                  Print
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="transactions.length === 0">
+              <td colspan="6" style="text-align: center; color: #777;">No transactions recorded.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+</section>

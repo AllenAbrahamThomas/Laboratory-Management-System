@@ -1,0 +1,85 @@
+<section class="advance-search-window" aria-label="Accounts Heads Master">
+  <header class="window-title">
+    Accounts Heads Master
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <section class="search-panel" style="grid-template-columns: 1fr auto auto;">
+    <div class="status-message error" style="margin:0;" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div *ngIf="!errorMessage"></div>
+    <button type="button" class="search-button" (click)="openAdd()">Add New..</button>
+    <button type="button" class="search-button" (click)="openEdit()" [disabled]="selectedHeadId === null">Edit Selected..</button>
+  </section>
+
+  <p class="status-message" *ngIf="isLoading">Loading data...</p>
+
+  <section class="result-grid">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Account Head Name</th>
+          <th>Group</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let head of heads"
+          [class.selected-row]="selectedHeadId === head.id"
+          (click)="selectHead(head.id!)"
+          (dblclick)="openEdit()"
+        >
+          <td>{{ head.id }}</td>
+          <td>{{ head.name }}</td>
+          <td>{{ head.group_display }}</td>
+          <td>
+            <span [style.color]="head.is_active ? 'green' : 'red'">
+              {{ head.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+
+  <!-- Modal overlay for creating/editing Account Head -->
+  <div class="modal-overlay" *ngIf="showForm">
+    <div class="modal-content">
+      <header class="window-title">
+        {{ formMode === 'add' ? 'Add Account Head' : 'Edit Account Head' }}
+        <button type="button" (click)="closeForm()">X</button>
+      </header>
+      
+      <div class="form-body">
+        <div class="form-group-item">
+          <label>Name:</label>
+          <input type="text" [(ngModel)]="formName" name="formName" placeholder="Enter name">
+        </div>
+        <div class="form-group-item">
+          <label>Group:</label>
+          <select [(ngModel)]="formGroup" name="formGroup">
+            <option value="asset">Asset</option>
+            <option value="liability">Liability</option>
+            <option value="equity">Equity</option>
+            <option value="revenue">Revenue</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div class="form-group-item">
+          <label>Active:</label>
+          <input type="checkbox" [(ngModel)]="formIsActive" name="formIsActive" style="width: auto; height: auto;">
+        </div>
+      </div>
+
+      <footer class="window-footer">
+        <button type="button" (click)="saveHead()">Save</button>
+        <button type="button" (click)="closeForm()">Cancel</button>
+      </footer>
+    </div>
+  </div>
+</section>

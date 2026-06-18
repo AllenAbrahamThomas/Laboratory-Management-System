@@ -1,0 +1,18 @@
+@import '../../patient-advance-search/patient-advance-search.component.css';
+
+textarea {
+  resize: vertical;
+}
+
+section.advance-search-window {
+  grid-template-rows: auto 1fr auto !important;
+}
+
+section.advance-search-window .search-panel button.search-button {
+  width: auto !important;
+  min-width: 86px;
+  height: auto !important;
+  min-height: 24px;
+  padding: 3px 12px !important;
+  white-space: nowrap !important;
+}
