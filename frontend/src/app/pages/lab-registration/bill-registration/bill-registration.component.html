@@ -210,11 +210,11 @@
     </section>
 
     <footer class="action-bar">
-      <button type="button" (click)="openResultEntry()">Result</button>
-      <button type="button" (click)="addTestLine()">New</button>
-      <button type="button" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
+      <button type="button" *ngIf="hasResultPermission()" (click)="openResultEntry()">Result</button>
+      <button type="button" *ngIf="authService.hasPermission('invoice-entry')" (click)="addTestLine()">New</button>
+      <button type="button" *ngIf="hasDeleteLinePermission()" (click)="deleteSelectedTestLine()" [disabled]="selectedTestSlNo === null">Delete</button>
       <button type="button" (click)="openBillPrintPreview()">Print</button>
-      <button #saveButton name="saveButton" type="button" (click)="promptSave($event)"
+      <button #saveButton name="saveButton" type="button" *ngIf="hasSavePermission()" (click)="promptSave($event)"
         (keydown.enter)="promptSave($event)" [disabled]="isSaving">Save</button>
       <button type="button" (click)="closed.emit()"><span class="exit-icon">↩</span>Exit</button>
     </footer>
@@ -425,8 +425,8 @@
       </section>
 
       <footer class="edit-invoice-footer">
-        <button type="button" class="edit-action-button new-button" (click)="startEditInvoiceLookup()">New</button>
-        <button type="button" class="edit-action-button save-button" (click)="promptSave($event)"
+        <button type="button" class="edit-action-button new-button" *ngIf="authService.hasPermission('edit-invoice')" (click)="startEditInvoiceLookup()">New</button>
+        <button type="button" class="edit-action-button save-button" *ngIf="authService.hasPermission('edit-invoice')" (click)="promptSave($event)"
           [disabled]="isSaving">Save</button>
         <button type="button" class="edit-action-button" (click)="closeEditInvoiceLookup()">Exit</button>
       </footer>

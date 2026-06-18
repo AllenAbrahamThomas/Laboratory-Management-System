@@ -69,7 +69,7 @@
       <button type="button" (click)="selectPreviousTest()" [disabled]="!selectedTest || resultTests.length === 0">Previous</button>
       <button type="button" (click)="selectNextTest()" [disabled]="!selectedTest || resultTests.length === 0">Next</button>
       <button type="button" (click)="openPrintPreview()">Print</button>
-      <button type="button" (click)="saveResults()" [disabled]="isSaving">Finished</button>
+      <button type="button" *ngIf="authService.hasPermission('result-entry')" (click)="saveResults()" [disabled]="isSaving">Finished</button>
       <button type="button" (click)="closed.emit()">Exit</button>
     </footer>
 
@@ -140,7 +140,7 @@
           <button type="button" (click)="selectPreviousTest()" [disabled]="!selectedTest || resultTests.length === 0">Previous</button>
           <button type="button" (click)="selectNextTest()" [disabled]="!selectedTest || resultTests.length === 0">Next</button>
           <button type="button" (click)="closeEntryDialog()">Exit</button>
-          <button type="button" class="primary" (click)="saveResults()" [disabled]="isSaving">Save</button>
+          <button type="button" class="primary" *ngIf="authService.hasPermission('result-entry')" (click)="saveResults()" [disabled]="isSaving">Save</button>
         </footer>
       </div>
     </section>

@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { VisitService } from '../../../services/visit.service';
+import { AuthService } from '../../../services/auth.service';
 
 interface PatientSummary {
   id: number;
@@ -29,6 +30,7 @@ export class PatientListComponent implements OnInit {
   @Output() patientSelected = new EventEmitter<number>();
 
   private readonly visitService = inject(VisitService);
+  readonly authService = inject(AuthService);
 
   labNoSearch = '';
   patientSearch = '';
@@ -95,6 +97,14 @@ export class PatientListComponent implements OnInit {
   }
 
   openPatientBill(patient: PatientSummary): void {
+    if (this.purpose === 'registration' && !this.authService.hasPermission('edit-invoice')) {
+      alert("You do not have permission to edit invoices.");
+      return;
+    }
+    if (this.purpose === 'result' && !this.authService.hasPermission('result-entry')) {
+      alert("You do not have permission for result entry.");
+      return;
+    }
     this.patientSelected.emit(patient.id);
   }
 

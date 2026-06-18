@@ -1,0 +1,115 @@
+<section class="advance-search-window" aria-label="User Management Master">
+  <header class="window-title">
+    User Management Master
+    <button type="button" aria-label="Close" (click)="closed.emit()">X</button>
+  </header>
+
+  <section class="search-panel" style="grid-template-columns: 1fr auto auto;">
+    <div class="status-message error" style="margin:0;" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <div class="status-message success" style="margin:0; color: green; font-weight: bold;" *ngIf="successMessage">{{ successMessage }}</div>
+    <div *ngIf="!errorMessage && !successMessage"></div>
+    <button type="button" class="search-button" (click)="openAdd()">Add New User..</button>
+    <button type="button" class="search-button" (click)="selectUser(selectedUserId!)" [disabled]="selectedUserId === null">Edit Selected..</button>
+  </section>
+
+  <p class="status-message" *ngIf="isLoading">Loading users...</p>
+
+  <section class="result-grid">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let u of users"
+          [class.selected-row]="selectedUserId === u.id"
+          (click)="selectedUserId = u.id!"
+          (dblclick)="selectUser(u.id!)"
+        >
+          <td>{{ u.id }}</td>
+          <td>{{ u.username }}</td>
+          <td style="text-transform: capitalize;">{{ u.role }}</td>
+          <td>
+            <span [style.color]="u.is_active ? 'green' : 'red'">
+              {{ u.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </td>
+          <td>{{ u.created_at | date:'yyyy-MM-dd HH:mm' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="window-footer">
+    <button type="button" (click)="closed.emit()">Exit</button>
+  </footer>
+
+  <!-- Modal overlay for creating/editing user -->
+  <div class="modal-overlay" *ngIf="showForm">
+    <div class="modal-content user-modal">
+      <header class="window-title">
+        {{ formMode === 'add' ? 'Add User Account' : 'Edit User Account' }}
+        <button type="button" (click)="closeForm()">X</button>
+      </header>
+      
+      <div class="form-body user-form-body">
+        <div class="form-group-item">
+          <label>Username:</label>
+          <input type="text" [(ngModel)]="formUsername" name="formUsername" [disabled]="formMode === 'edit'" placeholder="Enter username">
+        </div>
+        <div class="form-group-item">
+          <label>Password:</label>
+          <input type="password" [(ngModel)]="formPassword" name="formPassword" [placeholder]="formMode === 'edit' ? 'Leave blank to keep unchanged' : 'Enter password'">
+        </div>
+        <div class="form-group-item">
+          <label>Role:</label>
+          <select [(ngModel)]="formRole" name="formRole" [disabled]="currentUserRole === 'supervisor' || formUsername === 'admin'">
+            <option value="staff">Staff</option>
+            <option value="supervisor" *ngIf="currentUserRole === 'admin'">Supervisor</option>
+            <option value="admin" *ngIf="currentUserRole === 'admin'">Admin</option>
+          </select>
+        </div>
+        <div class="form-group-item">
+          <label>Active:</label>
+          <input type="checkbox" [(ngModel)]="formIsActive" name="formIsActive" [disabled]="formUsername === 'admin'" style="width: auto; height: auto;">
+        </div>
+
+        <!-- Permissions Checkboxes Grouped -->
+        <div class="permissions-container" *ngIf="formRole !== 'admin'">
+          <h4 class="permissions-header">User Permissions Allowances</h4>
+          <div class="permissions-groups-grid">
+            <div class="perm-group-box" *ngFor="let group of permissionGroups">
+              <h5 class="perm-group-title">{{ group.name }}</h5>
+              <div class="perm-list">
+                <label *ngFor="let perm of group.perms" class="perm-item">
+                  <input
+                    type="checkbox"
+                    [checked]="isPermissionChecked(perm.value)"
+                    (change)="togglePermission(perm.value, $event)"
+                  >
+                  <span>{{ perm.label }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-notice" *ngIf="formRole === 'admin'">
+          <p><strong>Note:</strong> Admin users automatically have full access to all system features. Specific permissions are not required.</p>
+        </div>
+      </div>
+
+      <footer class="window-footer">
+        <button type="button" (click)="saveUser()">Save</button>
+        <button type="button" class="delete-button" *ngIf="formMode === 'edit' && formUsername !== 'admin'" (click)="deleteUser()">Delete User</button>
+        <button type="button" (click)="closeForm()">Cancel</button>
+      </footer>
+    </div>
+  </div>
+</section>

@@ -29,13 +29,19 @@
 
           <label>
             <span>User Name</span>
-            <input class="username-input" name="username" [(ngModel)]="username" autocomplete="username" autofocus (keydown.enter)="focusPassword($event)">
+            <input class="username-input" name="username" [(ngModel)]="username" autocomplete="username" autofocus (keydown.enter)="focusPassword($event)" (blur)="lookupRole()">
+          </label>
+
+          <label>
+            <span>Role</span>
+            <input class="role-input" name="role" [value]="userRoleDisplay" placeholder="Auto-filled" readonly disabled tabindex="-1" style="background: #e9ecef; color: #495057; cursor: not-allowed; border: 1px solid #ced4da;">
           </label>
 
           <label>
             <span>Password</span>
             <input name="password" [(ngModel)]="password" type="password" autocomplete="current-password" (keydown.enter)="submitFromPassword($event)">
           </label>
+
 
           <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
 

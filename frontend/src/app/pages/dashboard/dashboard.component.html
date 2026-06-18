@@ -2,52 +2,58 @@
   <header class="top-menu">
     <div class="app-title">Neethi Clinical Lab</div>
     <nav>
-      <div class="menu-group" *ngFor="let menu of dropdownMenus" [class.open]="openTopMenu === menu.key">
-        <button type="button" class="menu-trigger" (click)="toggleTopMenu(menu.key, $event)">{{ menu.label }}</button>
-
-        <div
-          class="dropdown-panel"
-          *ngIf="openTopMenu === menu.key"
-          [style.width.px]="menu.width"
-          (click)="$event.stopPropagation()"
-        >
-          <button
-            type="button"
-            class="dropdown-item"
-            *ngFor="let item of menu.items"
-            [class.active]="menu.key === 'reports' && openReportsSubmenu === item.action"
-            (mouseenter)="menu.key === 'reports' ? openSubmenu(item.action) : openSubmenu(null)"
-            (click)="handleTopMenuItemClick(item.action, $event)"
-          >
-            <span class="dropdown-badge" *ngIf="item.badge">{{ item.badge }}</span>
-            <span class="dropdown-label">{{ item.label }}</span>
-            <span class="dropdown-arrow" *ngIf="item.hasChildIndicator">&gt;</span>
-          </button>
+      <ng-container *ngFor="let menu of dropdownMenus">
+        <div class="menu-group" *ngIf="hasMenuGroupPermission(menu.key)" [class.open]="openTopMenu === menu.key">
+          <button type="button" class="menu-trigger" (click)="toggleTopMenu(menu.key, $event)">{{ menu.label }}</button>
 
           <div
-            class="submenu-panel"
-            *ngIf="menu.key === 'reports'"
-            (mouseenter)="openSubmenu(openReportsSubmenu)"
+            class="dropdown-panel"
+            *ngIf="openTopMenu === menu.key"
+            [style.width.px]="menu.width"
+            (click)="$event.stopPropagation()"
           >
             <ng-container *ngFor="let item of menu.items">
-              <div
-                class="submenu-list"
-                *ngIf="openReportsSubmenu === item.action && item.children"
-                [style.width.px]="item.childWidth || 240"
+              <button
+                type="button"
+                class="dropdown-item"
+                *ngIf="hasActionPermission(item.action)"
+                [class.active]="menu.key === 'reports' && openReportsSubmenu === item.action"
+                (mouseenter)="menu.key === 'reports' ? openSubmenu(item.action) : openSubmenu(null)"
+                (click)="handleTopMenuItemClick(item.action, $event)"
               >
-                <button
-                  type="button"
-                  class="dropdown-item submenu-item"
-                  *ngFor="let child of item.children"
-                  (click)="handleTopMenuItemClick(child.action, $event)"
-                >
-                  <span class="dropdown-label">{{ child.label }}</span>
-                </button>
-              </div>
+                <span class="dropdown-badge" *ngIf="item.badge">{{ item.badge }}</span>
+                <span class="dropdown-label">{{ item.label }}</span>
+                <span class="dropdown-arrow" *ngIf="item.hasChildIndicator">&gt;</span>
+              </button>
             </ng-container>
+
+            <div
+              class="submenu-panel"
+              *ngIf="menu.key === 'reports'"
+              (mouseenter)="openSubmenu(openReportsSubmenu)"
+            >
+              <ng-container *ngFor="let item of menu.items">
+                <div
+                  class="submenu-list"
+                  *ngIf="openReportsSubmenu === item.action && item.children"
+                  [style.width.px]="item.childWidth || 240"
+                >
+                  <ng-container *ngFor="let child of item.children">
+                    <button
+                      type="button"
+                      class="dropdown-item submenu-item"
+                      *ngIf="hasActionPermission(child.action)"
+                      (click)="handleTopMenuItemClick(child.action, $event)"
+                    >
+                      <span class="dropdown-label">{{ child.label }}</span>
+                    </button>
+                  </ng-container>
+                </div>
+              </ng-container>
+            </div>
           </div>
         </div>
-      </div>
+      </ng-container>
     </nav>
   </header>
 
@@ -58,9 +64,11 @@
 
     <section class="home-layout">
       <aside class="side-menu">
-        <button *ngFor="let item of menuItems" (click)="handleMenuClick(item)">
-          <span>{{ item.charAt(0) }}</span>{{ item.slice(1) }}
-        </button>
+        <ng-container *ngFor="let item of menuItems">
+          <button *ngIf="hasSidebarItemPermission(item)" (click)="handleMenuClick(item)">
+            <span>{{ item.charAt(0) }}</span>{{ item.slice(1) }}
+          </button>
+        </ng-container>
 
         <div class="side-logo">
           <img src="assets/logo.png" alt="Neethi Lab Logo" class="side-logo-img">
@@ -143,6 +151,11 @@
           *ngIf="activeRegistrationView === 'stock-report'"
           (closed)="closeRegistration()"
         ></app-stock-report>
+
+        <app-user-management
+          *ngIf="activeRegistrationView === 'user-management'"
+          (closed)="closeRegistration()"
+        ></app-user-management>
       </div>
     </section>
 
@@ -155,3 +168,4 @@
     </footer>
   </ng-container>
 </main>
+

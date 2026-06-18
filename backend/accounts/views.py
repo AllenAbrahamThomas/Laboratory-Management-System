@@ -1,13 +1,17 @@
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from django.db.models import Sum
 from django.utils.dateparse import parse_date
 import datetime
 
-from .models import AccountHead, CashTransaction, JournalEntry, LoginSession
-from .serializers import AccountHeadSerializer, CashTransactionSerializer, JournalEntrySerializer, LoginSessionSerializer
+from .models import AccountHead, CashTransaction, JournalEntry, LoginSession, LabUser
+from .serializers import AccountHeadSerializer, CashTransactionSerializer, JournalEntrySerializer, LoginSessionSerializer, LabUserSerializer
+from .authentication import SessionTokenAuthentication
+from .permissions import HasRequiredPermission, check_permission
 from lab.models import Visit
 
 
@@ -22,28 +26,119 @@ class LoginView(APIView):
         return Response(LoginSessionSerializer(session).data, status=status.HTTP_201_CREATED)
 
 
+class UserRoleLookupView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        username = request.query_params.get("username", "").strip()
+        if not username:
+            return Response({"role": ""})
+        try:
+            user = LabUser.objects.get(username__iexact=username, is_active=True)
+            return Response({"role": user.role})
+        except LabUser.DoesNotExist:
+            return Response({"role": ""})
+
+
+
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("user-management")
 def recent_logins(request):
     sessions = LoginSession.objects.all()[:20]
     return Response(LoginSessionSerializer(sessions, many=True).data)
 
 
+class LabUserViewSet(viewsets.ModelViewSet):
+    serializer_class = LabUserSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+    required_permission = "user-management"
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == LabUser.Role.ADMIN:
+            return LabUser.objects.all()
+        elif user.role == LabUser.Role.SUPERVISOR:
+            # Supervisor can only manage staff
+            return LabUser.objects.filter(role=LabUser.Role.STAFF)
+        return LabUser.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        role = serializer.validated_data.get("role", LabUser.Role.STAFF)
+        
+        # Enforce role hierarchy: supervisor can only create staff
+        if user.role == LabUser.Role.SUPERVISOR and role != LabUser.Role.STAFF:
+            raise PermissionDenied("Supervisors can only create Staff users.")
+        
+        serializer.save()
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        role = serializer.validated_data.get("role", serializer.instance.role)
+        
+        # Enforce role hierarchy
+        if user.role == LabUser.Role.SUPERVISOR:
+            if serializer.instance.role != LabUser.Role.STAFF:
+                raise PermissionDenied("Supervisors can only modify Staff users.")
+            if role != LabUser.Role.STAFF:
+                raise PermissionDenied("Supervisors cannot promote a user to Supervisor or Admin.")
+        
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        
+        # Enforce role hierarchy
+        if user.role == LabUser.Role.SUPERVISOR and instance.role != LabUser.Role.STAFF:
+            raise PermissionDenied("Supervisors can only delete Staff users.")
+        
+        instance.delete()
+
+
 class AccountHeadViewSet(viewsets.ModelViewSet):
     queryset = AccountHead.objects.all()
     serializer_class = AccountHeadSerializer
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+    required_permission = "accounts-heads"
 
 
 class CashTransactionViewSet(viewsets.ModelViewSet):
     queryset = CashTransaction.objects.all()
     serializer_class = CashTransactionSerializer
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+
+    def get_required_permission(self):
+        # Determine permission based on request method and transaction type
+        if self.action == "create":
+            tx_type = self.request.data.get("tx_type")
+            if tx_type == "payment":
+                return "cash-payments"
+            elif tx_type == "receipt":
+                return "cash-receipts"
+        return "cash-payments"  # Default fallback
+
+    def check_permissions(self, request):
+        self.required_permission = self.get_required_permission()
+        super().check_permissions(request)
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Check permissions depending on transaction type filters
+        user = request_user = self.request.user
         tx_type = self.request.query_params.get('tx_type')
+        
+        # Enforce granular permissions
+        if tx_type == 'payment' and 'cash-payments' not in user.permissions and user.role != LabUser.Role.ADMIN:
+            raise PermissionDenied("No permission to view cash payments.")
+        if tx_type == 'receipt' and 'cash-receipts' not in user.permissions and user.role != LabUser.Role.ADMIN:
+            raise PermissionDenied("No permission to view cash receipts.")
+
+        queryset = super().get_queryset()
         if tx_type:
             queryset = queryset.filter(tx_type=tx_type)
         return queryset
@@ -52,11 +147,15 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
 class JournalEntryViewSet(viewsets.ModelViewSet):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+    required_permission = "journal"
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("day-book")
 def daybook_view(request):
     date_str = request.query_params.get("date")
     if not date_str:

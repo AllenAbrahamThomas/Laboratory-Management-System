@@ -15,6 +15,7 @@ import { JournalComponent } from '../accounts/journal/journal.component';
 import { ReagentItemsComponent } from '../stock/reagent-items/reagent-items.component';
 import { StockTransactionComponent } from '../stock/stock-transaction/stock-transaction.component';
 import { StockReportComponent } from '../stock/stock-report/stock-report.component';
+import { UserManagementComponent } from '../accounts/user-management/user-management.component';
 
 type EntryAction =
   | 'invoice-entry'
@@ -138,7 +139,8 @@ type TopMenu = {
     JournalComponent,
     ReagentItemsComponent,
     StockTransactionComponent,
-    StockReportComponent
+    StockReportComponent,
+    UserManagementComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -191,7 +193,7 @@ export class DashboardComponent implements OnInit {
         { label: 'Doctor', action: 'doctor', badge: 'D' },
         { label: 'Hospital', action: 'hospital', badge: 'H' },
         { label: 'Patient', action: 'patient', badge: 'P' },
-        { label: 'Staff', action: 'staff', badge: 'S' },
+        { label: 'User Management', action: 'staff', badge: 'U' },
         { label: 'Customer', action: 'customer', badge: 'C' },
         { label: 'Discount reason', action: 'discount-reason', badge: '%' },
         { label: 'Set test order', action: 'set-test-order', badge: 'O' },
@@ -315,6 +317,7 @@ export class DashboardComponent implements OnInit {
     | 'stock-inward'
     | 'stock-outward'
     | 'stock-report'
+    | 'user-management'
     | null = null;
   selectedVisitId: number | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
@@ -520,6 +523,11 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    if (action === 'staff') {
+      this.activeRegistrationView = 'user-management';
+      return;
+    }
+
     if (action === 'exit') {
       this.logout();
     }
@@ -587,5 +595,82 @@ export class DashboardComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     this.router.navigateByUrl('');
+  }
+
+  hasActionPermission(action: TopMenuAction): boolean {
+    if (action === 'exit' || action === 'about-us' || action === 'our-features') {
+      return true;
+    }
+    if (action === 'invoice-entry') return this.authService.hasPermission('invoice-entry');
+    if (action === 'edit-invoice') return this.authService.hasPermission('edit-invoice');
+    if (action === 'patient-advance-search') return this.authService.hasPermission('patient-advance-search');
+    if (action === 'pending-collection') return this.authService.hasPermission('pending-collection');
+    if (action === 'remove-report-authorization') return this.authService.hasPermission('remove-report-authorization');
+    if (action === 'result-entry') return this.authService.hasPermission('result-entry');
+    if (action === 'accounts-heads') return this.authService.hasPermission('accounts-heads');
+    if (action === 'cash-payments') return this.authService.hasPermission('cash-payments');
+    if (action === 'cash-receipts') return this.authService.hasPermission('cash-receipts');
+    if (action === 'day-book') return this.authService.hasPermission('day-book');
+    if (action === 'journal') return this.authService.hasPermission('journal');
+    if (action === 'reagent-items') return this.authService.hasPermission('reagent-items');
+    if (action === 'stock-inward') return this.authService.hasPermission('stock-inward');
+    if (action === 'stock-outward') return this.authService.hasPermission('stock-outward');
+    if (action === 'stock-report') return this.authService.hasPermission('stock-report');
+    if (action === 'staff') return this.authService.hasPermission('user-management');
+    
+    if (action === 'daily-collection-statement') return this.authService.hasPermission('daily-collection-statement');
+    if (action === 'collection-summary') return this.authService.hasPermission('collection-summary');
+    if (action === 'daily-collection-summary-division-wise') return this.authService.hasPermission('daily-collection-summary-division-wise');
+    if (action === 'monthly-collection-summary-division-wise') return this.authService.hasPermission('monthly-collection-summary-division-wise');
+
+    const generalReportActions = [
+      'credit-client-invoice-summary', 'credit-client-invoice', 'user-wise-collection', 
+      'pending-register', 'pending-collection-register', 'result-register', 
+      'cancelled-invoices', 'doctor-wise-invoices', 'hospital-wise-invoices', 
+      'patient-wise-invoices', 'test-wise-invoices', 'sample-collection-wise-invoices', 
+      'division-wise-invoices', 'test-performance', 'test-price-list', 
+      'test-detailed', 'doctors', 'hospitals', 'patients', 'employees', 
+      'departments', 'divisions', 'methods', 'units', 'technologies'
+    ];
+    if (generalReportActions.includes(action)) {
+      return this.authService.hasPermission('general-reports');
+    }
+
+    const accountsReportActions = [
+      'payments-statement', 'receipts-statement', 'income-expense-statement', 
+      'other-income-expense-statement', 'ledger', 'cash-statement', 'bank-statement'
+    ];
+    if (accountsReportActions.includes(action)) {
+      return this.authService.hasPermission('accounts-statements');
+    }
+
+    const masterSettingActions = [
+      'test', 'department', 'unit', 'method', 'technologies', 'area', 'contacts', 
+      'result-note-template', 'doctor', 'hospital', 'patient', 'customer', 
+      'discount-reason', 'set-test-order', 'set-group-test', 'set-hospital-collection', 
+      'set-customize-1', 'set-customize-2', 'set-customize-3', 'set-special-rate', 
+      'set-sms-template', 'set-discount-percentage', 'set-result-template', 'set-culture'
+    ];
+    if (masterSettingActions.includes(action)) {
+      return this.authService.hasPermission('master-settings');
+    }
+
+    return false;
+  }
+
+  hasMenuGroupPermission(menuKey: TopMenuKey): boolean {
+    if (menuKey === 'help') return true;
+    const menu = this.dropdownMenus.find((m) => m.key === menuKey);
+    if (!menu) return false;
+    return menu.items.some((item) => this.hasActionPermission(item.action));
+  }
+
+  hasSidebarItemPermission(item: string): boolean {
+    if (item === 'About us' || item === 'Log off') return true;
+    if (item === 'Lab registration') return this.authService.hasPermission('invoice-entry');
+    if (item === 'Result entry') return this.authService.hasPermission('result-entry');
+    if (item === 'Pending Collection') return this.authService.hasPermission('pending-collection');
+    if (item === 'Patient Adv. Search') return this.authService.hasPermission('patient-advance-search');
+    return false;
   }
 }

@@ -1,10 +1,17 @@
 from django.db import models
+import secrets
+
+
+def generate_token():
+    return secrets.token_hex(32)
 
 
 class LoginSession(models.Model):
     username = models.CharField(max_length=120)
     user_group = models.CharField(max_length=120, blank=True)
+    token = models.CharField(max_length=64, unique=True, default=generate_token)
     login_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-login_at"]
@@ -19,6 +26,35 @@ class TimestampedModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class LabUser(TimestampedModel):
+    class Role(models.TextChoices):
+        ADMIN = 'admin', 'Admin'
+        SUPERVISOR = 'supervisor', 'Supervisor'
+        STAFF = 'staff', 'Staff'
+
+    username = models.CharField(max_length=150, unique=True)
+    password = models.CharField(max_length=128)  # hashed password
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.STAFF)
+    permissions = models.JSONField(default=list, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "lab_users"
+        ordering = ["role", "username"]
+
+    def __str__(self) -> str:
+        return f"{self.username} ({self.get_role_display()})"
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
 
 
 class AccountHead(TimestampedModel):

@@ -1,15 +1,17 @@
 from rest_framework import serializers
 
-from .models import AccountHead, CashTransaction, JournalEntry, JournalLine, LoginSession
+from .models import AccountHead, CashTransaction, JournalEntry, JournalLine, LoginSession, LabUser
 
 
 class LoginSessionSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
+    token = serializers.CharField(read_only=True)
+    permissions = serializers.ListField(child=serializers.CharField(), read_only=True)
 
     class Meta:
         model = LoginSession
-        fields = ["id", "username", "user_group", "password", "login_at"]
-        read_only_fields = ["id", "login_at"]
+        fields = ["id", "username", "user_group", "password", "token", "permissions", "login_at"]
+        read_only_fields = ["id", "user_group", "token", "permissions", "login_at"]
 
     def validate_username(self, value):
         value = value.strip()
@@ -21,13 +23,107 @@ class LoginSessionSerializer(serializers.ModelSerializer):
         username = attrs.get("username", "").strip()
         password = attrs.get("password", "")
 
-        if username != "admin" or password != "admin":
+        from django.contrib.auth.hashers import check_password
+
+        user = LabUser.objects.filter(username=username, is_active=True).first()
+        if not user or not check_password(password, user.password):
             raise serializers.ValidationError("Invalid username or password.")
+        
+        self.validated_user = user
         return attrs
 
     def create(self, validated_data):
         validated_data.pop("password", None)
-        return LoginSession.objects.create(**validated_data)
+        validated_data.pop("username", None)
+        user = self.validated_user
+        
+        if user.role == LabUser.Role.ADMIN:
+            all_permissions = [
+                'invoice-entry', 'edit-invoice', 'patient-advance-search', 
+                'pending-collection', 'remove-report-authorization',
+                'result-entry', 'accounts-heads', 'cash-payments', 
+                'cash-receipts', 'day-book', 'journal', 'reagent-items', 
+                'stock-inward', 'stock-outward', 'stock-report', 
+                'daily-collection-statement', 'collection-summary', 
+                'daily-collection-summary-division-wise', 'monthly-collection-summary-division-wise', 
+                'general-reports', 'accounts-statements', 'master-settings', 'user-management'
+            ]
+            permissions_list = all_permissions
+        else:
+            permissions_list = user.permissions
+
+        session = LoginSession.objects.create(
+            username=user.username,
+            user_group=user.role,
+            **validated_data
+        )
+        session.permissions = permissions_list
+        return session
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        if not hasattr(instance, 'permissions'):
+            user = LabUser.objects.filter(username=instance.username).first()
+            if user:
+                if user.role == LabUser.Role.ADMIN:
+                    ret['permissions'] = [
+                        'invoice-entry', 'edit-invoice', 'patient-advance-search', 
+                        'pending-collection', 'remove-report-authorization',
+                        'result-entry', 'accounts-heads', 'cash-payments', 
+                        'cash-receipts', 'day-book', 'journal', 'reagent-items', 
+                        'stock-inward', 'stock-outward', 'stock-report', 
+                        'daily-collection-statement', 'collection-summary', 
+                        'daily-collection-summary-division-wise', 'monthly-collection-summary-division-wise', 
+                        'general-reports', 'accounts-statements', 'master-settings', 'user-management'
+                    ]
+                else:
+                    ret['permissions'] = user.permissions
+            else:
+                ret['permissions'] = []
+        else:
+            ret['permissions'] = instance.permissions
+        return ret
+
+
+class LabUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
+    class Meta:
+        model = LabUser
+        fields = ["id", "username", "password", "role", "permissions", "is_active", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", "")
+        if not password:
+            raise serializers.ValidationError({"password": "Password is required for new users."})
+        
+        from django.contrib.auth.hashers import make_password
+        validated_data["password"] = make_password(password)
+        
+        if "permissions" not in validated_data or not validated_data["permissions"]:
+            role = validated_data.get("role", LabUser.Role.STAFF)
+            if role == LabUser.Role.STAFF:
+                validated_data["permissions"] = [
+                    'invoice-entry', 'edit-invoice', 'patient-advance-search', 
+                    'pending-collection', 'result-entry'
+                ]
+            elif role == LabUser.Role.SUPERVISOR:
+                validated_data["permissions"] = [
+                    'invoice-entry', 'edit-invoice', 'patient-advance-search', 
+                    'pending-collection', 'result-entry', 'user-management'
+                ]
+        
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        if password:
+            from django.contrib.auth.hashers import make_password
+            instance.password = make_password(password)
+        
+        return super().update(instance, validated_data)
+
 
 
 class AccountHeadSerializer(serializers.ModelSerializer):

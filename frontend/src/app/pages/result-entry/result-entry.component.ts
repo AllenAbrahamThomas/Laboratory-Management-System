@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../services/clock.service';
 import { LabPrintConfig, ResultEntryPayload, ResultEntryTest, VisitService } from '../../services/visit.service';
+import { AuthService } from '../../services/auth.service';
 
 interface ResultEntryDisplayChild {
   test_id: number;
@@ -37,6 +38,7 @@ export class ResultEntryComponent implements OnChanges {
   private readonly clockService = inject(ClockService);
   private readonly visitService = inject(VisitService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly authService = inject(AuthService);
 
   labNoSearch = '';
   currentTime = new Date();

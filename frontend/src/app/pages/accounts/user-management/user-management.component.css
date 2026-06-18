@@ -1,0 +1,150 @@
+@import '../../../pages/patient-advance-search/patient-advance-search.component.css';
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content.user-modal {
+  width: 580px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--bright-teal-blue);
+  box-shadow: 0 8px 18px rgba(3, 4, 94, 0.25);
+}
+
+.form-body.user-form-body {
+  padding: 15px;
+  background: var(--light-cyan);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.form-group-item {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-group-item label {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.form-group-item input[type="text"],
+.form-group-item input[type="password"],
+.form-group-item select {
+  height: 25px;
+  padding: 0 6px;
+  border: 1px solid #b5b5b5;
+  background: #fff;
+  font-size: 12px;
+}
+
+.permissions-container {
+  margin-top: 10px;
+  border-top: 1px solid #ccc;
+  padding-top: 8px;
+}
+
+.permissions-header {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: var(--bright-teal-blue);
+  font-weight: bold;
+}
+
+.permissions-groups-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #ccc;
+}
+
+.perm-group-box {
+  background: #f7f9fa;
+  border: 1px solid #e1e6eb;
+  padding: 6px;
+  border-radius: 4px;
+}
+
+.perm-group-title {
+  margin: 0 0 4px 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: #495057;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 2px;
+}
+
+.perm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+
+.perm-item input {
+  margin: 0;
+  width: auto;
+  height: auto;
+}
+
+.admin-notice {
+  margin-top: 8px;
+  padding: 8px;
+  background: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+  color: #2e7d32;
+  font-size: 11px;
+}
+
+.delete-button {
+  background-color: #d9534f !important;
+  color: white !important;
+}
+
+.delete-button:hover {
+  background-color: #c9302c !important;
+}
+
+section.advance-search-window {
+  grid-template-rows: auto auto 1fr auto !important;
+}
+
+section.advance-search-window .result-grid {
+  margin-bottom: 0 !important;
+}
+
+section.advance-search-window .search-panel button.search-button {
+  width: auto !important;
+  min-width: 86px;
+  height: auto !important;
+  min-height: 24px;
+  padding: 3px 12px !important;
+  white-space: nowrap !important;
+}

@@ -2,6 +2,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export interface LabUser {
+  id?: number;
+  username: string;
+  password?: string;
+  role: 'admin' | 'supervisor' | 'staff';
+  permissions: string[];
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface AccountHead {
   id?: number;
   name: string;
@@ -62,6 +73,7 @@ export class AccountsService {
   private readonly txUrl = 'http://localhost:8000/api/transactions/';
   private readonly journalUrl = 'http://localhost:8000/api/journals/';
   private readonly daybookUrl = 'http://localhost:8000/api/daybook/';
+  private readonly usersUrl = 'http://localhost:8000/api/users/';
 
   getAccountHeads(): Observable<AccountHead[]> {
     return this.http.get<AccountHead[]>(this.apiUrl);
@@ -99,4 +111,21 @@ export class AccountsService {
     const params = new HttpParams().set('date', date);
     return this.http.get<DayBookResponse>(this.daybookUrl, { params });
   }
+
+  getUsers(): Observable<LabUser[]> {
+    return this.http.get<LabUser[]>(this.usersUrl);
+  }
+
+  createUser(user: LabUser): Observable<LabUser> {
+    return this.http.post<LabUser>(this.usersUrl, user);
+  }
+
+  updateUser(id: number, user: LabUser): Observable<LabUser> {
+    return this.http.put<LabUser>(`${this.usersUrl}${id}/`, user);
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.usersUrl}${id}/`);
+  }
 }
+

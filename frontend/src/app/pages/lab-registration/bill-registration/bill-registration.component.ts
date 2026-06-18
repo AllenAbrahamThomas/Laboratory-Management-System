@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ClockService } from '../../../services/clock.service';
 import { LabPrintConfig, TestLookupItem, UpiPaymentConfig, VisitDetail, VisitService } from '../../../services/visit.service';
+import { AuthService } from '../../../services/auth.service';
 
 interface TestLine {
   slNo: number;
@@ -51,6 +52,25 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
   private readonly clockService = inject(ClockService);
   private readonly visitService = inject(VisitService);
   private readonly destroyRef = inject(DestroyRef);
+  readonly authService = inject(AuthService);
+
+  hasSavePermission(): boolean {
+    if (this.openMode === 'existing') {
+      return this.authService.hasPermission('edit-invoice');
+    }
+    return this.authService.hasPermission('invoice-entry');
+  }
+
+  hasResultPermission(): boolean {
+    return this.authService.hasPermission('result-entry');
+  }
+
+  hasDeleteLinePermission(): boolean {
+    if (this.openMode === 'existing') {
+      return this.authService.hasPermission('edit-invoice');
+    }
+    return this.authService.hasPermission('invoice-entry');
+  }
 
   readonly paymentModes = ['Cash', 'Card', 'UPI', 'Credit'];
   readonly discountModes = ['NORMAL', 'CORPORATE', 'STAFF'];

@@ -60,7 +60,7 @@
   </div>
 
   <footer class="window-footer">
-    <button type="button" class="new-button" (click)="newRegistration.emit()" *ngIf="mode === 'all' && purpose === 'registration'">
+    <button type="button" class="new-button" (click)="newRegistration.emit()" *ngIf="mode === 'all' && purpose === 'registration' && authService.hasPermission('invoice-entry')">
       New Registration
     </button>
     <strong>{{ purpose === 'result' ? 'Result entry' : 'Patient registration' }}</strong>

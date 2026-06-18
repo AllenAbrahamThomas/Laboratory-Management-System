@@ -7,9 +7,14 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
 from django.conf import settings
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from accounts.authentication import SessionTokenAuthentication
+from accounts.permissions import HasRequiredPermission, check_permission
+from accounts.models import LabUser
 
 from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest, ReagentItem, StockTransaction
 from .serializers import VisitDetailSerializer, VisitListSerializer
@@ -42,12 +47,22 @@ def _normalize_lab_no(value: str) -> str:
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("invoice-entry")
 def next_visit_lab_no(request):
     return Response({"lab_no": _next_lab_no()})
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
 def visit_list(request):
+    user = request.user
+    if user.role != LabUser.Role.ADMIN:
+        billing_perms = {"invoice-entry", "edit-invoice", "patient-advance-search", "pending-collection"}
+        if not any(perm in user.permissions for perm in billing_perms):
+            raise PermissionDenied("You do not have permission to view this list.")
     queryset = Visit.objects.select_related("patient", "doctor").all()
 
     lab_no = request.query_params.get("lab_no", "").strip()
@@ -148,7 +163,14 @@ def visit_list(request):
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
 def visit_detail(request, visit_id: int):
+    user = request.user
+    if user.role != LabUser.Role.ADMIN:
+        billing_perms = {"invoice-entry", "edit-invoice"}
+        if not any(perm in user.permissions for perm in billing_perms):
+            raise PermissionDenied("You do not have permission to view visit details.")
     visit = get_object_or_404(
         Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
         id=visit_id,
@@ -157,7 +179,14 @@ def visit_detail(request, visit_id: int):
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
 def visit_detail_by_lab_no(request, lab_no: str):
+    user = request.user
+    if user.role != LabUser.Role.ADMIN:
+        billing_perms = {"invoice-entry", "edit-invoice"}
+        if not any(perm in user.permissions for perm in billing_perms):
+            raise PermissionDenied("You do not have permission to view visit details.")
     normalized_lab_no = _normalize_lab_no(lab_no)
     lookup = Q(lab_no=normalized_lab_no.zfill(5)) if normalized_lab_no.isdigit() else Q(lab_no=lab_no.strip())
     visit = get_object_or_404(
@@ -168,7 +197,14 @@ def visit_detail_by_lab_no(request, lab_no: str):
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
 def test_lookup(request):
+    user = request.user
+    if user.role != LabUser.Role.ADMIN:
+        allowed_perms = {"invoice-entry", "edit-invoice", "patient-advance-search", "result-entry"}
+        if not any(perm in user.permissions for perm in allowed_perms):
+            raise PermissionDenied("You do not have permission to look up tests.")
     query = request.query_params.get("q", "").strip()
     queryset = Test.objects.select_related("department").filter(is_active=True)
     if query:
@@ -288,6 +324,9 @@ def _save_visit_tests(visit: Visit, tests_data) -> None:
 
 
 @api_view(["POST"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("invoice-entry")
 def visit_create(request):
     data = request.data
     patient_name = str(data.get("patient_name", "")).strip()
@@ -372,6 +411,9 @@ def visit_create(request):
 
 
 @api_view(["PUT", "PATCH"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("edit-invoice")
 def visit_update(request, visit_id: int):
     visit = get_object_or_404(Visit.objects.select_related("patient"), id=visit_id)
     data = request.data
@@ -491,6 +533,9 @@ def _build_result_entry_payload(visit: Visit) -> dict:
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("result-entry")
 def result_entry_by_visit(request, visit_id: int):
     visit = get_object_or_404(
         Visit.objects.select_related("patient", "doctor", "hospital").prefetch_related("visit_tests__test"),
@@ -500,6 +545,9 @@ def result_entry_by_visit(request, visit_id: int):
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("result-entry")
 def result_entry_by_lab_no(request, lab_no: str):
     normalized_lab_no = _normalize_lab_no(lab_no)
     lookup = Q(lab_no=normalized_lab_no.zfill(5)) if normalized_lab_no.isdigit() else Q(lab_no=lab_no.strip())
@@ -511,6 +559,9 @@ def result_entry_by_lab_no(request, lab_no: str):
 
 
 @api_view(["POST"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("result-entry")
 def result_entry_save(request, visit_id: int):
     visit = get_object_or_404(Visit, id=visit_id)
     entries = request.data.get("entries", [])
@@ -574,8 +625,9 @@ import datetime as dt
 class ReagentItemViewSet(viewsets.ModelViewSet):
     queryset = ReagentItem.objects.all()
     serializer_class = ReagentItemSerializer
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+    required_permission = "reagent-items"
 
     @action(detail=True, methods=['get'])
     def batches(self, request, pk=None):
@@ -612,8 +664,21 @@ class ReagentItemViewSet(viewsets.ModelViewSet):
 class StockTransactionViewSet(viewsets.ModelViewSet):
     queryset = StockTransaction.objects.all()
     serializer_class = StockTransactionSerializer
-    authentication_classes = []
-    permission_classes = []
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, HasRequiredPermission]
+
+    def get_required_permission(self):
+        if self.action == "create":
+            tx_type = self.request.data.get("tx_type")
+            if tx_type == "inward":
+                return "stock-inward"
+            elif tx_type == "outward":
+                return "stock-outward"
+        return "stock-inward"  # default fallback
+
+    def check_permissions(self, request):
+        self.required_permission = self.get_required_permission()
+        super().check_permissions(request)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -627,6 +692,9 @@ class StockTransactionViewSet(viewsets.ModelViewSet):
 
 
 @api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+@check_permission("stock-report")
 def stock_report_view(request):
     all_items = ReagentItem.objects.all()
     today_dt = dt.date.today()

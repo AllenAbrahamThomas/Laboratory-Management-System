@@ -20,8 +20,30 @@ export class LoginComponent {
 
   username = '';
   password = '';
+  userRole = '';
   isSubmitting = false;
   errorMessage = '';
+
+  get userRoleDisplay(): string {
+    if (!this.userRole) return '';
+    return this.userRole.charAt(0).toUpperCase() + this.userRole.slice(1);
+  }
+
+  lookupRole(): void {
+    const username = this.username.trim();
+    if (!username) {
+      this.userRole = '';
+      return;
+    }
+    this.authService.lookupRole(username).subscribe({
+      next: (res) => {
+        this.userRole = res.role;
+      },
+      error: () => {
+        this.userRole = '';
+      }
+    });
+  }
 
   login(): void {
     this.errorMessage = '';
@@ -49,7 +71,9 @@ export class LoginComponent {
     this.username = '';
     this.password = '';
     this.errorMessage = '';
+    this.userRole = '';
   }
+
 
   focusPassword(event: KeyboardEvent): void {
     event.preventDefault();
