@@ -129,7 +129,7 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Check permissions depending on transaction type filters
-        user = request_user = self.request.user
+        user = self.request.user
         tx_type = self.request.query_params.get('tx_type')
         
         # Enforce granular permissions
@@ -141,6 +141,21 @@ class CashTransactionViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         if tx_type:
             queryset = queryset.filter(tx_type=tx_type)
+            
+        from_date = self.request.query_params.get('from_date')
+        to_date = self.request.query_params.get('to_date')
+        account_head = self.request.query_params.get('account_head')
+        group = self.request.query_params.get('group')
+        
+        if from_date:
+            queryset = queryset.filter(transaction_date__gte=from_date)
+        if to_date:
+            queryset = queryset.filter(transaction_date__lte=to_date)
+        if account_head:
+            queryset = queryset.filter(account_head_id=account_head)
+        if group:
+            queryset = queryset.filter(account_head__group=group)
+            
         return queryset
 
 
@@ -150,6 +165,21 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
     authentication_classes = [SessionTokenAuthentication]
     permission_classes = [IsAuthenticated, HasRequiredPermission]
     required_permission = "journal"
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        from_date = self.request.query_params.get('from_date')
+        to_date = self.request.query_params.get('to_date')
+        account_head = self.request.query_params.get('account_head')
+        
+        if from_date:
+            queryset = queryset.filter(entry_date__gte=from_date)
+        if to_date:
+            queryset = queryset.filter(entry_date__lte=to_date)
+        if account_head:
+            queryset = queryset.filter(lines__account_head_id=account_head).distinct()
+            
+        return queryset
 
 
 @api_view(["GET"])

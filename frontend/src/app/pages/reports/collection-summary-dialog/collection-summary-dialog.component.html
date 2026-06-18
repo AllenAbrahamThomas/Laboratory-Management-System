@@ -6,25 +6,25 @@
 
   <div class="summary-body">
     <fieldset class="criteria-box">
-      <legend>Criteria</legend>
+      <!-- <legend>Criteria</legend> -->
 
       <label *ngIf="mode !== 'monthly' && mode !== 'department-wise-monthly'">
-        Date from:
+        <span class="label-text">Date from:</span>
         <input type="date" [(ngModel)]="fromDate">
       </label>
 
       <label *ngIf="mode !== 'monthly' && mode !== 'department-wise-monthly'">
-        Date to:
+        <span class="label-text">Date to:</span>
         <input type="date" [(ngModel)]="toDate">
       </label>
 
       <label *ngIf="mode === 'monthly' || mode === 'department-wise-monthly'">
-        Month:
+        <span class="label-text">Month:</span>
         <input type="month" [(ngModel)]="selectedMonth">
       </label>
 
       <label *ngIf="isDepartmentWiseMode()">
-        Department:
+        <span class="label-text">Department:</span>
         <select [(ngModel)]="selectedDepartment">
           <option *ngFor="let department of departments" [value]="department">{{ department }}</option>
         </select>
@@ -32,6 +32,7 @@
 
       <div class="criteria-actions">
         <button type="button" (click)="preview()">Preview</button>
+        <button type="button" (click)="print()">Print</button>
         <button type="button" (click)="closed.emit()">Exit</button>
       </div>
     </fieldset>

@@ -833,3 +833,81 @@ def stock_report_view(request):
         "total_items_tracked": all_items.count()
     })
 
+
+from rest_framework import serializers
+from .models import Doctor, Hospital, Department, Unit
+
+class DoctorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Doctor
+        fields = '__all__'
+
+class HospitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = '__all__'
+
+class PatientSerializer(serializers.ModelSerializer):
+    gender_display = serializers.CharField(source='get_gender_display', read_only=True)
+    class Meta:
+        model = Patient
+        fields = '__all__'
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = '__all__'
+
+class UnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Unit
+        fields = '__all__'
+
+class TestDetailedSerializer(serializers.ModelSerializer):
+    department_name = serializers.CharField(source='department.name', read_only=True)
+    reference_range_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Test
+        fields = '__all__'
+        
+    def get_reference_range_display(self, obj):
+        ranges = obj.reference_ranges.filter(is_active=True)
+        return ", ".join([f"{r.get_gender_display()}: {r.display_text}" for r in ranges])
+
+class DoctorViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Doctor.objects.filter(is_active=True)
+    serializer_class = DoctorSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Hospital.objects.filter(is_active=True)
+    serializer_class = HospitalSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class PatientViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Department.objects.filter(is_active=True)
+    serializer_class = DepartmentSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class UnitViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Unit.objects.filter(is_active=True)
+    serializer_class = UnitSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+class TestDetailedViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Test.objects.filter(is_active=True)
+    serializer_class = TestDetailedSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated]
+

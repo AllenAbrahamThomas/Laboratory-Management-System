@@ -5,6 +5,7 @@ import { BillRegistrationComponent } from '../lab-registration/bill-registration
 import { PatientListComponent } from '../lab-registration/patient-list/patient-list.component';
 import { PatientAdvanceSearchComponent } from '../patient-advance-search/patient-advance-search.component';
 import { CollectionSummaryDialogComponent } from '../reports/collection-summary-dialog/collection-summary-dialog.component';
+import { StatementReportDialogComponent } from '../reports/statement-report-dialog/statement-report-dialog.component';
 import { ResultEntryComponent } from '../result-entry/result-entry.component';
 import { AuthService, LoginSession } from '../../services/auth.service';
 import { ClockService } from '../../services/clock.service';
@@ -133,6 +134,7 @@ type TopMenu = {
     BillRegistrationComponent,
     PatientAdvanceSearchComponent,
     CollectionSummaryDialogComponent,
+    StatementReportDialogComponent,
     ResultEntryComponent,
     AccountsHeadsComponent,
     CashVoucherComponent,
@@ -327,6 +329,8 @@ export class DashboardComponent implements OnInit {
   patientListPurpose: 'registration' | 'result' = 'registration';
   activeCollectionSummaryMode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly' | null = null;
   activeCollectionSummaryTitle = 'Collection summary';
+  activeStatementReportAction: string | null = null;
+  activeStatementReportTitle = 'Statement Report';
   openTopMenu: TopMenuKey | null = null;
   openReportsSubmenu: TopMenuAction | null = null;
 
@@ -486,6 +490,26 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    const accountsStatementActions = [
+      'payments-statement', 'receipts-statement', 'income-expense-statement', 
+      'other-income-expense-statement', 'ledger', 'cash-statement', 'bank-statement'
+    ];
+    if (accountsStatementActions.includes(action)) {
+      const title = this.getReportTitle(action);
+      this.openStatementReport(action, title);
+      return;
+    }
+
+    const masterReportActions = [
+      'doctors', 'hospitals', 'patients', 'employees', 'departments', 
+      'divisions', 'methods', 'units', 'technologies', 'test-price-list', 'test-detailed'
+    ];
+    if (masterReportActions.includes(action)) {
+      const title = this.getReportTitle(action);
+      this.openStatementReport(action, title);
+      return;
+    }
+
     if (action === 'accounts-heads') {
       this.activeRegistrationView = 'accounts-heads';
       return;
@@ -598,6 +622,39 @@ export class DashboardComponent implements OnInit {
   private openCollectionSummary(mode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly', title: string): void {
     this.activeCollectionSummaryMode = mode;
     this.activeCollectionSummaryTitle = title;
+  }
+
+  openStatementReport(action: string, title: string): void {
+    this.activeStatementReportAction = action;
+    this.activeStatementReportTitle = title;
+  }
+
+  closeStatementReport(): void {
+    this.activeStatementReportAction = null;
+  }
+
+  private getReportTitle(action: string): string {
+    switch (action) {
+      case 'payments-statement': return 'Payments Statement';
+      case 'receipts-statement': return 'Receipts Statement';
+      case 'income-expense-statement': return 'Income/Expense Statement';
+      case 'other-income-expense-statement': return 'Other Income/Expense Statement';
+      case 'ledger': return 'General Ledger';
+      case 'cash-statement': return 'Cash Statement';
+      case 'bank-statement': return 'Bank Statement';
+      case 'doctors': return 'Doctors Master List';
+      case 'hospitals': return 'Hospitals Master List';
+      case 'patients': return 'Patients Master List';
+      case 'employees': return 'Employees List';
+      case 'departments': return 'Departments List';
+      case 'divisions': return 'Divisions List';
+      case 'methods': return 'Methods List';
+      case 'units': return 'Units List';
+      case 'technologies': return 'Technologies List';
+      case 'test-price-list': return 'Test Price List';
+      case 'test-detailed': return 'Test Detailed List';
+      default: return 'Statement Report';
+    }
   }
 
   logout(): void {

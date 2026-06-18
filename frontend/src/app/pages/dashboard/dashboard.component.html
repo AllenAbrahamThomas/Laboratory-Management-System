@@ -121,6 +121,13 @@
           (closed)="closeCollectionSummary()"
         ></app-collection-summary-dialog>
 
+        <app-statement-report-dialog
+          *ngIf="activeStatementReportAction"
+          [action]="activeStatementReportAction"
+          [title]="activeStatementReportTitle"
+          (closed)="closeStatementReport()"
+        ></app-statement-report-dialog>
+
         <app-accounts-heads
           *ngIf="activeRegistrationView === 'accounts-heads'"
           (closed)="closeRegistration()"

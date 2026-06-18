@@ -3,7 +3,7 @@
   top: 8%;
   left: 50%;
   transform: translateX(-50%);
-  width: min(96vw, 980px);
+  width: min(96vw, 1020px);
   border: 1px solid var(--bright-teal-blue);
   background:
     linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
@@ -54,6 +54,7 @@
 .criteria-box label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   font-weight: 700;
   color: var(--deep-twilight);
@@ -107,53 +108,26 @@
   font-weight: 400;
 }
 
-.main-table,
-.pending-table {
+.main-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  margin-top: 10px;
 }
 
 .main-table th,
-.main-table td,
-.pending-table th,
-.pending-table td {
+.main-table td {
   border-bottom: 1px solid var(--frosted-blue);
-  padding: 4px 6px;
+  padding: 6px 8px;
   text-align: left;
   white-space: nowrap;
 }
 
-.main-table th,
-.pending-table th {
+.main-table th {
   border-top: 1px solid var(--frosted-blue);
   background: var(--frosted-blue);
   color: var(--deep-twilight);
   font-weight: 700;
-}
-
-.main-table th:nth-child(4),
-.main-table th:nth-child(5),
-.main-table th:nth-child(6),
-.main-table td:nth-child(4),
-.main-table td:nth-child(5),
-.main-table td:nth-child(6),
-.pending-table th:nth-child(4),
-.pending-table th:nth-child(5),
-.pending-table td:nth-child(4),
-.pending-table td:nth-child(5) {
-  text-align: right;
-}
-
-.main-table th:nth-child(1),
-.main-table th:nth-child(2),
-.main-table td:nth-child(1),
-.main-table td:nth-child(2),
-.pending-table th:nth-child(1),
-.pending-table th:nth-child(2),
-.pending-table td:nth-child(1),
-.pending-table td:nth-child(2) {
-  text-align: center;
 }
 
 .totals-line {
@@ -165,21 +139,10 @@
   font-weight: 700;
 }
 
-.pending-title {
-  margin: 12px 0 6px;
-  border-bottom: 2px solid var(--bright-teal-blue);
+.ledger-balance-line {
+  margin: 8px 0;
   color: var(--deep-twilight);
-  font-weight: 700;
-}
-
-.summary-footer {
-  margin-top: 10px;
-  display: grid;
-  justify-content: end;
-  gap: 4px;
-  text-align: right;
-  color: var(--deep-twilight);
-  font-weight: 700;
+  font-size: 13px;
 }
 
 .status {
@@ -188,6 +151,10 @@
 
 .status.error {
   color: #b22222;
+}
+
+.print-only-layout {
+  display: none;
 }
 
 @media (max-width: 700px) {

@@ -20,12 +20,24 @@ from .views import (
     ReagentItemViewSet,
     StockTransactionViewSet,
     stock_report_view,
+    DoctorViewSet,
+    HospitalViewSet,
+    PatientViewSet,
+    DepartmentViewSet,
+    UnitViewSet,
+    TestDetailedViewSet,
 )
 
 
 
 router = DefaultRouter()
 router.register("reagents", ReagentItemViewSet, basename="reagent")
+router.register("doctors", DoctorViewSet, basename="doctor")
+router.register("hospitals", HospitalViewSet, basename="hospital")
+router.register("patients", PatientViewSet, basename="patient")
+router.register("departments", DepartmentViewSet, basename="department")
+router.register("units", UnitViewSet, basename="unit")
+router.register("tests-detailed", TestDetailedViewSet, basename="test-detailed")
 
 urlpatterns = [
     path("visits/", visit_list, name="visit-list"),

@@ -189,4 +189,8 @@ export class CollectionSummaryDialogComponent implements OnChanges {
     return this.mode === 'department-wise-daily' || this.mode === 'department-wise-monthly';
   }
 
+  print(): void {
+    window.print();
+  }
+
 }

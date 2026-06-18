@@ -1,0 +1,485 @@
+<section class="summary-window no-print" aria-label="Statement report window">
+  <header class="summary-title">
+    {{ title }}
+    <button type="button" (click)="closed.emit()" aria-label="Close">X</button>
+  </header>
+
+  <div class="summary-body">
+    <fieldset class="criteria-box" *ngIf="isDateRangeNeeded() || action === 'ledger'">
+      <label *ngIf="isDateRangeNeeded()">
+        <span class="label-text">Date from:</span>
+        <input type="date" [(ngModel)]="fromDate">
+      </label>
+
+      <label *ngIf="isDateRangeNeeded()">
+        <span class="label-text">Date to:</span>
+        <input type="date" [(ngModel)]="toDate">
+      </label>
+
+      <label *ngIf="action === 'ledger'">
+        <span class="label-text">Account:</span>
+        <select [(ngModel)]="selectedAccountHeadId">
+          <option [value]="null" disabled selected>Select Account Head</option>
+          <option *ngFor="let head of accountHeads" [value]="head.id">{{ head.name }}</option>
+        </select>
+      </label>
+
+      <div class="criteria-actions">
+        <button type="button" (click)="preview()">Preview</button>
+        <button type="button" (click)="print()">Print</button>
+        <button type="button" (click)="closed.emit()">Exit</button>
+      </div>
+    </fieldset>
+
+    <fieldset class="criteria-box" *ngIf="isMasterReport()">
+      <div class="criteria-actions">
+        <button type="button" (click)="print()">Print</button>
+        <button type="button" (click)="closed.emit()">Exit</button>
+      </div>
+    </fieldset>
+
+    <div class="report-sheet" *ngIf="!isLoading && !errorMessage && rows.length > 0">
+      <div class="report-header">
+        <h3>Neethi Clinical Lab</h3>
+        <p>{{ title }}</p>
+        <p *ngIf="isDateRangeNeeded()">From {{ fromDate }} To {{ toDate }}</p>
+      </div>
+
+      <div class="ledger-balance-line" *ngIf="action === 'ledger'">
+        <strong>Opening Balance: {{ openingBalance | number:'1.2-2' }}</strong>
+      </div>
+
+      <table class="main-table" *ngIf="action === 'payments-statement' || action === 'receipts-statement' || action === 'cash-statement' || action === 'bank-statement' || action === 'income-expense-statement' || action === 'other-income-expense-statement'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 14%; text-align: center;">VOUCHER</th>
+            <th style="width: 14%; text-align: center;">DATE</th>
+            <th style="width: 24%;">ACCOUNT HEAD</th>
+            <th style="width: 24%;">NARRATION</th>
+            <th style="width: 16%; text-align: right;">AMOUNT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td style="text-align: center;">{{ row.voucher_no }}</td>
+            <td style="text-align: center;">{{ row.date }}</td>
+            <td>{{ row.account_head_name }}</td>
+            <td>{{ row.narration }}</td>
+            <td style="text-align: right;">{{ row.amount | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'ledger'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 14%; text-align: center;">DATE</th>
+            <th style="width: 14%; text-align: center;">REF/VOUCHER</th>
+            <th style="width: 10%; text-align: center;">TYPE</th>
+            <th style="width: 24%;">NARRATION</th>
+            <th style="width: 10%; text-align: right;">DEBIT</th>
+            <th style="width: 10%; text-align: right;">CREDIT</th>
+            <th style="width: 10%; text-align: right;">BALANCE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td style="text-align: center;">{{ row.date }}</td>
+            <td style="text-align: center;">{{ row.voucher }}</td>
+            <td style="text-align: center;">{{ row.type }}</td>
+            <td>{{ row.narration }}</td>
+            <td style="text-align: right;">{{ row.debit | number:'1.2-2' }}</td>
+            <td style="text-align: right;">{{ row.credit | number:'1.2-2' }}</td>
+            <td style="text-align: right;">{{ row.balance | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'doctors'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 18%;">DOCTOR CODE</th>
+            <th style="width: 28%;">NAME</th>
+            <th style="width: 18%;">PHONE</th>
+            <th style="width: 28%;">ADDRESS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.doctor_code }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.phone }}</td>
+            <td>{{ row.address }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'hospitals'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 18%;">HOSPITAL CODE</th>
+            <th style="width: 28%;">NAME</th>
+            <th style="width: 18%;">PHONE</th>
+            <th style="width: 28%;">ADDRESS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.hospital_code }}</td>
+            <td>{{ row.name }}</td>
+            <td>{{ row.phone }}</td>
+            <td>{{ row.address }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'patients'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 14%;">PATIENT CODE</th>
+            <th style="width: 24%;">NAME</th>
+            <th style="width: 10%; text-align: center;">GENDER</th>
+            <th style="width: 10%; text-align: center;">AGE</th>
+            <th style="width: 14%;">PHONE</th>
+            <th style="width: 20%;">ADDRESS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.patient_code }}</td>
+            <td>{{ row.full_name }}</td>
+            <td style="text-align: center;">{{ row.gender_display }}</td>
+            <td style="text-align: center;">{{ row.age_years }} Y, {{ row.age_months }} M</td>
+            <td>{{ row.phone }}</td>
+            <td>{{ row.address }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'employees'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 32%;">USERNAME</th>
+            <th style="width: 30%;">ROLE</th>
+            <th style="width: 30%; text-align: center;">ACTIVE STATUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.username }}</td>
+            <td>{{ row.role }}</td>
+            <td style="text-align: center;">{{ row.is_active ? 'Active' : 'Inactive' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'departments'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 24%;">DEPARTMENT CODE</th>
+            <th style="width: 34%;">NAME</th>
+            <th style="width: 18%; text-align: center;">REPORT ORDER</th>
+            <th style="width: 16%; text-align: center;">ACTIVE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.department_code }}</td>
+            <td>{{ row.name }}</td>
+            <td style="text-align: center;">{{ row.report_order }}</td>
+            <td style="text-align: center;">{{ row.is_active ? 'Yes' : 'No' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'units'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 60%;">NAME</th>
+            <th style="width: 32%; text-align: center;">ACTIVE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.name }}</td>
+            <td style="text-align: center;">{{ row.is_active ? 'Yes' : 'No' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="main-table" *ngIf="action === 'test-price-list' || action === 'test-detailed'">
+        <thead>
+          <tr>
+            <th style="width: 8%; text-align: center;">SL.NO</th>
+            <th style="width: 14%;">TEST CODE</th>
+            <th style="width: 24%;">TEST NAME</th>
+            <th style="width: 18%;">DEPARTMENT</th>
+            <th style="width: 10%; text-align: right;">RATE</th>
+            <th style="width: 10%; text-align: center;" *ngIf="action === 'test-detailed'">UNIT</th>
+            <th style="width: 16%;" *ngIf="action === 'test-detailed'">REF RANGE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td style="text-align: center;">{{ row.slNo }}</td>
+            <td>{{ row.test_code }}</td>
+            <td>{{ row.test_name }}</td>
+            <td>{{ row.department_name }}</td>
+            <td style="text-align: right;">{{ row.rate | number:'1.2-2' }}</td>
+            <td style="text-align: center;" *ngIf="action === 'test-detailed'">{{ row.unit }}</td>
+            <td *ngIf="action === 'test-detailed'">{{ row.reference_range_display }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-line" *ngIf="totals['amount'] !== undefined">
+        <strong>Total Amount: {{ totals['amount'] | number:'1.2-2' }}</strong>
+      </div>
+      <div class="totals-line" *ngIf="action === 'ledger'">
+        <strong>Total Debit: {{ totals['debit'] | number:'1.2-2' }}</strong>
+        <strong>Total Credit: {{ totals['credit'] | number:'1.2-2' }}</strong>
+        <strong>Closing Balance: {{ closingBalance | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+
+    <p class="status" *ngIf="isLoading">Loading preview...</p>
+    <p class="status error" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <p class="status" *ngIf="!isLoading && !errorMessage && rows.length === 0">No records found for selected criteria.</p>
+  </div>
+</section>
+
+<section class="print-only-layout print-sheet">
+  <div class="report-header">
+    <h3>Neethi Clinical Lab</h3>
+    <h2>{{ title }}</h2>
+    <p *ngIf="isDateRangeNeeded()">From {{ fromDate }} To {{ toDate }}</p>
+  </div>
+
+  <div class="ledger-balance-line" *ngIf="action === 'ledger'">
+    <strong>Opening Balance: {{ openingBalance | number:'1.2-2' }}</strong>
+  </div>
+
+  <table class="print-table" *ngIf="action === 'payments-statement' || action === 'receipts-statement' || action === 'cash-statement' || action === 'bank-statement' || action === 'income-expense-statement' || action === 'other-income-expense-statement'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 14%; text-align: center;">VOUCHER</th>
+        <th style="width: 14%; text-align: center;">DATE</th>
+        <th style="width: 24%;">ACCOUNT HEAD</th>
+        <th style="width: 24%;">NARRATION</th>
+        <th style="width: 16%; text-align: right;">AMOUNT</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td style="text-align: center;">{{ row.voucher_no }}</td>
+        <td style="text-align: center;">{{ row.date }}</td>
+        <td>{{ row.account_head_name }}</td>
+        <td>{{ row.narration }}</td>
+        <td style="text-align: right;">{{ row.amount | number:'1.2-2' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'ledger'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 14%; text-align: center;">DATE</th>
+        <th style="width: 14%; text-align: center;">REF/VOUCHER</th>
+        <th style="width: 10%; text-align: center;">TYPE</th>
+        <th style="width: 24%;">NARRATION</th>
+        <th style="width: 10%; text-align: right;">DEBIT</th>
+        <th style="width: 10%; text-align: right;">CREDIT</th>
+        <th style="width: 10%; text-align: right;">BALANCE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td style="text-align: center;">{{ row.date }}</td>
+        <td style="text-align: center;">{{ row.voucher }}</td>
+        <td style="text-align: center;">{{ row.type }}</td>
+        <td>{{ row.narration }}</td>
+        <td style="text-align: right;">{{ row.debit | number:'1.2-2' }}</td>
+        <td style="text-align: right;">{{ row.credit | number:'1.2-2' }}</td>
+        <td style="text-align: right;">{{ row.balance | number:'1.2-2' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'doctors'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 18%;">DOCTOR CODE</th>
+        <th style="width: 28%;">NAME</th>
+        <th style="width: 18%;">PHONE</th>
+        <th style="width: 28%;">ADDRESS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.doctor_code }}</td>
+        <td>{{ row.name }}</td>
+        <td>{{ row.phone }}</td>
+        <td>{{ row.address }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'hospitals'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 18%;">HOSPITAL CODE</th>
+        <th style="width: 28%;">NAME</th>
+        <th style="width: 18%;">PHONE</th>
+        <th style="width: 28%;">ADDRESS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.hospital_code }}</td>
+        <td>{{ row.name }}</td>
+        <td>{{ row.phone }}</td>
+        <td>{{ row.address }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'patients'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 14%;">PATIENT CODE</th>
+        <th style="width: 24%;">NAME</th>
+        <th style="width: 10%; text-align: center;">GENDER</th>
+        <th style="width: 10%; text-align: center;">AGE</th>
+        <th style="width: 14%;">PHONE</th>
+        <th style="width: 20%;">ADDRESS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.patient_code }}</td>
+        <td>{{ row.full_name }}</td>
+        <td style="text-align: center;">{{ row.gender_display }}</td>
+        <td style="text-align: center;">{{ row.age_years }} Y, {{ row.age_months }} M</td>
+        <td>{{ row.phone }}</td>
+        <td>{{ row.address }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'employees'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 32%;">USERNAME</th>
+        <th style="width: 30%;">ROLE</th>
+        <th style="width: 30%; text-align: center;">ACTIVE STATUS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.username }}</td>
+        <td>{{ row.role }}</td>
+        <td style="text-align: center;">{{ row.is_active ? 'Active' : 'Inactive' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'departments'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 24%;">DEPARTMENT CODE</th>
+        <th style="width: 34%;">NAME</th>
+        <th style="width: 18%; text-align: center;">REPORT ORDER</th>
+        <th style="width: 16%; text-align: center;">ACTIVE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.department_code }}</td>
+        <td>{{ row.name }}</td>
+        <td style="text-align: center;">{{ row.report_order }}</td>
+        <td style="text-align: center;">{{ row.is_active ? 'Yes' : 'No' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'units'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 60%;">NAME</th>
+        <th style="width: 32%; text-align: center;">ACTIVE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.name }}</td>
+        <td style="text-align: center;">{{ row.is_active ? 'Yes' : 'No' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table class="print-table" *ngIf="action === 'test-price-list' || action === 'test-detailed'">
+    <thead>
+      <tr>
+        <th style="width: 8%; text-align: center;">SL.NO</th>
+        <th style="width: 14%;">TEST CODE</th>
+        <th style="width: 24%;">TEST NAME</th>
+        <th style="width: 18%;">DEPARTMENT</th>
+        <th style="width: 10%; text-align: right;">RATE</th>
+        <th style="width: 10%; text-align: center;" *ngIf="action === 'test-detailed'">UNIT</th>
+        <th style="width: 16%;" *ngIf="action === 'test-detailed'">REF RANGE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows">
+        <td style="text-align: center;">{{ row.slNo }}</td>
+        <td>{{ row.test_code }}</td>
+        <td>{{ row.test_name }}</td>
+        <td>{{ row.department_name }}</td>
+        <td style="text-align: right;">{{ row.rate | number:'1.2-2' }}</td>
+        <td style="text-align: center;" *ngIf="action === 'test-detailed'">{{ row.unit }}</td>
+        <td *ngIf="action === 'test-detailed'">{{ row.reference_range_display }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals-line" *ngIf="totals['amount'] !== undefined">
+    <strong>Total Amount: {{ totals['amount'] | number:'1.2-2' }}</strong>
+  </div>
+  <div class="totals-line" *ngIf="action === 'ledger'">
+    <strong>Total Debit: {{ totals['debit'] | number:'1.2-2' }}</strong>
+    <strong>Total Credit: {{ totals['credit'] | number:'1.2-2' }}</strong>
+    <strong>Closing Balance: {{ closingBalance | number:'1.2-2' }}</strong>
+  </div>
+</section>

@@ -62,7 +62,6 @@ input {
   .lab-figure,
   app-patient-list,
   app-patient-advance-search,
-  app-collection-summary-dialog,
   .bill-window,
   .window-title,
   .lookup-strip,
@@ -400,5 +399,106 @@ input {
 
   .result-value-wrap span.colon {
     font-weight: bold !important;
+  }
+
+  /* Format collection summary dialog when printing */
+  app-collection-summary-dialog {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #fff !important;
+    z-index: auto !important;
+  }
+
+  app-collection-summary-dialog .summary-window {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  app-collection-summary-dialog .summary-title,
+  app-collection-summary-dialog .criteria-box,
+  app-collection-summary-dialog .status {
+    display: none !important;
+  }
+
+  app-collection-summary-dialog .report-sheet {
+    max-height: none !important;
+    overflow: visible !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  app-collection-summary-dialog .main-table th,
+  app-collection-summary-dialog .main-table td,
+  app-collection-summary-dialog .pending-table th,
+  app-collection-summary-dialog .pending-table td {
+    border-color: #000 !important;
+    color: #000 !important;
+  }
+
+  app-collection-summary-dialog .main-table th,
+  app-collection-summary-dialog .pending-table th {
+    background: #eaeaea !important;
+    border-top: 1px solid #000 !important;
+    border-bottom: 1px solid #000 !important;
+  }
+
+  /* Format general statement report dialog when printing */
+  app-statement-report-dialog {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: #fff !important;
+    z-index: auto !important;
+  }
+
+  app-statement-report-dialog .no-print {
+    display: none !important;
+  }
+
+  app-statement-report-dialog .print-only-layout {
+    display: block !important;
+    width: 100% !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  app-statement-report-dialog .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    margin-top: 15px !important;
+  }
+
+  app-statement-report-dialog .print-table th,
+  app-statement-report-dialog .print-table td {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+    border-bottom: 1px solid #000 !important;
+    text-align: left !important;
+  }
+
+  app-statement-report-dialog .print-table th {
+    background: #eaeaea !important;
+    font-weight: bold !important;
+    border-top: 1px solid #000 !important;
+    border-bottom: 1px solid #000 !important;
+  }
+
+  app-statement-report-dialog .print-table td {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 }
