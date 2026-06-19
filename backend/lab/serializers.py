@@ -167,3 +167,39 @@ class StockTransactionSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("Quantity must be greater than zero.")
         return value
+
+
+from .models import Method, Technology, DiscountReason, SMSTemplate, LabCustomization
+
+
+class MethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Method
+        fields = '__all__'
+
+
+class TechnologySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Technology
+        fields = '__all__'
+
+
+class DiscountReasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscountReason
+        fields = '__all__'
+
+
+class SMSTemplateSerializer(serializers.ModelSerializer):
+    event_name_display = serializers.CharField(source="get_event_name_display", read_only=True)
+
+    class Meta:
+        model = SMSTemplate
+        fields = '__all__'
+
+
+class LabCustomizationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabCustomization
+        fields = '__all__'
+

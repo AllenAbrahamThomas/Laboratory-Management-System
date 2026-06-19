@@ -4,7 +4,14 @@
     <nav>
       <ng-container *ngFor="let menu of dropdownMenus">
         <div class="menu-group" *ngIf="hasMenuGroupPermission(menu.key)" [class.open]="openTopMenu === menu.key">
-          <button type="button" class="menu-trigger" (click)="toggleTopMenu(menu.key, $event)">{{ menu.label }}</button>
+          <button
+            type="button"
+            class="menu-trigger"
+            (click)="menu.key === 'master-settings' ? handleMasterSettingsClick($event) : toggleTopMenu(menu.key, $event)"
+          >
+            {{ menu.label }}
+          </button>
+
 
           <div
             class="dropdown-panel"
@@ -169,6 +176,12 @@
           *ngIf="activeRegistrationView === 'user-management'"
           (closed)="closeRegistration()"
         ></app-user-management>
+
+        <app-master-settings
+          *ngIf="activeRegistrationView === 'master-settings'"
+          [activeAction]="activeMasterSettingAction"
+          (closed)="closeMasterSettings()"
+        ></app-master-settings>
       </div>
     </section>
 

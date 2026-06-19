@@ -18,6 +18,8 @@ import { StockTransactionComponent } from '../stock/stock-transaction/stock-tran
 import { StockReportComponent } from '../stock/stock-report/stock-report.component';
 import { UserManagementComponent } from '../accounts/user-management/user-management.component';
 import { BillCancellationComponent } from '../lab-registration/bill-cancellation/bill-cancellation.component';
+import { MasterSettingsComponent } from '../master-settings/master-settings.component';
+
 
 type EntryAction =
   | 'invoice-entry'
@@ -144,7 +146,8 @@ type TopMenu = {
     StockTransactionComponent,
     StockReportComponent,
     UserManagementComponent,
-    BillCancellationComponent
+    BillCancellationComponent,
+    MasterSettingsComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -206,7 +209,6 @@ export class DashboardComponent implements OnInit {
         { label: 'Set Customize1', action: 'set-customize-1', badge: '1' },
         { label: 'Set Customize2', action: 'set-customize-2', badge: '2' },
         { label: 'Set Customize3', action: 'set-customize-3', badge: '3' },
-        { label: 'Set Special rate', action: 'set-special-rate', badge: 'S' },
         { label: 'Set SMS Template', action: 'set-sms-template', badge: 'M' },
         { label: 'Set Discount Percentage', action: 'set-discount-percentage', badge: '%' },
         { label: 'Set Result Template', action: 'set-result-template', badge: 'R' },
@@ -323,8 +325,10 @@ export class DashboardComponent implements OnInit {
     | 'stock-report'
     | 'user-management'
     | 'bill-cancellation'
+    | 'master-settings'
     | null = null;
   selectedVisitId: number | null = null;
+  activeMasterSettingAction: string | null = null;
   billOpenMode: 'new' | 'existing' | 'prefill-only' = 'new';
   patientListPurpose: 'registration' | 'result' = 'registration';
   activeCollectionSummaryMode: 'daily' | 'monthly' | 'department-wise-daily' | 'department-wise-monthly' | null = null;
@@ -409,6 +413,14 @@ export class DashboardComponent implements OnInit {
     if (item === 'Log off') {
       this.logout();
     }
+  }
+
+  handleMasterSettingsClick(event: MouseEvent): void {
+    event.stopPropagation();
+    this.openTopMenu = null;
+    this.openReportsSubmenu = null;
+    this.activeMasterSettingAction = 'test';
+    this.activeRegistrationView = 'master-settings';
   }
 
   toggleTopMenu(menuKey: TopMenuKey, event: MouseEvent): void {
@@ -555,6 +567,19 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    const masterSettingActions = [
+      'test', 'department', 'unit', 'method', 'technologies', 'area', 'contacts', 
+      'result-note-template', 'doctor', 'hospital', 'patient', 'customer', 
+      'discount-reason', 'set-test-order', 'set-group-test', 'set-hospital-collection', 
+      'set-customize-1', 'set-customize-2', 'set-customize-3', 
+      'set-sms-template', 'set-discount-percentage', 'set-result-template', 'set-culture'
+    ];
+    if (masterSettingActions.includes(action)) {
+      this.activeMasterSettingAction = action;
+      this.activeRegistrationView = 'master-settings';
+      return;
+    }
+
     if (action === 'staff') {
       this.activeRegistrationView = 'user-management';
       return;
@@ -631,6 +656,11 @@ export class DashboardComponent implements OnInit {
 
   closeStatementReport(): void {
     this.activeStatementReportAction = null;
+  }
+
+  closeMasterSettings(): void {
+    this.activeMasterSettingAction = null;
+    this.activeRegistrationView = null;
   }
 
   private getReportTitle(action: string): string {
@@ -734,7 +764,7 @@ export class DashboardComponent implements OnInit {
       'test', 'department', 'unit', 'method', 'technologies', 'area', 'contacts', 
       'result-note-template', 'doctor', 'hospital', 'patient', 'customer', 
       'discount-reason', 'set-test-order', 'set-group-test', 'set-hospital-collection', 
-      'set-customize-1', 'set-customize-2', 'set-customize-3', 'set-special-rate', 
+      'set-customize-1', 'set-customize-2', 'set-customize-3', 
       'set-sms-template', 'set-discount-percentage', 'set-result-template', 'set-culture'
     ];
     if (masterSettingActions.includes(action)) {

@@ -1,0 +1,1194 @@
+<section class="advance-search-window master-settings-window" aria-label="Master Settings Console">
+  <header class="window-title">
+    <span>Master Settings Console - {{ getTabLabel(activeTab) }}</span>
+    <button type="button" (click)="close()" aria-label="Close Settings">X</button>
+  </header>
+
+  <div class="settings-hub-layout">
+    <!-- Left Navigation Sidebar -->
+    <aside class="settings-sidebar">
+      <div class="sidebar-group" *ngFor="let group of groups">
+        <h3 class="sidebar-group-title">{{ group.label }}</h3>
+        <ul class="sidebar-links">
+          <ng-container *ngFor="let tab of group.tabs">
+            <li *ngIf="isTabAllowed(tab.key)">
+              <button
+                type="button"
+                [class.active]="activeTab === tab.key"
+                (click)="changeTab(tab.key)"
+              >
+                {{ tab.label }}
+              </button>
+            </li>
+          </ng-container>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Right Workspace Area -->
+    <main class="settings-workspace">
+      <!-- Loading indicator -->
+      <div class="settings-loading" *ngIf="isLoading">
+        <span class="spinner"></span> Loading data, please wait...
+      </div>
+
+      <!-- Alert banners -->
+      <div class="message-banner success" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+      <div class="message-banner error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 1. EXPLANATION ONLY VIEW                       -->
+      <!-- ============================================== -->
+      <div class="explanation-card" *ngIf="isExplanationOnly(activeTab) && !isLoading">
+        <div class="explanation-header">
+          <span class="icon">ℹ</span>
+          <h2>{{ getTabLabel(activeTab) }} Module Definition</h2>
+        </div>
+        <div class="explanation-body" [ngSwitch]="activeTab">
+          <div *ngSwitchCase="'customer'">
+            <p><strong>Customer Master:</strong> Manages non-patient, corporate, and contract accounts (e.g., drug trials, wellness companies, and corporate packages).</p>
+            <p>This module configures client details, custom packaging rules, discount agreements, and corporate invoicing details. Enabling this streamlines wholesale ledger transactions and company payouts.</p>
+            <div class="badge admin-only">Administrator Only</div>
+          </div>
+          <div *ngSwitchCase="'area'">
+            <p><strong>Area Master:</strong> Defines geographical sectors, pickup zones, and delivery routes.</p>
+            <p>This setting maps collection boys to clinic networks and patient locations. It enables geo-performance analysis, optimizing collection schedules, and improving turnaround time for home collection visits.</p>
+            <div class="badge admin-only">Administrator Only</div>
+          </div>
+          <div *ngSwitchCase="'contacts'">
+            <p><strong>Contacts Directory:</strong> A central laboratory phonebook for support contacts, suppliers, and emergency hotlines.</p>
+            <p>Tracks diagnostic analyzer support details, vendor details, and repair engineers to speed up callout logs when hardware or software issues occur.</p>
+            <div class="badge admin-only">Administrator Only</div>
+          </div>
+          <div *ngSwitchCase="'result-note-template'">
+            <p><strong>Result Note Template:</strong> Save clinical disclaimers, text footnotes, and result interpretations.</p>
+            <p>Standardizes reports and saves pathologists time by inserting complex interpretations (e.g., standard normal values or risk factors) into patient reports in one click.</p>
+          </div>
+          <div *ngSwitchCase="'set-result-template'">
+            <p><strong>Set Result Template:</strong> Configure document layouts and paragraph grids for narrative tests.</p>
+            <p>Used for pathology, biopsy readings, radiology scans, and ultrasound records where results cannot be expressed as basic numeric values.</p>
+          </div>
+          <div *ngSwitchCase="'set-hospital-collection'">
+            <p><strong>Set Hospital Collection:</strong> Set up collection center mapping and payouts.</p>
+            <p>Tracks deposits, logs collection boys' handovers, and manages commission splits/settlements automatically with referral centers.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 2. SET TEST ORDER VIEW                         -->
+      <!-- ============================================== -->
+      <div class="order-panel" *ngIf="activeTab === 'set-test-order' && !isLoading">
+        <div class="panel-header">
+          <h2>Configure Department Print Order</h2>
+          <p>Reorder laboratory sections to customize which departments appear first on printed patient results.</p>
+        </div>
+        <div class="order-list-box">
+          <div class="order-item" *ngFor="let dept of reorderDepts; let idx = index">
+            <span class="order-num">{{ idx + 1 }}</span>
+            <span class="order-name">{{ dept.name }}</span>
+            <span class="order-code">({{ dept.department_code }})</span>
+            <div class="order-actions">
+              <button type="button" [disabled]="idx === 0" (click)="moveDept(idx, -1)" class="action-btn">▲ Up</button>
+              <button type="button" [disabled]="idx === reorderDepts.length - 1" (click)="moveDept(idx, 1)" class="action-btn">▼ Down</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel-footer">
+          <button type="button" (click)="saveDeptOrder()" class="save-btn">Save Print Order</button>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 3. SET GROUP TEST VIEW                         -->
+      <!-- ============================================== -->
+      <div class="group-panel" *ngIf="activeTab === 'set-group-test' && !isLoading">
+        <div class="panel-header">
+          <h2>Configure Profile / Group Tests</h2>
+          <p>Select a group test panel to add or remove individual child tests from its list.</p>
+        </div>
+        
+        <div class="selector-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label for="groupTestSelect">Select Group Test:</label>
+            <select id="groupTestSelect" [(ngModel)]="selectedGroupTestId" (change)="onGroupTestSelect()" style="min-width: 220px;">
+              <option [ngValue]="null">-- Select Group/Panel --</option>
+              <ng-container *ngFor="let test of allTests">
+                <option *ngIf="test.is_group" [value]="test.id">{{ test.test_name }} ({{ test.test_code }})</option>
+              </ng-container>
+            </select>
+            <button
+              type="button"
+              *ngIf="currentUserRole === 'admin' && selectedGroupTestId"
+              (click)="deleteSelectedGroupTest()"
+              class="action-btn delete-btn"
+              style="height: 25px; padding: 0 10px; font-weight: bold; font-size: 11px; margin-left: 2px;"
+            >
+              Delete Group Test
+            </button>
+          </div>
+          <button type="button" (click)="toggleGroupCreateForm()" class="add-new-btn">
+            {{ showGroupCreateForm ? 'Cancel' : '+ Create New Group Test' }}
+          </button>
+        </div>
+
+        <!-- Create Group Test Form -->
+        <div class="add-child-box" *ngIf="showGroupCreateForm" style="margin-bottom: 15px; border-style: solid; border-color: var(--bright-teal-blue); background: #fcfdfe; max-width: 550px;">
+          <h4 style="border-bottom: 1px dashed var(--frosted-blue); padding-bottom: 6px; margin-bottom: 12px; font-size: 13px;">Create New Group Test (Profile Panel)</h4>
+          <form (ngSubmit)="saveNewGroupTest()" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 12px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Test Code *:</label>
+              <input type="text" [(ngModel)]="newGroupTestData.test_code" name="new_test_code" required readonly placeholder="e.g. TC-0001" style="height: 24px; padding: 0 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 12px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Group Name *:</label>
+              <input type="text" [(ngModel)]="newGroupTestData.test_name" name="new_test_name" required placeholder="e.g. Liver Function Test" style="height: 24px; padding: 0 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 12px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Short Name:</label>
+              <input type="text" [(ngModel)]="newGroupTestData.short_name" name="new_short_name" placeholder="e.g. LFT" style="height: 24px; padding: 0 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 12px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Department *:</label>
+              <select [(ngModel)]="newGroupTestData.department" name="new_department" required style="height: 24px; padding: 0 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+                <option [ngValue]="undefined">-- Select Department --</option>
+                <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</option>
+              </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 12px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Rate (₹) *:</label>
+              <input type="number" [(ngModel)]="newGroupTestData.rate" name="new_rate" required style="height: 24px; padding: 0 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: center; gap: 12px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Default Discount (%):</label>
+              <input type="number" [(ngModel)]="newGroupTestData.default_discount_percent" name="new_discount" style="height: 24px; padding: 0 6px; font-size: 11px; border: 1px solid #ccc; border-radius: 2px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; align-items: start; gap: 12px; margin-top: 5px;">
+              <label style="font-size: 11px; font-weight: bold; color: #333;">Select Child Tests:</label>
+              <div class="associated-tests-selector" style="width: 100%;">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newGroupChildSearchQuery" 
+                  [ngModelOptions]="{standalone: true}" 
+                  placeholder="Search child tests to include..." 
+                  class="tech-test-search"
+                >
+                <div class="tech-tests-list-container" style="max-height: 140px;">
+                  <div *ngFor="let test of getFilteredNewGroupChildTests()" class="tech-test-checkbox-item">
+                    <input 
+                      type="checkbox" 
+                      [id]="'new-group-child-' + test.id" 
+                      [checked]="isNewGroupChildSelected(test.id)" 
+                      (change)="toggleNewGroupChildSelection(test.id)"
+                    >
+                    <label [for]="'new-group-child-' + test.id">
+                      {{ test.test_name }} ({{ test.test_code }})
+                    </label>
+                  </div>
+                  <div *ngIf="getFilteredNewGroupChildTests().length === 0" class="no-tech-tests">
+                    No matching child tests found.
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; border-top: 1px solid var(--frosted-blue); padding-top: 8px;">
+              <button type="submit" class="save-btn" style="height: 24px; font-size: 11px; padding: 0 12px;">Save Group Test</button>
+              <button type="button" (click)="toggleGroupCreateForm()" class="cancel-btn" style="height: 24px; font-size: 11px; padding: 0 12px;">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="group-items-workspace" *ngIf="selectedGroupTestId">
+          <h3>Child Tests in Group</h3>
+          <table class="data-table small-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Line Order</th>
+                <th style="width: 120px;">Test Code</th>
+                <th>Test Name</th>
+                <th style="width: 100px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of groupChildItems; let idx = index">
+                <td>{{ item.line_order }}</td>
+                <td>{{ item.child_test_code }}</td>
+                <td>{{ item.child_test_name }}</td>
+                <td>
+                  <div class="order-actions-cell" style="display: flex; gap: 4px;">
+                    <button type="button" [disabled]="idx === 0" (click)="moveGroupItem(idx, -1)" class="action-btn">▲</button>
+                    <button type="button" [disabled]="idx === groupChildItems.length - 1" (click)="moveGroupItem(idx, 1)" class="action-btn">▼</button>
+                    <button type="button" (click)="deleteGroupChildItem(item.id!)" class="action-btn delete-btn">Remove</button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="groupChildItems.length === 0">
+                <td colspan="4" class="empty-row">No child tests added to this profile yet.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Add Child Test Form -->
+          <div class="add-child-box">
+            <h4>Add Test to Profile</h4>
+            <div class="add-child-form">
+              <div class="field">
+                <label>Select Test:</label>
+                <select [(ngModel)]="newGroupItemData.child_test">
+                  <option [ngValue]="undefined">-- Select Child Test --</option>
+                  <ng-container *ngFor="let test of allTests">
+                    <!-- Prevent adding groups inside groups recursively -->
+                    <option *ngIf="!test.is_group" [value]="test.id">{{ test.test_name }} ({{ test.test_code }})</option>
+                  </ng-container>
+                </select>
+              </div>
+              <div class="field compact-field">
+                <label>Order:</label>
+                <input type="number" [(ngModel)]="newGroupItemData.line_order" placeholder="Auto">
+              </div>
+              <button type="button" (click)="addGroupChildItem()" class="add-btn">Add to Profile</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 4. CUSTOMIZATION VIEWS (Customize 1, 2, 3)     -->
+      <!-- ============================================== -->
+      <div class="custom-panel" *ngIf="['set-customize-1', 'set-customize-2', 'set-customize-3'].includes(activeTab) && !isLoading">
+        <div class="panel-header">
+          <h2>{{ getTabLabel(activeTab) }}</h2>
+          <p>Configure system behaviors, print layouts, and invoice preferences.</p>
+        </div>
+
+        <form (ngSubmit)="saveCustomizations()" class="settings-form customize-form">
+          <!-- Customize 1: Print margins and letterhead -->
+          <ng-container *ngIf="activeTab === 'set-customize-1'">
+            <div class="form-row">
+              <label>Print Header Margin (mm):</label>
+              <input type="number" [(ngModel)]="formData.print_header_margin" name="print_header_margin">
+            </div>
+            <div class="form-row">
+              <label>Print Footer Margin (mm):</label>
+              <input type="number" [(ngModel)]="formData.print_footer_margin" name="print_footer_margin">
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.show_signature_on_report" name="show_signature_on_report">
+                Show Authorizing Signature on Report
+              </label>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.show_letterhead" name="show_letterhead">
+                Print Report Header (Logo/Address) on Plain Paper
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Customize 2: Invoice & barcodes -->
+          <ng-container *ngIf="activeTab === 'set-customize-2'">
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.enable_barcode" name="enable_barcode">
+                Enable Barcode Printing on Registration
+              </label>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.thermal_printer" name="thermal_printer">
+                Use Thermal Slip Printer for Invoices (80mm)
+              </label>
+            </div>
+            <div class="form-row">
+              <label>Invoice Footer Note:</label>
+              <textarea [(ngModel)]="formData.invoice_footer_note" name="invoice_footer_note" rows="3"></textarea>
+            </div>
+          </ng-container>
+
+          <!-- Customize 3: Security & backup -->
+          <ng-container *ngIf="activeTab === 'set-customize-3'">
+            <div class="form-row">
+              <label>User Session Timeout (minutes):</label>
+              <input type="number" [(ngModel)]="formData.session_timeout" name="session_timeout">
+            </div>
+            <div class="form-row">
+              <label>Default Payment Mode:</label>
+              <select [(ngModel)]="formData.default_pay_mode" name="default_pay_mode">
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="upi">UPI</option>
+                <option value="credit">Credit</option>
+              </select>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.auto_backup_enabled" name="auto_backup_enabled">
+                Enable Automated Database Backups (Daily)
+              </label>
+            </div>
+          </ng-container>
+
+          <div class="panel-footer">
+            <button type="submit" class="save-btn">Save Customization Settings</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 5. TEST REFERENCE RANGES SUB-VIEW              -->
+      <!-- ============================================== -->
+      <div class="ranges-panel" *ngIf="viewMode === 'ranges' && selectedTest">
+        <div class="panel-header">
+          <button type="button" (click)="viewMode = 'list'" class="back-link">&larr; Back to Test Catalog</button>
+          <h2>Reference Ranges: {{ selectedTest.test_name }}</h2>
+          <p>Manage gender-based clinical reference ranges for this test parameter.</p>
+        </div>
+
+        <!-- Reference Ranges List Table -->
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Gender</th>
+              <th>Operator</th>
+              <th>Min Value</th>
+              <th>Max Value</th>
+              <th>Display Text Range</th>
+              <th>Unit</th>
+              <th>Status</th>
+              <th style="width: 140px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of selectedTestRanges">
+              <td>{{ r.gender_display || r.gender | titlecase }}</td>
+              <td>{{ r.operator | titlecase }}</td>
+              <td>{{ r.min_value !== null ? r.min_value : '-' }}</td>
+              <td>{{ r.max_value !== null ? r.max_value : '-' }}</td>
+              <td><strong>{{ r.display_text }}</strong></td>
+              <td>{{ r.unit || '-' }}</td>
+              <td>
+                <span class="status-indicator" [class.active]="r.is_active">
+                  {{ r.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="action-cell">
+                <button type="button" (click)="editReferenceRange(r)" class="action-btn">Edit</button>
+                <button
+                  type="button"
+                  *ngIf="isDeleteAllowed()"
+                  (click)="deleteReferenceRange(r.id!)"
+                  class="action-btn delete-btn"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="selectedTestRanges.length === 0">
+              <td colspan="8" class="empty-row">No reference ranges configured yet.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Reference Range Add/Edit Form -->
+        <div class="range-form-box">
+          <h3>{{ rangeFormData.id ? 'Edit' : 'Add' }} Reference Range</h3>
+          <div class="range-form">
+            <div class="field">
+              <label>Gender:</label>
+              <select [(ngModel)]="rangeFormData.gender">
+                <option value="any">Any / Unisex</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Operator:</label>
+              <select [(ngModel)]="rangeFormData.operator">
+                <option value="between">Between (Min/Max)</option>
+                <option value="lt">Less Than</option>
+                <option value="lte">Less Than or Equal</option>
+                <option value="gt">Greater Than</option>
+                <option value="gte">Greater Than or Equal</option>
+                <option value="text">Text Only</option>
+              </select>
+            </div>
+            <div class="field compact-field">
+              <label>Min Value:</label>
+              <input type="number" [(ngModel)]="rangeFormData.min_value">
+            </div>
+            <div class="field compact-field">
+              <label>Max Value:</label>
+              <input type="number" [(ngModel)]="rangeFormData.max_value">
+            </div>
+            <div class="field">
+              <label>Display Text Range:</label>
+              <input type="text" [(ngModel)]="rangeFormData.display_text" placeholder="e.g. 70 - 110 mg/dL">
+            </div>
+            <div class="field compact-field">
+              <label>Unit:</label>
+              <input type="text" [(ngModel)]="rangeFormData.unit" placeholder="e.g. mg/dL">
+            </div>
+            <div class="field checkbox-field">
+              <label>
+                <input type="checkbox" [(ngModel)]="rangeFormData.is_active">
+                Active
+              </label>
+            </div>
+            <div class="form-buttons">
+              <button type="button" (click)="saveReferenceRange()" class="add-btn">
+                {{ rangeFormData.id ? 'Update' : 'Add' }} Range
+              </button>
+              <button
+                type="button"
+                *ngIf="rangeFormData.id"
+                (click)="rangeFormData = { test: selectedTest.id, gender: 'any', operator: 'between', is_active: true }"
+                class="cancel-btn"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 6. STANDARD CRUD DATA TABLE VIEW               -->
+      <!-- ============================================== -->
+      <div class="crud-list-view" *ngIf="viewMode === 'list' && !isExplanationOnly(activeTab) && activeTab !== 'set-test-order' && activeTab !== 'set-group-test'">
+        <div class="workspace-header">
+          <h2>{{ getTabLabel(activeTab) }} Catalog</h2>
+          <div class="header-actions" style="display: flex; gap: 8px; align-items: center;">
+            <input
+              type="text"
+              *ngIf="['test', 'unit', 'department'].includes(activeTab)"
+              [(ngModel)]="searchQuery"
+              placeholder="Search catalog..."
+              class="search-input-settings"
+            >
+            <button type="button" (click)="openAdd()" class="add-new-btn">+ Add New Record</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <!-- Test list table -->
+          <table class="data-table test-master-table" *ngIf="activeTab === 'test'">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Test Code</th>
+                <th>Test Name</th>
+                <th>Short Name</th>
+                <th style="width: 130px;">Department</th>
+                <th style="width: 90px; text-align: right;">Rate (₹)</th>
+                <th style="width: 80px;">Is Group</th>
+                <th style="width: 70px;">Status</th>
+                <th style="width: 250px; text-align: center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of filteredItems">
+                <td>{{ item.test_code }}</td>
+                <td><strong>{{ item.test_name }}</strong></td>
+                <td>{{ item.short_name || '-' }}</td>
+                <td>{{ item.department_name || '-' }}</td>
+                <td style="text-align: right;">{{ item.rate | number:'1.2-2' }}</td>
+                <td>{{ item.is_group ? 'Yes' : 'No' }}</td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button type="button" (click)="openReferenceRangeConfig(item)" class="action-btn config-btn">Ranges</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.test_name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="itemsList.length === 0">
+                <td colspan="8" class="empty-row">No tests registered in catalog.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Department list table -->
+          <table class="data-table" *ngIf="activeTab === 'department'">
+            <thead>
+              <tr>
+                <th>Department Code</th>
+                <th>Department Name</th>
+                <th>Print Report Order</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of filteredItems">
+                <td>{{ item.department_code }}</td>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.report_order }}</td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Unit master list table -->
+          <table class="data-table" *ngIf="activeTab === 'unit'">
+            <thead>
+              <tr>
+                <th>Unit Name</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of filteredItems">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Method master list table -->
+          <table class="data-table" *ngIf="activeTab === 'method'">
+            <thead>
+              <tr>
+                <th>Method Name</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Technologies list table -->
+          <table class="data-table" *ngIf="activeTab === 'technologies'">
+            <thead>
+              <tr>
+                <th>Analyzer / Machine Name</th>
+                <th>Linked Tests</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ getTestsForTechnology(item.id) }}</td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Doctor master list table -->
+          <table class="data-table" *ngIf="activeTab === 'doctor'">
+            <thead>
+              <tr>
+                <th>Doctor Code</th>
+                <th>Doctor Name</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td>{{ item.doctor_code || '-' }}</td>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.phone || '-' }}</td>
+                <td>{{ item.address || '-' }}</td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Hospital master list table -->
+          <table class="data-table" *ngIf="activeTab === 'hospital'">
+            <thead>
+              <tr>
+                <th>Hospital Code</th>
+                <th>Hospital Name</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td>{{ item.hospital_code || '-' }}</td>
+                <td><strong>{{ item.name }}</strong></td>
+                <td>{{ item.phone || '-' }}</td>
+                <td>{{ item.address || '-' }}</td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Patient master list table -->
+          <table class="data-table" *ngIf="activeTab === 'patient'">
+            <thead>
+              <tr>
+                <th>Patient Code</th>
+                <th>Full Name</th>
+                <th>Gender</th>
+                <th>Age</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td>{{ item.patient_code || '-' }}</td>
+                <td><strong>{{ item.full_name }}</strong></td>
+                <td>{{ item.gender_display || item.gender | titlecase }}</td>
+                <td>{{ item.age_years }} Y, {{ item.age_months }} M</td>
+                <td>{{ item.phone || '-' }}</td>
+                <td>{{ item.address || '-' }}</td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.full_name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Discount reasons list table -->
+          <table class="data-table" *ngIf="activeTab === 'discount-reason'">
+            <thead>
+              <tr>
+                <th>Discount Justification / Reason</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td><strong>{{ item.reason_text }}</strong></td>
+                <td>
+                  <span class="status-indicator" [class.active]="item.is_active">
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.reason_text)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- SMS templates list table -->
+          <table class="data-table" *ngIf="activeTab === 'set-sms-template'">
+            <thead>
+              <tr>
+                <th style="width: 150px;">Trigger Event</th>
+                <th>SMS Message Template</th>
+                <th style="width: 140px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of itemsList">
+                <td><strong>{{ item.event_name_display || item.event_name | titlecase }}</strong></td>
+                <td><p class="sms-preview">{{ item.template_text }}</p></td>
+                <td class="action-cell">
+                  <button type="button" (click)="openEdit(item)" class="action-btn">Edit</button>
+                  <button
+                    type="button"
+                    *ngIf="isDeleteAllowed()"
+                    (click)="deleteItem(item.id, item.event_name)"
+                    class="action-btn delete-btn"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Mock or simple culture list for sensitivity -->
+          <div class="culture-box" *ngIf="activeTab === 'set-culture'">
+            <h3>Culture Organism Sensitivity Setup</h3>
+            <p>Culture templates are populated automatically during clinical result entry based on isolations.</p>
+            <div class="culture-setup-grid">
+              <div class="setup-col">
+                <h4>Organisms Tracked</h4>
+                <ul>
+                  <li>Escherichia coli</li>
+                  <li>Staphylococcus aureus</li>
+                  <li>Klebsiella pneumoniae</li>
+                  <li>Pseudomonas aeruginosa</li>
+                  <li>Salmonella enterica</li>
+                </ul>
+              </div>
+              <div class="setup-col">
+                <h4>Antibiotic Panels</h4>
+                <ul>
+                  <li>Amoxicillin / Clavulanic Acid</li>
+                  <li>Ciprofloxacin</li>
+                  <li>Ceftriaxone</li>
+                  <li>Gentamicin</li>
+                  <li>Imipenem</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Simple Mock for Set Discount Percentage -->
+          <div class="discount-box" *ngIf="activeTab === 'set-discount-percentage'">
+            <h3>Automated Discount Percentage Slabs</h3>
+            <p>Discount slabs are prefilled in billing based on corporate accounts or staff groups.</p>
+            <ul>
+              <li><strong>Corporate Discount:</strong> 15% automatic deduction</li>
+              <li><strong>Staff Benefit:</strong> 100% full deduction</li>
+              <li><strong>Standard Senior Citizen slab:</strong> 10% auto-deduction</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- 7. CRUD EDITING / ADDING FORM VIEW             -->
+      <!-- ============================================== -->
+      <div class="crud-form-view" *ngIf="(viewMode === 'add' || viewMode === 'edit') && !isLoading">
+        <div class="workspace-header">
+          <h2>{{ viewMode === 'edit' ? 'Edit' : 'Add' }} {{ getTabLabel(activeTab) }}</h2>
+        </div>
+
+        <form (ngSubmit)="saveForm()" class="settings-form main-editor-form">
+          
+          <!-- Edit/Add Test Form -->
+          <ng-container *ngIf="activeTab === 'test'">
+            <div class="form-row">
+              <label>Test Code *:</label>
+              <input type="text" [(ngModel)]="formData.test_code" name="test_code" required readonly placeholder="e.g. TC-0001">
+            </div>
+            <div class="form-row">
+              <label>Test Name *:</label>
+              <input type="text" [(ngModel)]="formData.test_name" name="test_name" required placeholder="e.g. Glucose Fasting">
+            </div>
+            <div class="form-row">
+              <label>Short Name:</label>
+              <input type="text" [(ngModel)]="formData.short_name" name="short_name" placeholder="e.g. FBS">
+            </div>
+            <div class="form-row">
+              <label>Department *:</label>
+              <select [(ngModel)]="formData.department" name="department" required>
+                <option [ngValue]="undefined">-- Select Department --</option>
+                <option *ngFor="let dept of departments" [value]="dept.id">{{ dept.name }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Rate (₹) *:</label>
+              <input type="number" [(ngModel)]="formData.rate" name="rate" required>
+            </div>
+            <div class="form-row">
+              <label>Default Discount (%):</label>
+              <input type="number" [(ngModel)]="formData.default_discount_percent" name="default_discount_percent">
+            </div>
+            <div class="form-row">
+              <label>Default Net Amount (₹):</label>
+              <input type="number" [(ngModel)]="formData.default_amount" name="default_amount">
+            </div>
+            <div class="form-row">
+              <label>Reporting Unit:</label>
+              <select [(ngModel)]="formData.unit" name="unit">
+                <option value="">-- None / No Unit --</option>
+                <option *ngFor="let u of getTestFormUnits()" [value]="u.name">{{ u.name }}</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Result Entry Type:</label>
+              <select [(ngModel)]="formData.result_type" name="result_type">
+                <option value="numeric">Numeric Value</option>
+                <option value="text">Text Description</option>
+                <option value="choice">Predefined Choices</option>
+                <option value="panel">Complex Panel Layout</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Analyzer / Technology:</label>
+              <select [(ngModel)]="formData.technology" name="technology">
+                <option [ngValue]="null">-- None / Standard --</option>
+                <option *ngFor="let tech of technologiesList" [value]="tech.id">{{ tech.name }}</option>
+              </select>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_group" name="is_group">
+                Is Group Test (Profile Panel)
+              </label>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active & Visible
+              </label>
+            </div>
+
+            <!-- Reagent Binding Block -->
+            <div class="reagent-binding-box">
+              <h4>Reagent Stock Binding (Auto Reduction)</h4>
+              <div class="form-row">
+                <label>Reagent Requisite:</label>
+                <select [(ngModel)]="formData.reagent_item" name="reagent_item">
+                  <option [ngValue]="null">-- None / No stock linked --</option>
+                  <option *ngFor="let r of reagents" [value]="r.id">{{ r.name }}</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Quantity per Test run:</label>
+                <input type="number" step="0.0001" [(ngModel)]="formData.reagent_quantity" name="reagent_quantity">
+              </div>
+              <div class="form-row checkbox-row">
+                <label>
+                  <input type="checkbox" [(ngModel)]="formData.reagent_auto_reduce" name="reagent_auto_reduce">
+                  Auto reduce stock on result entry
+                </label>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Department Form -->
+          <ng-container *ngIf="activeTab === 'department'">
+            <div class="form-row">
+              <label>Department Code *:</label>
+              <input type="text" [(ngModel)]="formData.department_code" name="department_code" required>
+            </div>
+            <div class="form-row">
+              <label>Department Name *:</label>
+              <input type="text" [(ngModel)]="formData.name" name="name" required>
+            </div>
+            <div class="form-row">
+              <label>Report printing order:</label>
+              <input type="number" [(ngModel)]="formData.report_order" name="report_order">
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Unit Form -->
+          <ng-container *ngIf="activeTab === 'unit'">
+            <div class="form-row">
+              <label>Unit Name *:</label>
+              <input type="text" [(ngModel)]="formData.name" name="name" required placeholder="e.g. mg/dL, g/L, pg">
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Method Form -->
+          <ng-container *ngIf="activeTab === 'method'">
+            <div class="form-row">
+              <label>Method Name *:</label>
+              <input type="text" [(ngModel)]="formData.name" name="name" required placeholder="e.g. ELISA, HPLC, Rapid card">
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Technology Form -->
+          <ng-container *ngIf="activeTab === 'technologies'">
+            <div class="form-row">
+              <label>Analyzer Name *:</label>
+              <input type="text" [(ngModel)]="formData.name" name="name" required placeholder="e.g. Beckman Coulter, Cobas e411">
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active
+              </label>
+            </div>
+            <div class="form-row" style="grid-template-columns: 180px 1fr; align-items: start; margin-top: 10px;">
+              <label>Specify Tests Using this Analyzer:</label>
+              <div class="associated-tests-selector" style="width: 100%;">
+                <input 
+                  type="text" 
+                  [(ngModel)]="techTestSearchQuery" 
+                  [ngModelOptions]="{standalone: true}" 
+                  placeholder="Search tests to link..." 
+                  class="tech-test-search"
+                >
+                <div class="tech-tests-list-container">
+                  <div *ngFor="let test of getFilteredTechTests()" class="tech-test-checkbox-item">
+                    <input 
+                      type="checkbox" 
+                      [id]="'tech-test-' + test.id" 
+                      [checked]="isTechTestSelected(test.id)" 
+                      (change)="toggleTechTestSelection(test.id)"
+                    >
+                    <label [for]="'tech-test-' + test.id">
+                      {{ test.test_name }} ({{ test.test_code }})
+                    </label>
+                  </div>
+                  <div *ngIf="getFilteredTechTests().length === 0" class="no-tech-tests">
+                    No matching tests found.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Doctor Form -->
+          <ng-container *ngIf="activeTab === 'doctor'">
+            <div class="form-row">
+              <label>Doctor Code:</label>
+              <input type="text" [(ngModel)]="formData.doctor_code" name="doctor_code">
+            </div>
+            <div class="form-row">
+              <label>Doctor Name *:</label>
+              <input type="text" [(ngModel)]="formData.name" name="name" required placeholder="e.g. Dr. John Doe">
+            </div>
+            <div class="form-row">
+              <label>Phone Number:</label>
+              <input type="text" [(ngModel)]="formData.phone" name="phone">
+            </div>
+            <div class="form-row">
+              <label>Clinic Address:</label>
+              <textarea [(ngModel)]="formData.address" name="address" rows="3"></textarea>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active referral source
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Hospital Form -->
+          <ng-container *ngIf="activeTab === 'hospital'">
+            <div class="form-row">
+              <label>Hospital Code:</label>
+              <input type="text" [(ngModel)]="formData.hospital_code" name="hospital_code">
+            </div>
+            <div class="form-row">
+              <label>Hospital Name *:</label>
+              <input type="text" [(ngModel)]="formData.name" name="name" required placeholder="e.g. City General Clinic">
+            </div>
+            <div class="form-row">
+              <label>Phone Number:</label>
+              <input type="text" [(ngModel)]="formData.phone" name="phone">
+            </div>
+            <div class="form-row">
+              <label>Clinic Address:</label>
+              <textarea [(ngModel)]="formData.address" name="address" rows="3"></textarea>
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active referral source
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Patient Form -->
+          <ng-container *ngIf="activeTab === 'patient'">
+            <div class="form-row">
+              <label>Patient Code:</label>
+              <input type="text" [(ngModel)]="formData.patient_code" name="patient_code" placeholder="Auto generated">
+            </div>
+            <div class="form-row">
+              <label>Full Name *:</label>
+              <input type="text" [(ngModel)]="formData.full_name" name="full_name" required>
+            </div>
+            <div class="form-row">
+              <label>Gender *:</label>
+              <select [(ngModel)]="formData.gender" name="gender" required>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Age (Years) *:</label>
+              <input type="number" [(ngModel)]="formData.age_years" name="age_years" required>
+            </div>
+            <div class="form-row">
+              <label>Age (Months):</label>
+              <input type="number" [(ngModel)]="formData.age_months" name="age_months">
+            </div>
+            <div class="form-row">
+              <label>Phone Number:</label>
+              <input type="text" [(ngModel)]="formData.phone" name="phone">
+            </div>
+            <div class="form-row">
+              <label>Address Details:</label>
+              <textarea [(ngModel)]="formData.address" name="address" rows="3"></textarea>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add Discount Reason Form -->
+          <ng-container *ngIf="activeTab === 'discount-reason'">
+            <div class="form-row">
+              <label>Reason Description *:</label>
+              <input type="text" [(ngModel)]="formData.reason_text" name="reason_text" required placeholder="e.g. Corporate Agreement, VIP Client">
+            </div>
+            <div class="form-row checkbox-row">
+              <label>
+                <input type="checkbox" [(ngModel)]="formData.is_active" name="is_active">
+                Active
+              </label>
+            </div>
+          </ng-container>
+
+          <!-- Edit/Add SMS Template Form -->
+          <ng-container *ngIf="activeTab === 'set-sms-template'">
+            <div class="form-row">
+              <label>Trigger Event *:</label>
+              <select [(ngModel)]="formData.event_name" name="event_name" required [disabled]="viewMode === 'edit'">
+                <option value="registration">On Patient Registration</option>
+                <option value="result_ready">On Result Ready</option>
+                <option value="balance_due">On Balance Due</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>SMS Body Text *:</label>
+              <textarea [(ngModel)]="formData.template_text" name="template_text" rows="5" required placeholder="Use bracket codes like {lab_no}, {patient}, {amount}"></textarea>
+            </div>
+          </ng-container>
+
+          <!-- Form Buttons -->
+          <div class="form-actions-row">
+            <button type="submit" class="save-btn">Save Record</button>
+            <button type="button" (click)="viewMode = 'list'" class="cancel-btn">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+    </main>
+  </div>
+</section>
