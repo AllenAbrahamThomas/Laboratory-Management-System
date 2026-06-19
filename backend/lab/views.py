@@ -16,7 +16,7 @@ from accounts.authentication import SessionTokenAuthentication
 from accounts.permissions import HasRequiredPermission, check_permission
 from accounts.models import LabUser
 
-from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest, ReagentItem, StockTransaction
+from .models import Patient, Test, TestGroupItem, TestReferenceRange, TestResult, Visit, VisitTest, ReagentItem, StockTransaction, _next_test_code
 from .serializers import VisitDetailSerializer, VisitListSerializer
 
 
@@ -52,6 +52,17 @@ def _normalize_lab_no(value: str) -> str:
 @check_permission("invoice-entry")
 def next_visit_lab_no(request):
     return Response({"lab_no": _next_lab_no()})
+
+
+@api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def next_test_code_view(request):
+    user = request.user
+    if user.role != LabUser.Role.ADMIN:
+        if "master-settings" not in user.permissions:
+            raise PermissionDenied("You do not have permission to access master settings.")
+    return Response({"test_code": _next_test_code()})
 
 
 @api_view(["GET"])
@@ -865,6 +876,7 @@ class UnitSerializer(serializers.ModelSerializer):
 
 class TestDetailedSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True)
+    technology_name = serializers.CharField(source='technology.name', read_only=True)
     reference_range_display = serializers.SerializerMethodField()
     
     class Meta:
@@ -875,39 +887,166 @@ class TestDetailedSerializer(serializers.ModelSerializer):
         ranges = obj.reference_ranges.filter(is_active=True)
         return ", ".join([f"{r.get_gender_display()}: {r.display_text}" for r in ranges])
 
-class DoctorViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Doctor.objects.filter(is_active=True)
+from rest_framework import permissions
+
+class MasterSettingsPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_active:
+            return False
+        
+        user = request.user
+        if user.role == LabUser.Role.ADMIN:
+            return True
+
+        if "master-settings" not in user.permissions:
+            return False
+
+        if request.method == "DELETE":
+            return user.role == LabUser.Role.SUPERVISOR
+
+        return True
+
+
+class DoctorViewSet(viewsets.ModelViewSet):
+    queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     authentication_classes = [SessionTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
 
-class HospitalViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Hospital.objects.filter(is_active=True)
+class HospitalViewSet(viewsets.ModelViewSet):
+    queryset = Hospital.objects.all()
     serializer_class = HospitalSerializer
     authentication_classes = [SessionTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
 
-class PatientViewSet(viewsets.ReadOnlyModelViewSet):
+class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
     authentication_classes = [SessionTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
 
-class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Department.objects.filter(is_active=True)
+class DepartmentViewSet(viewsets.ModelViewSet):
+    queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     authentication_classes = [SessionTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
 
-class UnitViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Unit.objects.filter(is_active=True)
+class UnitViewSet(viewsets.ModelViewSet):
+    queryset = Unit.objects.all()
     serializer_class = UnitSerializer
     authentication_classes = [SessionTokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
 
-class TestDetailedViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Test.objects.filter(is_active=True)
+class TestDetailedViewSet(viewsets.ModelViewSet):
+    queryset = Test.objects.all()
     serializer_class = TestDetailedSerializer
     authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+    def perform_create(self, serializer):
+        if not serializer.validated_data.get('test_code'):
+            serializer.save(test_code=_next_test_code())
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        original_instance = self.get_object()
+        if 'test_code' in serializer.validated_data:
+            serializer.validated_data['test_code'] = original_instance.test_code
+        serializer.save()
+
+
+
+from .models import TestReferenceRange, TestGroupItem, Method, Technology, DiscountReason, SMSTemplate, LabCustomization
+from .serializers import (
+    MethodSerializer,
+    TechnologySerializer,
+    DiscountReasonSerializer,
+    SMSTemplateSerializer,
+    LabCustomizationSerializer,
+)
+
+class TestReferenceRangeSerializer(serializers.ModelSerializer):
+    gender_display = serializers.CharField(source='get_gender_display', read_only=True)
+    class Meta:
+        model = TestReferenceRange
+        fields = '__all__'
+
+
+class TestGroupItemSerializer(serializers.ModelSerializer):
+    child_test_name = serializers.CharField(source="child_test.test_name", read_only=True)
+    child_test_code = serializers.CharField(source="child_test.test_code", read_only=True)
+    
+    class Meta:
+        model = TestGroupItem
+        fields = '__all__'
+
+
+class TestReferenceRangeViewSet(viewsets.ModelViewSet):
+    queryset = TestReferenceRange.objects.all()
+    serializer_class = TestReferenceRangeSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        test_id = self.request.query_params.get("test")
+        if test_id:
+            queryset = queryset.filter(test_id=test_id)
+        return queryset
+
+
+class TestGroupItemViewSet(viewsets.ModelViewSet):
+    queryset = TestGroupItem.objects.all()
+    serializer_class = TestGroupItemSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        parent_test_id = self.request.query_params.get("parent_test")
+        if parent_test_id:
+            queryset = queryset.filter(parent_test_id=parent_test_id)
+        return queryset
+
+
+class MethodViewSet(viewsets.ModelViewSet):
+    queryset = Method.objects.all()
+    serializer_class = MethodSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+
+class TechnologyViewSet(viewsets.ModelViewSet):
+    queryset = Technology.objects.all()
+    serializer_class = TechnologySerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+
+class DiscountReasonViewSet(viewsets.ModelViewSet):
+    queryset = DiscountReason.objects.all()
+    serializer_class = DiscountReasonSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+
+class SMSTemplateViewSet(viewsets.ModelViewSet):
+    queryset = SMSTemplate.objects.all()
+    serializer_class = SMSTemplateSerializer
+    authentication_classes = [SessionTokenAuthentication]
+    permission_classes = [IsAuthenticated, MasterSettingsPermission]
+
+
+class LabCustomizationViewSet(viewsets.ModelViewSet):
+    queryset = LabCustomization.objects.all()
+    serializer_class = LabCustomizationSerializer
+    authentication_classes = [SessionTokenAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def check_permissions(self, request):
+        super().check_permissions(request)
+        if request.user.role != LabUser.Role.ADMIN:
+            raise PermissionDenied("Only Administrators can modify system customizations.")
+
 

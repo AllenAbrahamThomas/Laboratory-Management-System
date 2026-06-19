@@ -91,6 +91,26 @@ class Unit(TimestampedModel):
         return self.name
 
 
+def _next_test_code() -> str:
+    import re
+    max_numeric = 0
+    pattern = re.compile(r'^TC-(\d+)$', re.IGNORECASE)
+    for code in Test.objects.values_list("test_code", flat=True):
+        match = pattern.match(str(code).strip())
+        if match:
+            num = int(match.group(1))
+            if num > max_numeric:
+                max_numeric = num
+
+    candidate = max_numeric + 1
+    candidate_code = f"TC-{str(candidate).zfill(4)}"
+    while Test.objects.filter(test_code__iexact=candidate_code).exists():
+        candidate += 1
+        candidate_code = f"TC-{str(candidate).zfill(4)}"
+
+    return candidate_code
+
+
 class Test(TimestampedModel):
     class ResultType(models.TextChoices):
         NUMERIC = "numeric", "Numeric"
@@ -124,6 +144,13 @@ class Test(TimestampedModel):
         max_digits=12, decimal_places=4, default=1
     )
     reagent_auto_reduce = models.BooleanField(default=False)
+    technology = models.ForeignKey(
+        "Technology",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tests",
+    )
 
     class Meta:
         db_table = "tests"
@@ -134,6 +161,15 @@ class Test(TimestampedModel):
 
     def __str__(self) -> str:
         return self.test_name
+
+    def save(self, *args, **kwargs):
+        if not self.test_code:
+            self.test_code = _next_test_code()
+        elif self.pk:
+            orig = Test.objects.get(pk=self.pk)
+            if orig.test_code != self.test_code:
+                self.test_code = orig.test_code
+        super().save(*args, **kwargs)
 
 
 class TestGroupItem(models.Model):
@@ -419,3 +455,70 @@ class StockTransaction(TimestampedModel):
             quantity_in_use = 0
             
         return quantity_in_stock, quantity_in_use
+
+
+class Method(TimestampedModel):
+    name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "methods"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Technology(TimestampedModel):
+    name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "technologies"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class DiscountReason(TimestampedModel):
+    reason_text = models.CharField(max_length=255, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "discount_reasons"
+        ordering = ["reason_text"]
+
+    def __str__(self) -> str:
+        return self.reason_text
+
+
+class SMSTemplate(TimestampedModel):
+    class EventType(models.TextChoices):
+        REGISTRATION = "registration", "On Patient Registration"
+        RESULT_READY = "result_ready", "On Result Ready"
+        BALANCE_DUE = "balance_due", "On Balance Due"
+
+    event_name = models.CharField(max_length=50, unique=True, choices=EventType.choices)
+    template_text = models.TextField()
+
+    class Meta:
+        db_table = "sms_templates"
+        ordering = ["event_name"]
+
+    def __str__(self) -> str:
+        return self.get_event_name_display()
+
+
+class LabCustomization(TimestampedModel):
+    section = models.CharField(max_length=50)  # e.g., 'customize_1', 'customize_2', 'customize_3'
+    key = models.CharField(max_length=50, unique=True)
+    value = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "lab_customizations"
+        ordering = ["section", "key"]
+
+    def __str__(self) -> str:
+        return f"{self.section} - {self.key}"
+

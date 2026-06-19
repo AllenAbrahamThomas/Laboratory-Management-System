@@ -6,6 +6,7 @@ from .views import (
     result_entry_by_visit,
     result_entry_save,
     test_lookup,
+    next_test_code_view,
     next_visit_lab_no,
     lab_print_config,
     upi_payment_config,
@@ -26,6 +27,13 @@ from .views import (
     DepartmentViewSet,
     UnitViewSet,
     TestDetailedViewSet,
+    MethodViewSet,
+    TechnologyViewSet,
+    DiscountReasonViewSet,
+    SMSTemplateViewSet,
+    LabCustomizationViewSet,
+    TestReferenceRangeViewSet,
+    TestGroupItemViewSet,
 )
 
 
@@ -38,6 +46,14 @@ router.register("patients", PatientViewSet, basename="patient")
 router.register("departments", DepartmentViewSet, basename="department")
 router.register("units", UnitViewSet, basename="unit")
 router.register("tests-detailed", TestDetailedViewSet, basename="test-detailed")
+router.register("methods", MethodViewSet, basename="method")
+router.register("technologies", TechnologyViewSet, basename="technology")
+router.register("discount-reasons", DiscountReasonViewSet, basename="discount-reason")
+router.register("sms-templates", SMSTemplateViewSet, basename="sms-template")
+router.register("lab-customizations", LabCustomizationViewSet, basename="lab-customization")
+router.register("test-reference-ranges", TestReferenceRangeViewSet, basename="test-reference-range")
+router.register("test-group-items", TestGroupItemViewSet, basename="test-group-item")
+
 
 urlpatterns = [
     path("visits/", visit_list, name="visit-list"),
@@ -50,6 +66,7 @@ urlpatterns = [
     path("visits/lab/<str:lab_no>/", visit_detail_by_lab_no, name="visit-detail-by-lab"),
     path("visits/<int:visit_id>/update/", visit_update, name="visit-update"),
 
+    path("tests/next-code/", next_test_code_view, name="test-next-code"),
     path("tests/", test_lookup, name="test-lookup"),
     path("print-config/", lab_print_config, name="lab-print-config"),
     path("payments/upi-config/", upi_payment_config, name="upi-payment-config"),
