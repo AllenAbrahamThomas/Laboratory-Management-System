@@ -26,7 +26,7 @@
     </aside>
 
     <!-- Right Workspace Area -->
-    <main class="settings-workspace">
+    <main class="settings-workspace" [class.scrollable-workspace]="viewMode !== 'list' || activeTab === 'set-group-test' || activeTab === 'set-test-order' || isExplanationOnly(activeTab)">
       <!-- Loading indicator -->
       <div class="settings-loading" *ngIf="isLoading">
         <span class="spinner"></span> Loading data, please wait...
@@ -914,10 +914,17 @@
             </div>
             <div class="form-row">
               <label>Reporting Unit:</label>
-              <select [(ngModel)]="formData.unit" name="unit">
-                <option value="">-- None / No Unit --</option>
-                <option *ngFor="let u of getTestFormUnits()" [value]="u.name">{{ u.name }}</option>
-              </select>
+              <input
+                type="text"
+                [(ngModel)]="formData.unit"
+                name="unit"
+                list="unitsDatalist"
+                placeholder="Type or select unit..."
+                autocomplete="off"
+              >
+              <datalist id="unitsDatalist">
+                <option *ngFor="let u of getTestFormUnits()" [value]="u.name"></option>
+              </datalist>
             </div>
             <div class="form-row">
               <label>Result Entry Type:</label>
@@ -960,11 +967,11 @@
               </div>
               <div class="form-row">
                 <label>Quantity per Test run:</label>
-                <input type="number" step="0.0001" [(ngModel)]="formData.reagent_quantity" name="reagent_quantity">
+                <input type="number" step="0.0001" [(ngModel)]="formData.reagent_quantity" name="reagent_quantity" [disabled]="!formData.reagent_item">
               </div>
               <div class="form-row checkbox-row">
                 <label>
-                  <input type="checkbox" [(ngModel)]="formData.reagent_auto_reduce" name="reagent_auto_reduce">
+                  <input type="checkbox" [(ngModel)]="formData.reagent_auto_reduce" name="reagent_auto_reduce" [disabled]="!formData.reagent_item">
                   Auto reduce stock on result entry
                 </label>
               </div>

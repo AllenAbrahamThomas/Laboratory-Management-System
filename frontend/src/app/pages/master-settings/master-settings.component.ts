@@ -1103,7 +1103,8 @@ export class MasterSettingsComponent implements OnInit {
           technology: this.formData.technology ? Number(this.formData.technology) : undefined,
           rate: Number(this.formData.rate || 0),
           default_discount_percent: Number(this.formData.default_discount_percent || 0),
-          default_amount: Number(this.formData.default_amount || 0)
+          default_amount: Number(this.formData.default_amount || 0),
+          reagent_quantity: (this.formData.reagent_quantity !== null && this.formData.reagent_quantity !== undefined && this.formData.reagent_quantity !== '') ? Number(this.formData.reagent_quantity) : null
         };
         if (isEdit) this.settingsService.updateTest(id, test).subscribe(handler);
         else this.settingsService.createTest(test).subscribe(handler);

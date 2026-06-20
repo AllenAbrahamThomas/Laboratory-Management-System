@@ -113,4 +113,5 @@ LAB_LOGO_URL = os.getenv("LAB_LOGO_URL", "/assets/logo.png").strip()
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "EXCEPTION_HANDLER": "lab.exceptions.custom_exception_handler",
 }

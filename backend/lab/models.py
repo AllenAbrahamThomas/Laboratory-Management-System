@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from django.db import models
 
 
@@ -141,7 +142,7 @@ class Test(TimestampedModel):
         related_name="tests",
     )
     reagent_quantity = models.DecimalField(
-        max_digits=12, decimal_places=4, default=1
+        max_digits=12, decimal_places=4, null=True, blank=True
     )
     reagent_auto_reduce = models.BooleanField(default=False)
     technology = models.ForeignKey(
@@ -521,4 +522,46 @@ class LabCustomization(TimestampedModel):
 
     def __str__(self) -> str:
         return f"{self.section} - {self.key}"
+
+
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+import re
+
+@receiver(post_delete, sender=Test)
+def shift_test_codes_on_delete(sender, instance, **kwargs):
+    code = instance.test_code
+    match = re.match(r'^TC-(\d+)$', code, re.IGNORECASE)
+    if not match:
+        return
+        
+    deleted_num = int(match.group(1))
+    
+    tests_to_update = []
+    pattern = re.compile(r'^TC-(\d+)$', re.IGNORECASE)
+    for t in Test.objects.filter(test_code__istartswith='TC-'):
+        m = pattern.match(t.test_code)
+        if m:
+            num = int(m.group(1))
+            if num > deleted_num:
+                tests_to_update.append((t.pk, num))
+                
+    if not tests_to_update:
+        return
+        
+    # Sort in ascending order to process sequentially
+    tests_to_update.sort(key=lambda x: x[1])
+    
+    from django.db import transaction
+    with transaction.atomic():
+        # Step 1: Update to temp to avoid unique constraint violations
+        for pk, num in tests_to_update:
+            new_num = num - 1
+            Test.objects.filter(pk=pk).update(test_code=f"TEMP-{new_num:04d}")
+            
+        # Step 2: Update to final TC-XXXX
+        for pk, num in tests_to_update:
+            new_num = num - 1
+            Test.objects.filter(pk=pk).update(test_code=f"TC-{new_num:04d}")
+
 

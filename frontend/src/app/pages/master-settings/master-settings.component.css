@@ -73,12 +73,34 @@
 /* Workspace Styling */
 .settings-workspace {
   padding: 15px;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
   position: relative;
   background: #ffffff;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.settings-workspace.scrollable-workspace {
+  overflow-y: auto;
+}
+
+.settings-workspace:not(.scrollable-workspace) {
+  overflow: hidden;
+}
+
+.settings-workspace:not(.scrollable-workspace) .crud-list-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.settings-workspace:not(.scrollable-workspace) .table-container {
+  flex: 1;
+  overflow: auto;
+  max-height: none;
 }
 
 .workspace-header, .panel-header {
@@ -105,7 +127,8 @@
 
 /* Data Tables */
 .table-container {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: calc(100vh - 165px);
   border: 1px solid var(--frosted-blue);
   background: #fff;
 }
@@ -131,6 +154,10 @@
   background: var(--frosted-blue);
   color: var(--deep-twilight);
   font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: inset 0 -1px 0 var(--frosted-blue);
 }
 
 .data-table tbody tr:hover {

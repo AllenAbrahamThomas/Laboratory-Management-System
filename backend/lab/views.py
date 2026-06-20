@@ -878,6 +878,7 @@ class TestDetailedSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True)
     technology_name = serializers.CharField(source='technology.name', read_only=True)
     reference_range_display = serializers.SerializerMethodField()
+    reagent_quantity = serializers.DecimalField(max_digits=12, decimal_places=4, required=False, allow_null=True)
     
     class Meta:
         model = Test
@@ -886,6 +887,8 @@ class TestDetailedSerializer(serializers.ModelSerializer):
     def get_reference_range_display(self, obj):
         ranges = obj.reference_ranges.filter(is_active=True)
         return ", ".join([f"{r.get_gender_display()}: {r.display_text}" for r in ranges])
+
+
 
 from rest_framework import permissions
 
