@@ -171,6 +171,10 @@ class Test(TimestampedModel):
             if orig.test_code != self.test_code:
                 self.test_code = orig.test_code
         super().save(*args, **kwargs)
+        if self.unit:
+            unit_name = self.unit.strip()
+            if unit_name:
+                Unit.objects.get_or_create(name=unit_name, defaults={"is_active": True})
 
 
 class TestGroupItem(models.Model):
