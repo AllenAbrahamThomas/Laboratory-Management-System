@@ -191,21 +191,24 @@
             <tr>
               <td>
                 <section class="print-table-shell">
-                  <table class="print-table">
+                  <table class="print-table" style="table-layout: fixed; width: 100%;">
                     <thead>
                       <tr>
-                        <th style="text-align: left;">Description of Test</th>
-                        <th style="text-align: center;">Observation and Remarks</th>
-                        <th style="text-align: right;">Reference range</th>
+                        <th style="width: 35%; text-align: left;">Description of Test</th>
+                        <th style="width: 30%; text-align: center;">Observation and Remarks</th>
+                        <th style="width: 35%; text-align: right;">Reference range</th>
                       </tr>
                     </thead>
                     <tbody>
                       <ng-container *ngFor="let row of getPrintableResultRows()">
-                        <tr *ngIf="row.type === 'group'" class="group-row">
-                          <td colspan="3" style="text-align: center; font-weight: bold; text-decoration: underline; text-transform: uppercase;">{{ row.name }}</td>
+                        <tr *ngIf="row.type === 'department'" class="department-row">
+                          <td colspan="3" style="text-align: center; font-weight: bold; text-decoration: underline; text-transform: uppercase; padding-top: 10px; padding-bottom: 4px;">{{ row.name }}</td>
+                        </tr>
+                        <tr *ngIf="row.type === 'group-header'" class="group-header-row">
+                          <td colspan="3" style="text-align: left; font-weight: bold; padding-top: 6px; padding-bottom: 2px;">{{ row.name }}</td>
                         </tr>
                         <tr *ngIf="row.type === 'general'">
-                          <td style="text-align: left;">{{ row.name }}</td>
+                          <td style="text-align: left; white-space: pre-wrap;">{{ row.name }}</td>
                           <td class="result-value-cell" style="font-weight: bold;">
                             <div class="result-value-wrap" *ngIf="row.result">
                               <span class="colon">:</span>

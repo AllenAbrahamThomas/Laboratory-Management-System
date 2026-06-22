@@ -280,6 +280,46 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+.print-catalog-btn {
+  background: #ebfbee;
+  color: #2b8a3e;
+  border: 1px solid #c3fae8;
+  font-weight: bold;
+  font-size: 11px;
+  height: 25px;
+  padding: 0 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.print-catalog-btn:hover {
+  background: #2b8a3e;
+  color: #fff;
+  border-color: #2b8a3e;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.print-dept-select {
+  height: 25px;
+  padding: 0 8px;
+  border: 1px solid var(--frosted-blue);
+  background: #ffffff;
+  font-size: 11px;
+  border-radius: 4px;
+  outline: none;
+  transition: all 0.2s ease;
+  color: #333;
+}
+
+.print-dept-select:focus {
+  border-color: var(--bright-teal-blue);
+  box-shadow: 0 0 4px rgba(72, 202, 228, 0.4);
+}
+
 .cancel-btn, .back-link {
   background: #f1f3f5;
   color: #495057;

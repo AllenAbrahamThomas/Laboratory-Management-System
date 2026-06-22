@@ -256,9 +256,11 @@ export class ResultEntryComponent implements OnChanges {
     });
   }
 
-  getPrintableResultRows(): Array<{ type: 'group' | 'general'; displayNo: number | null; name: string; result: string; reference: string; unit: string; }> {
-    const rows: Array<{ type: 'group' | 'general'; displayNo: number | null; name: string; result: string; reference: string; unit: string; }> = [];
-    let displayNo = 0;
+  getPrintableResultRows(): Array<{ type: 'department' | 'group-header' | 'general'; displayNo: number | null; name: string; result: string; reference: string; unit: string; }> {
+    const rows: Array<{ type: 'department' | 'group-header' | 'general'; displayNo: number | null; name: string; result: string; reference: string; unit: string; }> = [];
+
+    // 1. Group tests by department (filtering out tests/children without results)
+    const groupsMap = new Map<string, { order: number; tests: ResultEntryDisplayTest[] }>();
 
     for (const test of this.resultTests) {
       if (!test.printEnabled) {
@@ -266,37 +268,102 @@ export class ResultEntryComponent implements OnChanges {
       }
 
       if (test.type === 'group') {
-        rows.push({
-          type: 'group',
-          displayNo: null,
-          name: test.test_name,
-          result: '',
-          reference: '',
-          unit: ''
-        });
-        for (const child of test.children || []) {
+        const activeChildren = (test.children || []).filter(
+          (child) => child.result_value !== undefined && child.result_value.trim() !== ''
+        );
+
+        if (activeChildren.length === 0) {
+          continue; // skip empty group test
+        }
+
+        const testCopy = {
+          ...test,
+          children: activeChildren
+        };
+
+        const deptName = test.department_name || 'GENERAL';
+        const deptOrder = test.department_order !== undefined ? test.department_order : 9999;
+
+        if (!groupsMap.has(deptName)) {
+          groupsMap.set(deptName, { order: deptOrder, tests: [] });
+        }
+        groupsMap.get(deptName)!.tests.push(testCopy);
+      } else {
+        const hasResult = test.result_value !== undefined && test.result_value.trim() !== '';
+        if (!hasResult) {
+          continue; // skip empty general test
+        }
+
+        const deptName = test.department_name || 'GENERAL';
+        const deptOrder = test.department_order !== undefined ? test.department_order : 9999;
+
+        if (!groupsMap.has(deptName)) {
+          groupsMap.set(deptName, { order: deptOrder, tests: [] });
+        }
+        groupsMap.get(deptName)!.tests.push(test);
+      }
+    }
+
+    // 2. Sort departments by order, then by name
+    const sortedDeptNames = Array.from(groupsMap.keys()).sort((a, b) => {
+      const groupA = groupsMap.get(a)!;
+      const groupB = groupsMap.get(b)!;
+      if (groupA.order !== groupB.order) {
+        return groupA.order - groupB.order;
+      }
+      return a.localeCompare(b);
+    });
+
+    // 3. Build rows
+    let displayNo = 0;
+    for (const deptName of sortedDeptNames) {
+      const dept = groupsMap.get(deptName)!;
+
+      // Add department header
+      rows.push({
+        type: 'department',
+        displayNo: null,
+        name: deptName,
+        result: '',
+        reference: '',
+        unit: ''
+      });
+
+      for (const test of dept.tests) {
+        if (test.type === 'group') {
+          // Add group header
+          rows.push({
+            type: 'group-header',
+            displayNo: null,
+            name: test.test_name,
+            result: '',
+            reference: '',
+            unit: ''
+          });
+
+          for (const child of test.children || []) {
+            displayNo += 1;
+            rows.push({
+              type: 'general',
+              displayNo,
+              name: `  ${child.test_name}`,
+              result: child.result_value || '',
+              reference: child.reference_range || '',
+              unit: child.unit || ''
+            });
+          }
+        } else {
           displayNo += 1;
           rows.push({
             type: 'general',
             displayNo,
-            name: `  ${child.test_name}`,
-            result: child.result_value || '',
-            reference: child.reference_range || '',
-            unit: child.unit || ''
+            name: test.test_name,
+            result: test.result_value || '',
+            reference: test.reference_range || '',
+            unit: test.unit || ''
           });
         }
-        continue;
       }
-
-      displayNo += 1;
-      rows.push({
-        type: 'general',
-        displayNo,
-        name: test.test_name,
-        result: test.result_value || '',
-        reference: test.reference_range || '',
-        unit: test.unit || ''
-      });
     }
 
     return rows;

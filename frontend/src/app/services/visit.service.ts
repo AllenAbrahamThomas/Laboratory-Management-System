@@ -138,6 +138,8 @@ export interface ResultEntryTest {
   result_value?: string;
   note?: string;
   children?: ResultEntryGroupChild[];
+  department_name?: string;
+  department_order?: number;
 }
 
 export interface ResultEntryPayload {

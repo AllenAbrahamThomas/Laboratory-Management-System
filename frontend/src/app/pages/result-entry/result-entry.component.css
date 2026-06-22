@@ -453,6 +453,7 @@ td {
 .print-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .print-table th,
@@ -472,12 +473,16 @@ td {
 
 .print-table th:not(:last-child),
 .print-table td:not(:last-child) {
-  border-right: 1px solid #000;
+  border-right: none;
 }
 
-.group-row td {
-  background: #f4f4f4;
-  font-weight: 700;
+.department-row td {
+  font-weight: bold;
+  text-align: center;
+}
+
+.group-header-row td {
+  font-weight: bold;
   text-align: left;
 }
 
@@ -565,7 +570,8 @@ td {
   display: inline-grid;
   grid-template-columns: 12px 1fr;
   text-align: left;
-  width: 70px;
+  width: 130px;
+  white-space: nowrap;
 }
 
 .result-value-wrap span.colon {

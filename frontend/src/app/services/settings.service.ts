@@ -240,8 +240,11 @@ export class SettingsService {
   }
 
   // TestGroupItem CRUD
-  getTestGroupItems(parentTestId: number): Observable<TestGroupItem[]> {
-    const params = new HttpParams().set('parent_test', parentTestId.toString());
+  getTestGroupItems(parentTestId?: number): Observable<TestGroupItem[]> {
+    let params = new HttpParams();
+    if (parentTestId) {
+      params = params.set('parent_test', parentTestId.toString());
+    }
     return this.getList<TestGroupItem>('test-group-items', params);
   }
   createTestGroupItem(data: TestGroupItem): Observable<TestGroupItem> {

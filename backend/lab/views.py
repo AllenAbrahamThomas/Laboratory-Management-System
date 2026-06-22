@@ -551,7 +551,7 @@ def visit_revoke_cancel(request, visit_id: int):
 
 def _build_result_entry_payload(visit: Visit) -> dict:
     visit_tests = list(
-        visit.visit_tests.select_related("test").order_by("line_order", "id")
+        visit.visit_tests.select_related("test__department").order_by("line_order", "id")
     )
     patient = visit.patient
     gender_code = (patient.gender or "").lower()
@@ -583,6 +583,8 @@ def _build_result_entry_payload(visit: Visit) -> dict:
                 "test_id": test.id,
                 "test_name": vt.test_name_snapshot or test.test_name,
                 "type": "group",
+                "department_name": test.department.name,
+                "department_order": test.department.report_order,
                 "children": child_rows,
             })
         else:
@@ -599,6 +601,8 @@ def _build_result_entry_payload(visit: Visit) -> dict:
                 "reference_range": reference.display_text if reference and reference.display_text else "",
                 "result_value": existing_result.result_value if existing_result else "",
                 "note": existing_result.remarks if existing_result else "",
+                "department_name": test.department.name,
+                "department_order": test.department.report_order,
             })
 
     return {

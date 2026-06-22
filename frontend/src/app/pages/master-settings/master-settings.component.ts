@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { StockService, ReagentItem } from '../../services/stock.service';
+import { VisitService, LabPrintConfig } from '../../services/visit.service';
 import {
   SettingsService,
   Doctor,
@@ -59,6 +61,7 @@ export class MasterSettingsComponent implements OnInit {
   private readonly settingsService = inject(SettingsService);
   private readonly stockService = inject(StockService);
   private readonly authService = inject(AuthService);
+  private readonly visitService = inject(VisitService);
 
   // User details
   currentUserRole = 'staff';
@@ -90,6 +93,7 @@ export class MasterSettingsComponent implements OnInit {
   reorderDepts: Department[] = [];
   technologiesList: Technology[] = [];
   searchQuery = '';
+  printDeptFilter: string | number = 'all';
   techTestSearchQuery = '';
   newGroupChildSearchQuery = '';
 
@@ -208,6 +212,7 @@ export class MasterSettingsComponent implements OnInit {
     this.activeTab = tab;
     this.viewMode = 'list';
     this.searchQuery = '';
+    this.printDeptFilter = 'all';
     this.successMessage = '';
     this.errorMessage = '';
     this.selectedTest = null;
@@ -270,30 +275,41 @@ export class MasterSettingsComponent implements OnInit {
   }
 
   get filteredItems(): any[] {
+    let result = this.itemsList;
+
+    if (this.activeTab === 'test') {
+      if (this.printDeptFilter !== 'all') {
+        const deptId = Number(this.printDeptFilter);
+        result = result.filter(item => item.department === deptId);
+      }
+      if (this.searchQuery && this.searchQuery.trim()) {
+        const q = this.searchQuery.toLowerCase().trim();
+        result = result.filter(item =>
+          (item.test_code || '').toLowerCase().includes(q) ||
+          (item.test_name || '').toLowerCase().includes(q) ||
+          (item.short_name || '').toLowerCase().includes(q) ||
+          (item.department_name || '').toLowerCase().includes(q)
+        );
+      }
+      return result;
+    }
+
     if (!this.searchQuery || !this.searchQuery.trim()) {
-      return this.itemsList;
+      return result;
     }
     const q = this.searchQuery.toLowerCase().trim();
-    if (this.activeTab === 'test') {
-      return this.itemsList.filter(item =>
-        (item.test_code || '').toLowerCase().includes(q) ||
-        (item.test_name || '').toLowerCase().includes(q) ||
-        (item.short_name || '').toLowerCase().includes(q) ||
-        (item.department_name || '').toLowerCase().includes(q)
-      );
-    }
     if (this.activeTab === 'department') {
-      return this.itemsList.filter(item =>
+      return result.filter(item =>
         (item.department_code || '').toLowerCase().includes(q) ||
         (item.name || '').toLowerCase().includes(q)
       );
     }
     if (this.activeTab === 'unit') {
-      return this.itemsList.filter(item =>
+      return result.filter(item =>
         (item.name || '').toLowerCase().includes(q)
       );
     }
-    return this.itemsList;
+    return result;
   }
 
   getTestsForTechnology(techId: number): string {
@@ -1185,6 +1201,331 @@ export class MasterSettingsComponent implements OnInit {
       if (t) return t.label;
     }
     return 'Setting';
+  }
+
+  onRateOrAmountChange(): void {
+    if (this.activeTab !== 'test') return;
+    const rate = Number(this.formData.rate || 0);
+    const amount = Number(this.formData.default_amount || 0);
+    if (rate > 0) {
+      const discount = ((rate - amount) / rate) * 100;
+      this.formData.default_discount_percent = Math.round((discount + Number.EPSILON) * 100) / 100;
+    } else {
+      this.formData.default_discount_percent = 0;
+    }
+  }
+
+  mapResultType(type: string): string {
+    switch (type) {
+      case 'numeric': return 'Numeric';
+      case 'text': return 'Text';
+      case 'choice': return 'Choice';
+      case 'panel': return 'Panel';
+      default: return type || '-';
+    }
+  }
+
+  printCatalogue(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    forkJoin({
+      printConfig: this.visitService.getLabPrintConfig(),
+      groupItems: this.settingsService.getTestGroupItems()
+    }).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.generatePrintOut(res.printConfig, res.groupItems);
+      },
+      error: (err) => {
+        console.error('Failed to load catalog print details', err);
+        // Fallback: try to print with whatever is loaded without print config
+        this.settingsService.getTestGroupItems().subscribe({
+          next: (groupItems) => {
+            this.isLoading = false;
+            this.generatePrintOut(null, groupItems);
+          },
+          error: () => {
+            this.isLoading = false;
+            this.errorMessage = 'Failed to load test group items for printing.';
+          }
+        });
+      }
+    });
+  }
+
+  generatePrintOut(printConfig: LabPrintConfig | null, groupItems: TestGroupItem[]): void {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      this.errorMessage = 'Pop-up blocker is preventing catalogue printing. Please allow pop-ups for this site.';
+      return;
+    }
+
+    const labName = printConfig?.lab_name || 'Neethi Clinical Lab';
+    const subtitle = printConfig?.subtitle || 'Clinical Laboratory & Diagnostics';
+    const address = printConfig?.address || '';
+    const phone = printConfig?.phone || '';
+    const logoUrl = printConfig?.logo_url || '';
+
+    // Filter tests by selected department if not 'all'
+    let itemsToPrint = this.filteredItems;
+    let deptNameSuffix = '';
+    if (this.printDeptFilter !== 'all') {
+      const deptId = Number(this.printDeptFilter);
+      itemsToPrint = itemsToPrint.filter(item => item.department === deptId);
+      const selectedDeptObj = this.departments.find(d => d.id === deptId);
+      if (selectedDeptObj) {
+        deptNameSuffix = ` - ${selectedDeptObj.name}`;
+      }
+    }
+
+    const testRows: string[] = [];
+
+    itemsToPrint.forEach(item => {
+      // 1. Parent/General Test Row
+      const rateVal = typeof item.rate === 'number' ? item.rate : parseFloat(item.rate || '0');
+      const isGroup = !!item.is_group;
+      const rowClass = isGroup ? 'group-parent-row' : 'standard-row';
+      const badgeHtml = isGroup ? '<span class="group-badge">GROUP</span>' : '';
+      
+      testRows.push(`
+        <tr class="${rowClass}">
+          <td style="font-weight: ${isGroup ? 'bold' : 'normal'};">${item.test_code}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-weight: ${isGroup ? '700' : '600'}; color: ${isGroup ? '#1e3a8a' : '#1f2937'};">${item.test_name}</span>
+              ${badgeHtml}
+            </div>
+          </td>
+          <td>${item.short_name || '-'}</td>
+          <td>${item.department_name || '-'}</td>
+          <td>${this.mapResultType(item.result_type)}</td>
+          <td>${item.unit || '-'}</td>
+          <td style="text-align: right; font-weight: bold; color: #111827;">₹${rateVal.toFixed(2)}</td>
+        </tr>
+      `);
+
+      // 2. Child Test Rows if Group
+      if (isGroup) {
+        const children = groupItems.filter(gi => gi.parent_test === item.id);
+        children.forEach(childItem => {
+          const childTest = this.allTests.find(t => t.id === childItem.child_test);
+          const childRate = childTest ? (typeof childTest.rate === 'number' ? childTest.rate : parseFloat(childTest.rate || '0')) : 0;
+          const childName = childItem.child_test_name || childTest?.test_name || 'Unknown Child Test';
+          const childCode = childItem.child_test_code || childTest?.test_code || '-';
+          const childShort = childTest?.short_name || '-';
+          const childDept = childTest?.department_name || '-';
+          const childType = childTest ? this.mapResultType(childTest.result_type) : '-';
+          const childUnit = childTest?.unit || '-';
+
+          testRows.push(`
+            <tr class="group-child-row">
+              <td style="padding-left: 20px; color: #6b7280;">└─ ${childCode}</td>
+              <td style="padding-left: 20px; color: #374151; font-style: italic;">└─ ${childName}</td>
+              <td style="color: #6b7280;">${childShort}</td>
+              <td style="color: #6b7280;">${childDept}</td>
+              <td style="color: #6b7280;">${childType}</td>
+              <td style="color: #6b7280;">${childUnit}</td>
+              <td style="text-align: right; color: #9ca3af; font-size: 10px;">₹${childRate.toFixed(2)} (Indiv.)</td>
+            </tr>
+          `);
+        });
+      }
+    });
+
+    const dateStr = new Date().toLocaleString('en-IN', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Test Master Catalogue</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            
+            body {
+              font-family: 'Inter', sans-serif;
+              padding: 40px;
+              color: #1f2937;
+              background-color: #fff;
+              font-size: 11px;
+              line-height: 1.5;
+            }
+            
+            /* Header Styling */
+            .header-container {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              border-bottom: 2px solid #1e3a8a;
+              padding-bottom: 15px;
+              margin-bottom: 20px;
+            }
+            .lab-details {
+              flex: 1;
+            }
+            .lab-name {
+              font-size: 24px;
+              font-weight: 700;
+              color: #1e3a8a;
+              margin: 0 0 4px 0;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .lab-subtitle {
+              font-size: 12px;
+              color: #4b5563;
+              margin: 0 0 8px 0;
+              font-weight: 500;
+            }
+            .lab-contact {
+              font-size: 10px;
+              color: #6b7280;
+              margin: 2px 0;
+            }
+            .logo-container {
+              max-height: 70px;
+              max-width: 200px;
+            }
+            .logo-container img {
+              max-height: 70px;
+              object-fit: contain;
+            }
+            
+            /* Title & Metadata */
+            .report-title-bar {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+            }
+            .report-title {
+              font-size: 16px;
+              font-weight: 700;
+              color: #111827;
+              margin: 0;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            .meta-item {
+              font-size: 10px;
+              color: #4b5563;
+              background-color: #f3f4f6;
+              padding: 4px 10px;
+              border-radius: 4px;
+              font-weight: 500;
+            }
+
+            /* Table Design */
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 10px;
+            }
+            th {
+              background-color: #f3f4f6;
+              color: #374151;
+              font-weight: 600;
+              text-align: left;
+              padding: 8px 10px;
+              border-bottom: 2px solid #e5e7eb;
+              font-size: 10px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            td {
+              padding: 8px 10px;
+              border-bottom: 1px solid #f3f4f6;
+              vertical-align: middle;
+            }
+            
+            /* Rows styling */
+            .group-parent-row {
+              background-color: #f9fafb;
+            }
+            .group-parent-row td {
+              border-top: 1px solid #e5e7eb;
+              border-bottom: 1px dashed #e5e7eb;
+            }
+            .group-child-row td {
+              padding-top: 5px;
+              padding-bottom: 5px;
+              background-color: #fff;
+              border-bottom: 1px solid #f3f4f6;
+              font-size: 10.5px;
+            }
+            .group-badge {
+              font-size: 8px;
+              font-weight: 700;
+              background-color: #dbeafe;
+              color: #1e40af;
+              padding: 2px 6px;
+              border-radius: 9999px;
+              letter-spacing: 0.5px;
+            }
+            
+            /* Print configuration */
+            @media print {
+              body {
+                padding: 20px;
+                font-size: 10px;
+              }
+              th, td {
+                padding: 6px 8px;
+              }
+              .group-child-row td {
+                padding-top: 4px;
+                padding-bottom: 4px;
+              }
+              tr {
+                page-break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          <div class="header-container">
+            <div class="lab-details">
+              <h1 class="lab-name">${labName}</h1>
+              <div class="lab-subtitle">${subtitle}</div>
+              ${address ? `<div class="lab-contact"><strong>Address:</strong> ${address}</div>` : ''}
+              ${phone ? `<div class="lab-contact"><strong>Phone:</strong> ${phone}</div>` : ''}
+            </div>
+            ${logoUrl ? `<div class="logo-container"><img src="${logoUrl}" alt="Lab Logo"></div>` : ''}
+          </div>
+          
+          <div class="report-title-bar">
+            <h2 class="report-title">Test Master Catalogue${deptNameSuffix}</h2>
+            <div style="display: flex; gap: 8px;">
+              <div class="meta-item">Total Items: ${itemsToPrint.length}</div>
+              <div class="meta-item">Date: ${dateStr}</div>
+            </div>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 100px;">Test Code</th>
+                <th>Test Name</th>
+                <th style="width: 100px;">Short Name</th>
+                <th style="width: 140px;">Department</th>
+                <th style="width: 100px;">Result Type</th>
+                <th style="width: 90px;">Unit</th>
+                <th style="width: 90px; text-align: right;">Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${testRows.join('') || '<tr><td colspan="7" style="text-align: center; padding: 20px;">No tests found.</td></tr>'}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   }
 
   close(): void {

@@ -249,6 +249,11 @@ input {
     border: 1px solid #222 !important;
   }
 
+  .print-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
   .print-table th,
   .print-table td {
     padding: 6px 8px !important;
@@ -265,7 +270,17 @@ input {
 
   .print-table th:not(:last-child),
   .print-table td:not(:last-child) {
-    border-right: 1px solid #000 !important;
+    border-right: none !important;
+  }
+
+  .department-row td {
+    font-weight: bold !important;
+    text-align: center !important;
+  }
+
+  .group-header-row td {
+    font-weight: bold !important;
+    text-align: left !important;
   }
 
   .bill-summary {
@@ -394,7 +409,8 @@ input {
     display: inline-grid !important;
     grid-template-columns: 12px 1fr !important;
     text-align: left !important;
-    width: 70px !important;
+    width: 130px !important;
+    white-space: nowrap !important;
   }
 
   .result-value-wrap span.colon {
