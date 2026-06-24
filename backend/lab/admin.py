@@ -1,11 +1,11 @@
 from django.contrib import admin
-
 from .models import (
     Department,
     Doctor,
     Hospital,
     Patient,
     Test,
+    TestComponent,
     TestGroupItem,
     Unit,
     TestReferenceRange,
@@ -52,6 +52,32 @@ class UnitAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
 
 
+class TestComponentInline(admin.TabularInline):
+    model = TestComponent
+    extra = 1
+    fields = ("component_name", "result_type", "unit", "display_order", "is_active")
+
+class TestReferenceRangeInline(admin.TabularInline):
+    model = TestReferenceRange
+    extra = 1
+    fields = ("component", "reference_group", "operator", "min_value", "max_value", "display_text", "unit", "is_active")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "component":
+            resolved = request.resolver_match
+            if resolved and resolved.kwargs.get("object_id"):
+                test_id = resolved.kwargs["object_id"]
+                kwargs["queryset"] = TestComponent.objects.filter(test_id=test_id)
+            else:
+                kwargs["queryset"] = TestComponent.objects.none()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+class ComponentReferenceRangeInline(admin.TabularInline):
+    model = TestReferenceRange
+    extra = 1
+    fields = ("reference_group", "operator", "min_value", "max_value", "display_text", "unit", "is_active")
+
+
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
     list_display = (
@@ -66,6 +92,15 @@ class TestAdmin(admin.ModelAdmin):
     )
     search_fields = ("test_code", "test_name", "short_name")
     list_filter = ("department", "result_type", "is_group", "is_active", "reagent_item", "reagent_auto_reduce")
+    inlines = [TestComponentInline, TestReferenceRangeInline]
+
+
+@admin.register(TestComponent)
+class TestComponentAdmin(admin.ModelAdmin):
+    list_display = ("test", "component_name", "result_type", "unit", "display_order", "is_active")
+    search_fields = ("component_name", "test__test_name")
+    list_filter = ("result_type", "is_active")
+    inlines = [ComponentReferenceRangeInline]
 
 
 @admin.register(TestGroupItem)
@@ -89,15 +124,15 @@ class VisitTestAdmin(admin.ModelAdmin):
 
 @admin.register(TestReferenceRange)
 class TestReferenceRangeAdmin(admin.ModelAdmin):
-    list_display = ("test", "gender", "operator", "min_value", "max_value", "display_text", "is_active")
-    list_filter = ("gender", "operator", "is_active")
-    search_fields = ("test__test_name", "display_text")
+    list_display = ("test", "component", "reference_group", "operator", "min_value", "max_value", "display_text", "is_active")
+    list_filter = ("reference_group", "operator", "is_active")
+    search_fields = ("test__test_name", "component__component_name", "display_text")
 
 
 @admin.register(TestResult)
 class TestResultAdmin(admin.ModelAdmin):
-    list_display = ("visit", "test", "result_value", "result_value_numeric", "status", "entered_at", "authorized_at")
-    search_fields = ("visit__lab_no", "test__test_name", "result_value", "result_text")
+    list_display = ("visit", "test", "component", "result_value", "result_value_numeric", "status", "entered_at", "authorized_at")
+    search_fields = ("visit__lab_no", "test__test_name", "component__component_name", "result_value", "result_text")
     list_filter = ("status",)
 
 
