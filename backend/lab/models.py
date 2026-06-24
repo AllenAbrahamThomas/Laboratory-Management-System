@@ -177,6 +177,26 @@ class Test(TimestampedModel):
                 Unit.objects.get_or_create(name=unit_name, defaults={"is_active": True})
 
 
+class TestComponent(TimestampedModel):
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="components")
+    component_name = models.CharField(max_length=255)
+    result_type = models.CharField(
+        max_length=20,
+        choices=Test.ResultType.choices,
+        default=Test.ResultType.NUMERIC,
+    )
+    unit = models.CharField(max_length=50, blank=True)
+    display_order = models.IntegerField(default=1)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "test_components"
+        ordering = ["test", "display_order", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.test.test_name} - {self.component_name}"
+
+
 class TestGroupItem(models.Model):
     parent_test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="group_items")
     child_test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="parent_groups")
@@ -285,10 +305,11 @@ class VisitTest(models.Model):
 
 
 class TestReferenceRange(TimestampedModel):
-    class Gender(models.TextChoices):
-        ANY = "any", "Any"
-        MALE = "male", "Male"
-        FEMALE = "female", "Female"
+    class ReferenceGroup(models.TextChoices):
+        COMMON = "COMMON", "Common"
+        MALE = "MALE", "Male"
+        FEMALE = "FEMALE", "Female"
+        CHILD = "CHILD", "Child"
 
     class Operator(models.TextChoices):
         BETWEEN = "between", "Between"
@@ -298,8 +319,9 @@ class TestReferenceRange(TimestampedModel):
         GTE = "gte", "Greater Than or Equal"
         TEXT = "text", "Text Only"
 
-    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="reference_ranges")
-    gender = models.CharField(max_length=10, choices=Gender.choices, default=Gender.ANY)
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="reference_ranges", null=True, blank=True)
+    component = models.ForeignKey(TestComponent, on_delete=models.CASCADE, related_name="reference_ranges", null=True, blank=True)
+    reference_group = models.CharField(max_length=20, choices=ReferenceGroup.choices, default=ReferenceGroup.COMMON)
     operator = models.CharField(max_length=20, choices=Operator.choices, default=Operator.BETWEEN)
     min_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     max_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -309,10 +331,21 @@ class TestReferenceRange(TimestampedModel):
 
     class Meta:
         db_table = "test_reference_ranges"
-        ordering = ["test", "gender", "id"]
+        ordering = ["component", "reference_group", "id"]
 
     def __str__(self) -> str:
-        return f"{self.test.test_name} ({self.gender})"
+        if self.component:
+            return f"{self.component.component_name} ({self.reference_group})"
+        return f"Legacy Test Range ({self.reference_group})"
+
+    def get_gender_display(self) -> str:
+        return self.get_reference_group_display()
+
+    def save(self, *args, **kwargs):
+        if self.component and not self.test:
+            self.test = self.component.test
+        super().save(*args, **kwargs)
+
 
 
 class TestResult(TimestampedModel):
@@ -323,7 +356,8 @@ class TestResult(TimestampedModel):
 
     visit = models.ForeignKey(Visit, on_delete=models.CASCADE, related_name="results")
     visit_test = models.ForeignKey(VisitTest, on_delete=models.CASCADE, related_name="results")
-    test = models.ForeignKey(Test, on_delete=models.PROTECT, related_name="results")
+    test = models.ForeignKey(Test, on_delete=models.PROTECT, related_name="results", null=True, blank=True)
+    component = models.ForeignKey(TestComponent, on_delete=models.PROTECT, related_name="results", null=True, blank=True)
     result_value = models.CharField(max_length=120, blank=True)
     result_value_numeric = models.DecimalField(max_digits=12, decimal_places=3, null=True, blank=True)
     result_text = models.TextField(blank=True)

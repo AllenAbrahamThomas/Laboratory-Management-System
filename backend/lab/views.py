@@ -558,6 +558,15 @@ def _build_result_entry_payload(visit: Visit) -> dict:
     age_years = int(patient.age_years or 0)
     age_months = int(patient.age_months or 0)
 
+    # Determine reference groups to check based on gender and age
+    ref_groups = [TestReferenceRange.ReferenceGroup.COMMON]
+    if age_years < 12:
+        ref_groups.append(TestReferenceRange.ReferenceGroup.CHILD)
+    if gender_code == "male":
+        ref_groups.append(TestReferenceRange.ReferenceGroup.MALE)
+    elif gender_code == "female":
+        ref_groups.append(TestReferenceRange.ReferenceGroup.FEMALE)
+
     tests = []
     for vt in visit_tests:
         test = vt.test
@@ -568,7 +577,7 @@ def _build_result_entry_payload(visit: Visit) -> dict:
                 child_test = item.child_test
                 existing_result = TestResult.objects.filter(visit=visit, visit_test=vt, test=child_test).order_by("-id").first()
                 reference = TestReferenceRange.objects.filter(test=child_test, is_active=True).filter(
-                    gender__in=[gender_code, "any"]
+                    reference_group__in=ref_groups
                 ).order_by("id").first()
                 child_rows.append({
                     "test_id": child_test.id,
@@ -590,7 +599,7 @@ def _build_result_entry_payload(visit: Visit) -> dict:
         else:
             existing_result = TestResult.objects.filter(visit=visit, visit_test=vt, test=test).order_by("-id").first()
             reference = TestReferenceRange.objects.filter(test=test, is_active=True).filter(
-                gender__in=[gender_code, "any"]
+                reference_group__in=ref_groups
             ).order_by("id").first()
             tests.append({
                 "visit_test_id": vt.id,
@@ -974,10 +983,33 @@ from .serializers import (
 )
 
 class TestReferenceRangeSerializer(serializers.ModelSerializer):
+    gender = serializers.SerializerMethodField()
     gender_display = serializers.CharField(source='get_gender_display', read_only=True)
+
     class Meta:
         model = TestReferenceRange
         fields = '__all__'
+
+    def get_gender(self, obj) -> str:
+        if obj.reference_group == TestReferenceRange.ReferenceGroup.COMMON:
+            return "any"
+        return obj.reference_group.lower()
+
+    def to_internal_value(self, data):
+        data = data.copy()
+        if "gender" in data:
+            gender_val = str(data["gender"]).strip().lower()
+            if gender_val == "any":
+                data["reference_group"] = TestReferenceRange.ReferenceGroup.COMMON
+            elif gender_val == "male":
+                data["reference_group"] = TestReferenceRange.ReferenceGroup.MALE
+            elif gender_val == "female":
+                data["reference_group"] = TestReferenceRange.ReferenceGroup.FEMALE
+            elif gender_val == "child":
+                data["reference_group"] = TestReferenceRange.ReferenceGroup.CHILD
+            else:
+                data["reference_group"] = TestReferenceRange.ReferenceGroup.COMMON
+        return super().to_internal_value(data)
 
 
 class TestGroupItemSerializer(serializers.ModelSerializer):
