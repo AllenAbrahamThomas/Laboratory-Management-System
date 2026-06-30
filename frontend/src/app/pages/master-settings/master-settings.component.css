@@ -815,3 +815,228 @@
   padding: 10px;
 }
 
+/* Searchable Select Premium Styling */
+.searchable-select-container {
+  position: relative;
+  display: inline-block;
+}
+
+.searchable-select-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.searchable-select-input {
+  width: 100%;
+  height: 25px;
+  padding: 0 34px 0 8px !important;
+  font-size: 11.5px;
+  border: 1px solid #b5b5b5;
+  border-radius: 3px;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.searchable-select-input:focus {
+  border-color: var(--bright-teal-blue);
+  box-shadow: 0 0 3px rgba(72, 202, 228, 0.4);
+}
+
+.searchable-select-icon {
+  position: absolute;
+  right: 8px;
+  color: #777;
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.searchable-select-clear {
+  position: absolute;
+  right: 20px;
+  color: #999;
+  font-size: 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  z-index: 5;
+}
+
+.searchable-select-clear:hover {
+  color: #e03131;
+}
+
+.searchable-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid var(--frosted-blue);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(3, 4, 94, 0.15);
+}
+
+.searchable-select-option {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 11px;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.15s;
+  color: #333;
+}
+
+.searchable-select-option:hover {
+  background: rgba(144, 224, 239, 0.25);
+  color: var(--deep-twilight);
+}
+
+.searchable-select-option.active {
+  background: var(--deep-twilight);
+  color: #ffffff;
+}
+
+.searchable-select-option-code {
+  font-weight: bold;
+  color: #777;
+  font-size: 9.5px;
+}
+
+.searchable-select-option.active .searchable-select-option-code {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.searchable-select-no-results {
+  padding: 10px;
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+/* Child Test Details Preview */
+.child-test-preview-box {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 1px solid var(--frosted-blue);
+  border-radius: 4px;
+}
+
+.preview-title {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--deep-twilight);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--frosted-blue);
+  padding-bottom: 4px;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.preview-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-label {
+  font-size: 9.5px;
+  color: #666;
+  font-weight: bold;
+}
+
+.preview-val {
+  font-size: 11px;
+  color: #333;
+  font-weight: 500;
+}
+
+.preview-ranges-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px dashed var(--frosted-blue);
+  padding-top: 8px;
+}
+
+.preview-ranges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.preview-range-row {
+  display: flex;
+  gap: 12px;
+  font-size: 10.5px;
+  color: #444;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.range-gender {
+  font-weight: bold;
+  color: var(--deep-twilight);
+  min-width: 60px;
+}
+
+.range-operator {
+  color: #666;
+  min-width: 70px;
+}
+
+.range-vals {
+  font-weight: 600;
+  color: #111;
+  min-width: 70px;
+}
+
+.range-unit {
+  color: #666;
+  min-width: 40px;
+}
+
+.range-text {
+  font-style: italic;
+  color: #555;
+}
+
+.loading-text, .no-ranges-text {
+  font-size: 10.5px;
+  color: #888;
+  padding: 2px 0;
+}
+
+.selected-child-row {
+  background: rgba(72, 202, 228, 0.15) !important;
+}
+
+.selected-child-row td {
+  font-weight: bold;
+  border-bottom: 1.5px solid var(--bright-teal-blue) !important;
+}
+

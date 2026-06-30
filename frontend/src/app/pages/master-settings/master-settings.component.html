@@ -115,12 +115,52 @@
         <div class="selector-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <label for="groupTestSelect">Select Group Test:</label>
-            <select id="groupTestSelect" [(ngModel)]="selectedGroupTestId" (change)="onGroupTestSelect()" style="min-width: 220px;">
-              <option [ngValue]="null">-- Select Group/Panel --</option>
-              <ng-container *ngFor="let test of allTests">
-                <option *ngIf="test.is_group" [value]="test.id">{{ test.test_name }} ({{ test.test_code }})</option>
-              </ng-container>
-            </select>
+            <div class="searchable-select-container searchable-select-container-group" style="min-width: 380px;">
+              <div class="searchable-select-input-wrapper">
+                <input
+                  type="text"
+                  class="searchable-select-input"
+                  placeholder="-- Search & Select Group --"
+                  [(ngModel)]="groupTestSearchQuery"
+                  (focus)="isGroupDropdownOpen = true"
+                  (input)="isGroupDropdownOpen = true"
+                  autocomplete="off"
+                >
+                <button
+                  type="button"
+                  class="searchable-select-clear"
+                  *ngIf="selectedGroupTestId || groupTestSearchQuery"
+                  (click)="clearGroupTestSelection()"
+                  title="Clear selection"
+                >
+                  ✕
+                </button>
+                <span class="searchable-select-icon">▼</span>
+              </div>
+              <div class="searchable-select-dropdown" *ngIf="isGroupDropdownOpen">
+                <button
+                  type="button"
+                  class="searchable-select-option"
+                  [class.active]="selectedGroupTestId === null"
+                  (click)="clearGroupTestSelection()"
+                >
+                  <span>-- Select Group/Panel --</span>
+                </button>
+                <button
+                  type="button"
+                  class="searchable-select-option"
+                  *ngFor="let test of getFilteredGroupTests()"
+                  [class.active]="selectedGroupTestId === test.id"
+                  (click)="selectGroupTest(test)"
+                >
+                  <span>{{ test.test_name }}</span>
+                  <span class="searchable-select-option-code">({{ test.test_code }})</span>
+                </button>
+                <div class="searchable-select-no-results" *ngIf="getFilteredGroupTests().length === 0">
+                  No group tests found
+                </div>
+              </div>
+            </div>
             <button
               type="button"
               *ngIf="currentUserRole === 'admin' && selectedGroupTestId"
@@ -215,11 +255,16 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of groupChildItems; let idx = index">
+              <tr *ngFor="let item of groupChildItems; let idx = index"
+                  [class.selected-child-row]="selectedTableChildTestId === item.child_test"
+                  (click)="selectTableChildTest(item.child_test)"
+                  style="cursor: pointer;"
+                  title="Click to view details"
+              >
                 <td>{{ item.line_order }}</td>
                 <td>{{ item.child_test_code }}</td>
                 <td>{{ item.child_test_name }}</td>
-                <td>
+                <td (click)="$event.stopPropagation()">
                   <div class="order-actions-cell" style="display: flex; gap: 4px;">
                     <button type="button" [disabled]="idx === 0" (click)="moveGroupItem(idx, -1)" class="action-btn">▲</button>
                     <button type="button" [disabled]="idx === groupChildItems.length - 1" (click)="moveGroupItem(idx, 1)" class="action-btn">▼</button>
@@ -233,25 +278,150 @@
             </tbody>
           </table>
 
+          <!-- Table-selected child test details preview -->
+          <div class="child-test-preview-box" *ngIf="selectedTableChildTestId" style="margin-bottom: 20px; border-color: var(--deep-twilight);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--frosted-blue); padding-bottom: 4px; margin-bottom: 8px;">
+              <h5 class="preview-title" style="border: none; margin: 0; padding: 0;">Saved Test Details</h5>
+              <button type="button" (click)="clearTableChildTestSelection()" style="background: none; border: none; cursor: pointer; font-size: 11px; color: #777; font-weight: bold;">✕ Close Preview</button>
+            </div>
+            <div class="preview-grid">
+              <div class="preview-item">
+                <span class="preview-label">Short Name:</span>
+                <span class="preview-val">{{ getTableChildTestInfo()?.short_name || '-' }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-label">Test Code:</span>
+                <span class="preview-val">{{ getTableChildTestInfo()?.test_code }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-label">Department:</span>
+                <span class="preview-val">{{ getTableChildTestDeptName() }}</span>
+              </div>
+              <div class="preview-item">
+                <span class="preview-label">Rate:</span>
+                <span class="preview-val">₹{{ getTableChildTestInfo()?.rate | number:'1.2-2' }}</span>
+              </div>
+            </div>
+            <div class="preview-ranges-section">
+              <span class="preview-label">Reference Ranges:</span>
+              <div class="preview-ranges-list">
+                <div class="preview-range-row" *ngFor="let range of selectedTableChildTestRanges">
+                  <span class="range-gender">{{ range.gender_display || range.gender | titlecase }}</span>
+                  <span class="range-operator">{{ range.operator | titlecase }}</span>
+                  <span class="range-vals" *ngIf="range.operator === 'between'">{{ range.min_value }} - {{ range.max_value }}</span>
+                  <span class="range-vals" *ngIf="range.operator !== 'between'">
+                    {{ range.operator === 'greater_than' ? '>' : range.operator === 'less_than' ? '<' : '' }} 
+                    {{ range.operator === 'greater_than_or_equal' ? '≥' : range.operator === 'less_than_or_equal' ? '≤' : '' }} 
+                    {{ range.min_value !== null ? range.min_value : range.max_value }}
+                  </span>
+                  <span class="range-unit">{{ range.unit || '-' }}</span>
+                  <span class="range-text">"{{ range.display_text }}"</span>
+                </div>
+                <div *ngIf="isLoadingTableChildRanges" class="loading-text">Loading ranges...</div>
+                <div *ngIf="!isLoadingTableChildRanges && selectedTableChildTestRanges.length === 0" class="no-ranges-text">No reference ranges defined.</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Add Child Test Form -->
           <div class="add-child-box">
             <h4>Add Test to Profile</h4>
             <div class="add-child-form">
               <div class="field">
                 <label>Select Test:</label>
-                <select [(ngModel)]="newGroupItemData.child_test">
-                  <option [ngValue]="undefined">-- Select Child Test --</option>
-                  <ng-container *ngFor="let test of allTests">
-                    <!-- Prevent adding groups inside groups recursively -->
-                    <option *ngIf="!test.is_group" [value]="test.id">{{ test.test_name }} ({{ test.test_code }})</option>
-                  </ng-container>
-                </select>
+                <div class="searchable-select-container searchable-select-container-child" style="flex: 1; min-width: 200px;">
+                  <div class="searchable-select-input-wrapper">
+                    <input
+                      type="text"
+                      class="searchable-select-input"
+                      placeholder="-- Search & Select Child Test --"
+                      [(ngModel)]="childTestSearchQuery"
+                      (focus)="isChildDropdownOpen = true"
+                      (input)="isChildDropdownOpen = true"
+                      autocomplete="off"
+                    >
+                    <button
+                      type="button"
+                      class="searchable-select-clear"
+                      *ngIf="newGroupItemData.child_test || childTestSearchQuery"
+                      (click)="clearChildTestSelection()"
+                      title="Clear selection"
+                    >
+                      ✕
+                    </button>
+                    <span class="searchable-select-icon">▼</span>
+                  </div>
+                  <div class="searchable-select-dropdown" *ngIf="isChildDropdownOpen">
+                    <button
+                      type="button"
+                      class="searchable-select-option"
+                      [class.active]="newGroupItemData.child_test === undefined"
+                      (click)="clearChildTestSelection()"
+                    >
+                      <span>-- Select Child Test --</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="searchable-select-option"
+                      *ngFor="let test of getFilteredChildTests()"
+                      [class.active]="newGroupItemData.child_test === test.id"
+                      (click)="selectChildTest(test)"
+                    >
+                      <span>{{ test.test_name }}</span>
+                      <span class="searchable-select-option-code">({{ test.test_code }})</span>
+                    </button>
+                    <div class="searchable-select-no-results" *ngIf="getFilteredChildTests().length === 0">
+                      No matching child tests found
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="field compact-field">
                 <label>Order:</label>
                 <input type="number" [(ngModel)]="newGroupItemData.line_order" placeholder="Auto">
               </div>
               <button type="button" (click)="addGroupChildItem()" class="add-btn">Add to Profile</button>
+            </div>
+            <!-- Child Test Details Preview -->
+            <div class="child-test-preview-box" *ngIf="newGroupItemData.child_test">
+              <h5 class="preview-title">Selected Test Details</h5>
+              <div class="preview-grid">
+                <div class="preview-item">
+                  <span class="preview-label">Short Name:</span>
+                  <span class="preview-val">{{ getSelectedChildTestInfo()?.short_name || '-' }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Test Code:</span>
+                  <span class="preview-val">{{ getSelectedChildTestInfo()?.test_code }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Department:</span>
+                  <span class="preview-val">{{ getSelectedChildTestDeptName() }}</span>
+                </div>
+                <div class="preview-item">
+                  <span class="preview-label">Rate:</span>
+                  <span class="preview-val">₹{{ getSelectedChildTestInfo()?.rate | number:'1.2-2' }}</span>
+                </div>
+              </div>
+              <div class="preview-ranges-section">
+                <span class="preview-label">Reference Ranges:</span>
+                <div class="preview-ranges-list">
+                  <div class="preview-range-row" *ngFor="let range of selectedChildTestRanges">
+                    <span class="range-gender">{{ range.gender_display || range.gender | titlecase }}</span>
+                    <span class="range-operator">{{ range.operator | titlecase }}</span>
+                    <span class="range-vals" *ngIf="range.operator === 'between'">{{ range.min_value }} - {{ range.max_value }}</span>
+                    <span class="range-vals" *ngIf="range.operator !== 'between'">
+                      {{ range.operator === 'greater_than' ? '>' : range.operator === 'less_than' ? '<' : '' }} 
+                      {{ range.operator === 'greater_than_or_equal' ? '≥' : range.operator === 'less_than_or_equal' ? '≤' : '' }} 
+                      {{ range.min_value !== null ? range.min_value : range.max_value }}
+                    </span>
+                    <span class="range-unit">{{ range.unit || '-' }}</span>
+                    <span class="range-text">"{{ range.display_text }}"</span>
+                  </div>
+                  <div *ngIf="isLoadingChildRanges" class="loading-text">Loading ranges...</div>
+                  <div *ngIf="!isLoadingChildRanges && selectedChildTestRanges.length === 0" class="no-ranges-text">No reference ranges defined.</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

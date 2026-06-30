@@ -500,7 +500,16 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
     event.stopPropagation();
 
     if (this.activeSuggestionSlNo === this.currentTest.slNo && this.testSuggestions.length > 0) {
-      this.applyActiveSuggestion(this.currentTest);
+      // If there is an active selection index, use it. Otherwise, if they typed a code exactly, try to find it first.
+      const query = (this.currentTest.testCode || '').trim().toUpperCase();
+      let match = this.testSuggestions.find(
+        (opt) => opt.test_code.toUpperCase() === query || opt.short_name.toUpperCase() === query
+      );
+      if (match) {
+        this.selectTestSuggestion(this.currentTest, match);
+      } else {
+        this.applyActiveSuggestion(this.currentTest);
+      }
       return;
     }
 
@@ -511,6 +520,14 @@ export class BillRegistrationComponent implements OnChanges, AfterViewInit {
       this.currentTest.discount = null;
       this.currentTest.amount = null;
       this.updateGrossAmount();
+    } else if (this.testSuggestions.length > 0) {
+      const query = this.currentTest.testCode.trim().toUpperCase();
+      const match = this.testSuggestions.find(
+        (opt) => opt.test_code.toUpperCase() === query || opt.short_name.toUpperCase() === query
+      );
+      if (match) {
+        this.selectTestSuggestion(this.currentTest, match);
+      }
     }
 
     setTimeout(() => {

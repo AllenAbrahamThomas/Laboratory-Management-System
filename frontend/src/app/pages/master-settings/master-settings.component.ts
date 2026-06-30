@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -96,6 +96,17 @@ export class MasterSettingsComponent implements OnInit {
   printDeptFilter: string | number = 'all';
   techTestSearchQuery = '';
   newGroupChildSearchQuery = '';
+
+  // Searchable Select State
+  groupTestSearchQuery = '';
+  isGroupDropdownOpen = false;
+  childTestSearchQuery = '';
+  isChildDropdownOpen = false;
+  selectedChildTestRanges: TestReferenceRange[] = [];
+  isLoadingChildRanges = false;
+  selectedTableChildTestId: number | null = null;
+  selectedTableChildTestRanges: TestReferenceRange[] = [];
+  isLoadingTableChildRanges = false;
 
   // Loading & Messages
   isLoading = false;
@@ -217,6 +228,15 @@ export class MasterSettingsComponent implements OnInit {
     this.errorMessage = '';
     this.selectedTest = null;
     this.selectedGroupTestId = null;
+    this.groupTestSearchQuery = '';
+    this.isGroupDropdownOpen = false;
+    this.childTestSearchQuery = '';
+    this.isChildDropdownOpen = false;
+    this.selectedChildTestRanges = [];
+    this.isLoadingChildRanges = false;
+    this.selectedTableChildTestId = null;
+    this.selectedTableChildTestRanges = [];
+    this.isLoadingTableChildRanges = false;
 
     if (this.isExplanationOnly(tab)) {
       return;
@@ -622,9 +642,19 @@ export class MasterSettingsComponent implements OnInit {
 
   // Group test child mapping loaders
   onGroupTestSelect(): void {
+    this.selectedTableChildTestId = null;
+    this.selectedTableChildTestRanges = [];
+    this.isLoadingTableChildRanges = false;
+
     if (!this.selectedGroupTestId) {
       this.groupChildItems = [];
+      this.groupTestSearchQuery = '';
       return;
+    }
+
+    const groupTest = this.allTests.find(t => t.id === Number(this.selectedGroupTestId));
+    if (groupTest) {
+      this.groupTestSearchQuery = groupTest.test_name;
     }
 
     this.isLoading = true;
@@ -638,6 +668,169 @@ export class MasterSettingsComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    
+    // Close group test dropdown if clicking outside its container
+    if (!target.closest('.searchable-select-container-group')) {
+      if (this.isGroupDropdownOpen) {
+        this.isGroupDropdownOpen = false;
+        this.restoreGroupTestSearchQuery();
+      }
+    }
+    
+    // Close child test dropdown if clicking outside its container
+    if (!target.closest('.searchable-select-container-child')) {
+      if (this.isChildDropdownOpen) {
+        this.isChildDropdownOpen = false;
+        this.restoreChildTestSearchQuery();
+      }
+    }
+  }
+
+  getFilteredGroupTests(): Test[] {
+    if (!this.allTests) return [];
+    const groupTests = this.allTests.filter(t => t.is_group);
+    if (!this.groupTestSearchQuery) return groupTests;
+    const q = this.groupTestSearchQuery.toLowerCase().trim();
+    return groupTests.filter(t =>
+      (t.test_name || '').toLowerCase().includes(q) ||
+      (t.test_code || '').toLowerCase().includes(q)
+    );
+  }
+
+  getFilteredChildTests(): Test[] {
+    if (!this.allTests) return [];
+    const nonGroupTests = this.allTests.filter(t => !t.is_group);
+    if (!this.childTestSearchQuery) return nonGroupTests;
+    const q = this.childTestSearchQuery.toLowerCase().trim();
+    return nonGroupTests.filter(t =>
+      (t.test_name || '').toLowerCase().includes(q) ||
+      (t.test_code || '').toLowerCase().includes(q)
+    );
+  }
+
+  selectGroupTest(test: Test): void {
+    this.selectedGroupTestId = test.id!;
+    this.groupTestSearchQuery = test.test_name;
+    this.isGroupDropdownOpen = false;
+    this.onGroupTestSelect();
+  }
+
+  selectChildTest(test: Test): void {
+    this.newGroupItemData.child_test = test.id;
+    this.childTestSearchQuery = test.test_name;
+    this.isChildDropdownOpen = false;
+    if (test.id) {
+      this.loadSelectedChildTestRanges(test.id);
+    }
+  }
+
+  clearGroupTestSelection(): void {
+    this.selectedGroupTestId = null;
+    this.groupTestSearchQuery = '';
+    this.groupChildItems = [];
+    this.isGroupDropdownOpen = false;
+  }
+
+  clearChildTestSelection(): void {
+    this.newGroupItemData.child_test = undefined;
+    this.childTestSearchQuery = '';
+    this.isChildDropdownOpen = false;
+    this.selectedChildTestRanges = [];
+    this.isLoadingChildRanges = false;
+  }
+
+  loadSelectedChildTestRanges(testId: number): void {
+    this.selectedChildTestRanges = [];
+    this.isLoadingChildRanges = true;
+    this.settingsService.getTestReferenceRanges(testId).subscribe({
+      next: (data) => {
+        this.selectedChildTestRanges = data;
+        this.isLoadingChildRanges = false;
+      },
+      error: () => {
+        this.isLoadingChildRanges = false;
+      }
+    });
+  }
+
+  getSelectedChildTestInfo(): Test | null {
+    if (!this.newGroupItemData.child_test) return null;
+    return this.allTests.find(t => t.id === Number(this.newGroupItemData.child_test)) || null;
+  }
+
+  getSelectedChildTestDeptName(): string {
+    const test = this.getSelectedChildTestInfo();
+    if (!test || !test.department) return '-';
+    const dept = this.departments.find(d => d.id === Number(test.department));
+    return dept ? dept.name : '-';
+  }
+
+  selectTableChildTest(childTestId: number): void {
+    if (this.selectedTableChildTestId === childTestId) {
+      this.clearTableChildTestSelection();
+      return;
+    }
+    this.selectedTableChildTestId = childTestId;
+    this.loadTableChildTestRanges(childTestId);
+  }
+
+  clearTableChildTestSelection(): void {
+    this.selectedTableChildTestId = null;
+    this.selectedTableChildTestRanges = [];
+    this.isLoadingTableChildRanges = false;
+  }
+
+  loadTableChildTestRanges(childTestId: number): void {
+    this.selectedTableChildTestRanges = [];
+    this.isLoadingTableChildRanges = true;
+    this.settingsService.getTestReferenceRanges(childTestId).subscribe({
+      next: (data) => {
+        this.selectedTableChildTestRanges = data;
+        this.isLoadingTableChildRanges = false;
+      },
+      error: () => {
+        this.isLoadingTableChildRanges = false;
+      }
+    });
+  }
+
+  getTableChildTestInfo(): Test | null {
+    if (!this.selectedTableChildTestId) return null;
+    return this.allTests.find(t => t.id === Number(this.selectedTableChildTestId)) || null;
+  }
+
+  getTableChildTestDeptName(): string {
+    const test = this.getTableChildTestInfo();
+    if (!test || !test.department) return '-';
+    const dept = this.departments.find(d => d.id === Number(test.department));
+    return dept ? dept.name : '-';
+  }
+
+  restoreGroupTestSearchQuery(): void {
+    if (this.selectedGroupTestId) {
+      const groupTest = this.allTests.find(t => t.id === Number(this.selectedGroupTestId));
+      if (groupTest) {
+        this.groupTestSearchQuery = groupTest.test_name;
+      }
+    } else {
+      this.groupTestSearchQuery = '';
+    }
+  }
+
+  restoreChildTestSearchQuery(): void {
+    if (this.newGroupItemData.child_test) {
+      const childTest = this.allTests.find(t => t.id === Number(this.newGroupItemData.child_test));
+      if (childTest) {
+        this.childTestSearchQuery = childTest.test_name;
+      }
+    } else {
+      this.childTestSearchQuery = '';
+    }
   }
 
   deleteSelectedGroupTest(): void {
@@ -659,6 +852,7 @@ export class MasterSettingsComponent implements OnInit {
       next: () => {
         this.successMessage = `Group test "${testName}" deleted successfully.`;
         this.selectedGroupTestId = null;
+        this.groupTestSearchQuery = '';
         this.groupChildItems = [];
         this.loadAllTestsList();
         this.isLoading = false;
@@ -690,6 +884,9 @@ export class MasterSettingsComponent implements OnInit {
       next: () => {
         this.successMessage = 'Test added to group successfully.';
         this.newGroupItemData = {};
+        this.childTestSearchQuery = '';
+        this.selectedChildTestRanges = [];
+        this.isLoadingChildRanges = false;
         this.onGroupTestSelect();
       },
       error: (err) => {
@@ -711,6 +908,7 @@ export class MasterSettingsComponent implements OnInit {
     this.settingsService.deleteTestGroupItem(id).subscribe({
       next: () => {
         this.successMessage = 'Test removed from group.';
+        this.clearTableChildTestSelection();
         this.onGroupTestSelect();
       },
       error: () => {
