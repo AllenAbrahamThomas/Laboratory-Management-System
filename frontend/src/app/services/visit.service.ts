@@ -126,6 +126,9 @@ export interface ResultEntryGroupChild {
   reference_range: string;
   result_value: string;
   note: string;
+  test_code?: string;
+  short_name?: string;
+  formula?: string;
 }
 
 export interface ResultEntryTest {
@@ -140,6 +143,9 @@ export interface ResultEntryTest {
   children?: ResultEntryGroupChild[];
   department_name?: string;
   department_order?: number;
+  test_code?: string;
+  short_name?: string;
+  formula?: string;
 }
 
 export interface ResultEntryPayload {

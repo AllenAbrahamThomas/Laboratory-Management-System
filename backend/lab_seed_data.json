@@ -37866,8 +37866,8 @@
     "model": "lab.testcomponent",
     "pk": 1450,
     "fields": {
-        "created_at": "2026-06-23T13:40:12.000Z",
-        "updated_at": "2026-06-23T13:40:12.000Z",
+        "created_at": "2026-06-23T13:40:12Z",
+        "updated_at": "2026-06-23T13:40:12Z",
         "test": 12,
         "component_name": "INR VALUE",
         "result_type": "numeric",
@@ -38608,8 +38608,8 @@
     "model": "lab.testcomponent",
     "pk": 2175,
     "fields": {
-        "created_at": "2026-06-23T13:40:13.000Z",
-        "updated_at": "2026-06-23T13:40:13.000Z",
+        "created_at": "2026-06-23T13:40:13Z",
+        "updated_at": "2026-06-23T13:40:13Z",
         "test": 685,
         "component_name": "Complete Haemogram (Hb, TC, DC, , PCV, PLC,MCV,MCH,MCHC)",
         "result_type": "panel",
@@ -50886,7 +50886,7 @@
     "pk": 2296,
     "fields": {
         "created_at": "2026-06-24T08:16:42.886Z",
-        "updated_at": "2026-06-24T08:17:58.000Z",
+        "updated_at": "2026-06-24T08:17:58Z",
         "test": 35,
         "component": 1485,
         "reference_group": "COMMON",
@@ -64145,7 +64145,7 @@
     "model": "lab.testreferencerange",
     "pk": 2677,
     "fields": {
-        "created_at": "2026-06-24T08:16:45.000Z",
+        "created_at": "2026-06-24T08:16:45Z",
         "updated_at": "2026-06-24T08:18:01.809Z",
         "test": 731,
         "component": 2263,

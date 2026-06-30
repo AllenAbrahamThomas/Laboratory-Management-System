@@ -330,13 +330,24 @@ def _save_visit_tests(visit: Visit, tests_data) -> None:
         if test is None:
             raise ValueError(f"Unknown test reference: {test_id or test_code}")
 
+        raw_rate = raw_test.get("rate")
+        if raw_rate is None or str(raw_rate).strip() == "" or _to_decimal(raw_rate) == 0:
+            rate = test.rate
+        else:
+            rate = _to_decimal(raw_rate)
+
+        discount_percent = _round_whole(raw_test.get("discount", raw_test.get("discount_percent", 0)))
+        amount = _round_bill_amount(raw_test.get("amount", 0))
+        if amount == 0 and rate > 0:
+            amount = _round_bill_amount(rate - (rate * discount_percent / Decimal("100")))
+
         VisitTest.objects.create(
             visit=visit,
             test=test,
             test_name_snapshot=test_name or test.test_name,
-            rate=_to_decimal(raw_test.get("rate", test.rate)),
-            discount_percent=_round_whole(raw_test.get("discount", raw_test.get("discount_percent", 0))),
-            amount=_round_bill_amount(raw_test.get("amount", 0)),
+            rate=rate,
+            discount_percent=discount_percent,
+            amount=amount,
             line_order=_to_int(raw_test.get("line_order", index)),
         )
 
@@ -581,6 +592,9 @@ def _build_result_entry_payload(visit: Visit) -> dict:
                 ).order_by("id").first()
                 child_rows.append({
                     "test_id": child_test.id,
+                    "test_code": child_test.test_code,
+                    "short_name": child_test.short_name or "",
+                    "formula": child_test.formula or "",
                     "test_name": child_test.test_name,
                     "unit": child_test.unit or "",
                     "reference_range": reference.display_text if reference and reference.display_text else "",
@@ -604,6 +618,9 @@ def _build_result_entry_payload(visit: Visit) -> dict:
             tests.append({
                 "visit_test_id": vt.id,
                 "test_id": test.id,
+                "test_code": test.test_code,
+                "short_name": test.short_name or "",
+                "formula": test.formula or "",
                 "test_name": vt.test_name_snapshot or test.test_name,
                 "type": "general",
                 "unit": test.unit or "",

@@ -152,6 +152,8 @@ class Test(TimestampedModel):
         blank=True,
         related_name="tests",
     )
+    formula = models.CharField(max_length=255, blank=True, default="")
+
 
     class Meta:
         db_table = "tests"
@@ -175,6 +177,34 @@ class Test(TimestampedModel):
             unit_name = self.unit.strip()
             if unit_name:
                 Unit.objects.get_or_create(name=unit_name, defaults={"is_active": True})
+        
+        # Ensure that every non-group test has at least one component
+        if not self.is_group:
+            from lab.models import TestComponent
+            comps = list(self.components.all())
+            if not comps:
+                TestComponent.objects.create(
+                    test=self,
+                    component_name=self.test_name,
+                    result_type=self.result_type,
+                    unit=self.unit,
+                    display_order=1,
+                    is_active=True
+                )
+            elif len(comps) == 1:
+                comp = comps[0]
+                updated_fields = []
+                if comp.result_type != self.result_type:
+                    comp.result_type = self.result_type
+                    updated_fields.append("result_type")
+                if comp.unit != self.unit:
+                    comp.unit = self.unit
+                    updated_fields.append("unit")
+                if comp.component_name != self.test_name:
+                    comp.component_name = self.test_name
+                    updated_fields.append("component_name")
+                if updated_fields:
+                    comp.save(update_fields=updated_fields + ["updated_at"])
 
 
 class TestComponent(TimestampedModel):

@@ -65,6 +65,7 @@ export interface Test {
   reagent_auto_reduce?: boolean;
   technology?: number;
   technology_name?: string;
+  formula?: string;
 }
 
 export interface Method {

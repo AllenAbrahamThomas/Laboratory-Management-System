@@ -16,6 +16,9 @@ interface ResultEntryDisplayChild {
   note?: string;
   isIssued: boolean;
   printEnabled: boolean;
+  test_code?: string;
+  short_name?: string;
+  formula?: string;
 }
 
 type ResultEntryDisplayTest = Omit<ResultEntryTest, 'children'> & {
@@ -220,6 +223,7 @@ export class ResultEntryComponent implements OnChanges {
         printEnabled: true,
       }))
     }));
+    this.calculateFormulas();
     this.selectedTest = this.resultTests[0] || null;
     this.showEntryDialog = false;
     this.dialogGeneralTests = [];
@@ -367,5 +371,128 @@ export class ResultEntryComponent implements OnChanges {
     }
 
     return rows;
+  }
+
+  onResultValueChange(): void {
+    this.calculateFormulas();
+  }
+
+  calculateFormulas(): void {
+    const valuesMap = new Map<string, number>();
+
+    const getCleanNumericValue = (val: string | undefined | null): number | null => {
+      if (val === undefined || val === null) return null;
+      const trimmed = val.trim();
+      if (!trimmed) return null;
+      const parsed = parseFloat(trimmed);
+      return isNaN(parsed) ? null : parsed;
+    };
+
+    // Populate lookup map
+    for (const test of this.resultTests) {
+      if (test.type === 'group' && test.children) {
+        for (const child of test.children) {
+          const val = getCleanNumericValue(child.result_value);
+          if (val !== null) {
+            if (child.test_code) {
+              valuesMap.set(child.test_code.toUpperCase(), val);
+            }
+            if (child.short_name) {
+              valuesMap.set(child.short_name.toUpperCase(), val);
+            }
+          }
+        }
+      } else {
+        const val = getCleanNumericValue(test.result_value);
+        if (val !== null) {
+          if (test.test_code) {
+            valuesMap.set(test.test_code.toUpperCase(), val);
+          }
+          if (test.short_name) {
+            valuesMap.set(test.short_name.toUpperCase(), val);
+          }
+        }
+      }
+    }
+
+    // Loop to resolve formulas. We can do up to 3 passes to handle simple dependencies.
+    let changed = false;
+    for (let pass = 0; pass < 3; pass++) {
+      changed = false;
+      for (const test of this.resultTests) {
+        if (test.type === 'group' && test.children) {
+          for (const child of test.children) {
+            if (child.formula) {
+              const newVal = this.evaluateFormula(child.formula, valuesMap);
+              if (newVal !== null && child.result_value !== newVal) {
+                child.result_value = newVal;
+                changed = true;
+                if (child.test_code) {
+                  valuesMap.set(child.test_code.toUpperCase(), parseFloat(newVal));
+                }
+                if (child.short_name) {
+                  valuesMap.set(child.short_name.toUpperCase(), parseFloat(newVal));
+                }
+              }
+            }
+          }
+        } else {
+          if (test.formula) {
+            const newVal = this.evaluateFormula(test.formula, valuesMap);
+            if (newVal !== null && test.result_value !== newVal) {
+              test.result_value = newVal;
+              changed = true;
+              if (test.test_code) {
+                valuesMap.set(test.test_code.toUpperCase(), parseFloat(newVal));
+              }
+              if (test.short_name) {
+                valuesMap.set(test.short_name.toUpperCase(), parseFloat(newVal));
+              }
+            }
+          }
+        }
+      }
+      if (!changed) break;
+    }
+  }
+
+  evaluateFormula(formula: string, values: Map<string, number>): string | null {
+    if (!formula) return null;
+
+    let cleanFormula = formula.replace(/[\[\]]/g, ''); // strip brackets
+
+    // Find all variable tokens (tokens with at least one letter)
+    const tokenRegex = /[a-zA-Z0-9_-]+/g;
+    let hasMissingVariable = false;
+
+    const replaced = cleanFormula.replace(tokenRegex, (token) => {
+      // Check if it is a variable (contains letters)
+      if (/[a-zA-Z]/.test(token)) {
+        const key = token.toUpperCase();
+        if (values.has(key)) {
+          return values.get(key)!.toString();
+        } else {
+          hasMissingVariable = true;
+          return '0';
+        }
+      }
+      return token;
+    });
+
+    if (hasMissingVariable) {
+      return ''; // prerequisites are missing
+    }
+
+    const sanitized = replaced.replace(/[^0-9+\-*/().\s]/g, '');
+
+    try {
+      const result = new Function(`return (${sanitized});`)();
+      if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+        return parseFloat(result.toFixed(2)).toString();
+      }
+    } catch (e) {
+      console.error('Error evaluating formula:', formula, sanitized, e);
+    }
+    return '';
   }
 }

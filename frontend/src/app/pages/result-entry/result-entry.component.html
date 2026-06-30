@@ -104,7 +104,12 @@
                 <td>{{ i + 1 }}</td>
                 <td>{{ child.test_name }}</td>
                 <td>{{ child.reference_range || '-' }}</td>
-                <td><input [(ngModel)]="child.result_value"></td>
+                <td>
+                  <div class="result-input-wrapper" style="position: relative; display: flex; align-items: center; width: 100%;">
+                    <input [(ngModel)]="child.result_value" (ngModelChange)="onResultValueChange()" [disabled]="!!child.formula" [class.calculated]="!!child.formula" style="width: 100%;">
+                    <span *ngIf="child.formula" class="calc-indicator" title="Auto-calculated: {{child.formula}}">ƒ<sub>x</sub></span>
+                  </div>
+                </td>
                 <td>{{ child.unit || '-' }}</td>
               </tr>
             </tbody>
@@ -128,7 +133,12 @@
                   <td>{{ i + 1 }}</td>
                   <td>{{ row.test_name }}</td>
                   <td>{{ row.reference_range || '-' }}</td>
-                  <td><input [(ngModel)]="row.result_value"></td>
+                  <td>
+                    <div class="result-input-wrapper" style="position: relative; display: flex; align-items: center; width: 100%;">
+                      <input [(ngModel)]="row.result_value" (ngModelChange)="onResultValueChange()" [disabled]="!!row.formula" [class.calculated]="!!row.formula" style="width: 100%;">
+                      <span *ngIf="row.formula" class="calc-indicator" title="Auto-calculated: {{row.formula}}">ƒ<sub>x</sub></span>
+                    </div>
+                  </td>
                   <td>{{ row.unit || '-' }}</td>
                 </tr>
               </tbody>

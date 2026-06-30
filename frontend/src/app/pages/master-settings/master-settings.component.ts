@@ -107,6 +107,8 @@ export class MasterSettingsComponent implements OnInit {
   selectedTableChildTestId: number | null = null;
   selectedTableChildTestRanges: TestReferenceRange[] = [];
   isLoadingTableChildRanges = false;
+  formulaTestSearchQuery = '';
+  isFormulaDropdownOpen = false;
 
   // Loading & Messages
   isLoading = false;
@@ -689,6 +691,14 @@ export class MasterSettingsComponent implements OnInit {
         this.restoreChildTestSearchQuery();
       }
     }
+    
+    // Close formula test dropdown if clicking outside its container
+    if (!target.closest('.searchable-select-container-formula')) {
+      if (this.isFormulaDropdownOpen) {
+        this.isFormulaDropdownOpen = false;
+        this.formulaTestSearchQuery = '';
+      }
+    }
   }
 
   getFilteredGroupTests(): Test[] {
@@ -831,6 +841,29 @@ export class MasterSettingsComponent implements OnInit {
     } else {
       this.childTestSearchQuery = '';
     }
+  }
+
+  getFilteredFormulaTests(): Test[] {
+    const q = this.formulaTestSearchQuery.toLowerCase().trim();
+    return this.allTests.filter(t => {
+      if (t.is_group || t.id === this.formData.id) return false;
+      if (!q) return true;
+      return (t.test_name || '').toLowerCase().includes(q) || 
+             (t.test_code || '').toLowerCase().includes(q) || 
+             (t.short_name || '').toLowerCase().includes(q);
+    });
+  }
+
+  insertTestIntoFormula(t: Test): void {
+    const insertVal = t.short_name ? t.short_name : t.test_code;
+    const currentFormula = this.formData.formula || '';
+    if (currentFormula) {
+      this.formData.formula = currentFormula.trim() + ' ' + insertVal;
+    } else {
+      this.formData.formula = insertVal;
+    }
+    this.formulaTestSearchQuery = '';
+    this.isFormulaDropdownOpen = false;
   }
 
   deleteSelectedGroupTest(): void {
@@ -1132,6 +1165,7 @@ export class MasterSettingsComponent implements OnInit {
       this.formData.default_discount_percent = 0;
       this.formData.default_amount = 0;
       this.formData.test_code = '';
+      this.formData.formula = '';
       this.settingsService.getNextTestCode().subscribe({
         next: (res) => {
           this.formData.test_code = res.test_code;
@@ -1318,7 +1352,8 @@ export class MasterSettingsComponent implements OnInit {
           rate: Number(this.formData.rate || 0),
           default_discount_percent: Number(this.formData.default_discount_percent || 0),
           default_amount: Number(this.formData.default_amount || 0),
-          reagent_quantity: (this.formData.reagent_quantity !== null && this.formData.reagent_quantity !== undefined && this.formData.reagent_quantity !== '') ? Number(this.formData.reagent_quantity) : null
+          reagent_quantity: (this.formData.reagent_quantity !== null && this.formData.reagent_quantity !== undefined && this.formData.reagent_quantity !== '') ? Number(this.formData.reagent_quantity) : null,
+          formula: this.formData.formula || ''
         };
         if (isEdit) this.settingsService.updateTest(id, test).subscribe(handler);
         else this.settingsService.createTest(test).subscribe(handler);

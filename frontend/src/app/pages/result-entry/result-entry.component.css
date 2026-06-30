@@ -615,3 +615,23 @@ td {
     width: min(100vw - 20px, 1020px);
   }
 }
+
+/* Auto-calculated inputs and badges */
+input.calculated {
+  background-color: #f1f8ff !important;
+  color: #0366d6 !important;
+  font-weight: bold;
+  cursor: not-allowed;
+  padding-right: 24px !important;
+}
+
+.calc-indicator {
+  position: absolute;
+  right: 8px;
+  color: #0366d6;
+  font-size: 13px;
+  font-family: serif;
+  font-weight: bold;
+  font-style: italic;
+  user-select: none;
+}
