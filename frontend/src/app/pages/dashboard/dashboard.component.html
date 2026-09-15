@@ -177,6 +177,11 @@
           (closed)="closeRegistration()"
         ></app-user-management>
 
+        <app-pre-test-history-report
+          *ngIf="activeRegistrationView === 'pre-test-history'"
+          (closed)="closeRegistration()"
+        ></app-pre-test-history-report>
+
         <app-master-settings
           *ngIf="activeRegistrationView === 'master-settings'"
           [activeAction]="activeMasterSettingAction"

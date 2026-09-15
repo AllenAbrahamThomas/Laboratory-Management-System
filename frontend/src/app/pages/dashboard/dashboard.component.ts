@@ -19,6 +19,7 @@ import { StockReportComponent } from '../stock/stock-report/stock-report.compone
 import { UserManagementComponent } from '../accounts/user-management/user-management.component';
 import { BillCancellationComponent } from '../lab-registration/bill-cancellation/bill-cancellation.component';
 import { MasterSettingsComponent } from '../master-settings/master-settings.component';
+import { PreTestHistoryReportComponent } from '../reports/pre-test-history-report/pre-test-history-report.component';
 
 
 type EntryAction =
@@ -90,6 +91,7 @@ type TopMenuAction =
   | 'division-wise-invoices'
   | 'branch-wise-invoices'
   | 'test-performance'
+  | 'pre-test-history'
   | 'test-price-list'
   | 'test-detailed'
   | 'doctors'
@@ -147,7 +149,8 @@ type TopMenu = {
     StockReportComponent,
     UserManagementComponent,
     BillCancellationComponent,
-    MasterSettingsComponent
+    MasterSettingsComponent,
+    PreTestHistoryReportComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
@@ -245,6 +248,7 @@ export class DashboardComponent implements OnInit {
             { label: 'Sample Collection wise Invoices', action: 'sample-collection-wise-invoices' },
             { label: 'Division wise Invoices', action: 'division-wise-invoices' },
             { label: 'Test Performance', action: 'test-performance' },
+            { label: 'Pre-Test History', action: 'pre-test-history' },
           ],
         },
         {
@@ -326,6 +330,7 @@ export class DashboardComponent implements OnInit {
     | 'user-management'
     | 'bill-cancellation'
     | 'master-settings'
+    | 'pre-test-history'
     | null = null;
   selectedVisitId: number | null = null;
   activeMasterSettingAction: string | null = null;
@@ -479,6 +484,11 @@ export class DashboardComponent implements OnInit {
 
     if (action === 'bill-cancellation') {
       this.activeRegistrationView = 'bill-cancellation';
+      return;
+    }
+
+    if (action === 'pre-test-history') {
+      this.activeRegistrationView = 'pre-test-history';
       return;
     }
 
@@ -715,6 +725,11 @@ export class DashboardComponent implements OnInit {
     if (action === 'stock-outward') return this.authService.hasPermission('stock-outward');
     if (action === 'stock-report') return this.authService.hasPermission('stock-report');
     if (action === 'staff') return this.authService.hasPermission('user-management');
+
+    if (action === 'pre-test-history') {
+      const role = this.authService.activeSession?.user_group;
+      return role === 'admin' || role === 'supervisor';
+    }
     
     if (action === 'daily-collection-statement') return this.authService.hasPermission('daily-collection-statement');
     if (action === 'collection-summary') return this.authService.hasPermission('collection-summary');

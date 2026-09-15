@@ -1106,3 +1106,130 @@ class LabCustomizationViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Only Administrators can modify system customizations.")
 
 
+@api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def patient_previous_tests(request, patient_id: int):
+    user = request.user
+    if user.role not in [LabUser.Role.ADMIN, LabUser.Role.SUPERVISOR]:
+        raise PermissionDenied("Only Admins and Supervisors can access pre-test history.")
+
+    # Fetch all visits for this patient (excluding cancelled ones)
+    visits = Visit.objects.filter(patient_id=patient_id).exclude(status=Visit.Status.CANCELLED).order_by("-visit_date", "-id")
+    
+    visit_data_list = []
+    for visit in visits:
+        # Get all completed test results for this visit.
+        results = TestResult.objects.filter(
+            visit=visit,
+            status__in=[TestResult.Status.ENTERED, TestResult.Status.AUTHORIZED]
+        ).select_related("test", "component").order_by("visit_test__line_order", "id")
+        
+        if not results.exists():
+            continue
+            
+        test_results = []
+        for res in results:
+            # Determine display name: use component name if component is set, otherwise test name
+            test_name = res.component.component_name if res.component else (res.test.test_name if res.test else "")
+            test_code = res.test.test_code if res.test else ""
+            
+            test_results.append({
+                "test_id": res.test_id,
+                "test_code": test_code,
+                "test_name": test_name,
+                "result_value": res.result_value,
+                "unit": res.unit or "",
+                "reference_range": res.reference_range_text or "",
+                "remarks": res.remarks or ""
+            })
+            
+        visit_data_list.append({
+            "visit_id": visit.id,
+            "visit_date": str(visit.visit_date),
+            "lab_no": visit.lab_no,
+            "patient_name": visit.patient.full_name,
+            "results": test_results
+        })
+        
+    return Response(visit_data_list)
+
+
+@api_view(["GET"])
+@authentication_classes([SessionTokenAuthentication])
+@permission_classes([IsAuthenticated])
+def pre_test_history_report(request):
+    user = request.user
+    if user.role not in [LabUser.Role.ADMIN, LabUser.Role.SUPERVISOR]:
+        raise PermissionDenied("Only Admins and Supervisors can access this report.")
+
+    # Get date from query parameters, defaulting to today
+    date_str = request.query_params.get("date", "").strip()
+    if date_str:
+        try:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return Response({"detail": "Invalid date format, use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        target_date = timezone.now().date()
+
+    # Fetch all visits for the target date
+    visits = Visit.objects.filter(visit_date=target_date).exclude(status=Visit.Status.CANCELLED).select_related("patient").prefetch_related("visit_tests__test")
+    
+    report_data = []
+    for visit in visits:
+        patient = visit.patient
+        matched_tests = []
+        
+        # We need to collect all test definitions for this visit (resolving group tests to children)
+        for vt in visit.visit_tests.all():
+            test = vt.test
+            tests_to_check = []
+            if test.is_group:
+                child_items = TestGroupItem.objects.filter(parent_test=test).select_related("child_test")
+                for item in child_items:
+                    tests_to_check.append((item.child_test, item.child_test.test_name))
+            else:
+                tests_to_check.append((test, vt.test_name_snapshot or test.test_name))
+                
+            for t, displayName in tests_to_check:
+                # Find the latest completed previous result for this test
+                prev_res = TestResult.objects.filter(
+                    visit__patient=patient,
+                    test=t,
+                    status__in=[TestResult.Status.ENTERED, TestResult.Status.AUTHORIZED]
+                ).exclude(visit=visit).order_by("-visit__visit_date", "-id").first()
+                
+                if prev_res:
+                    # Find the current result if entered
+                    current_res = TestResult.objects.filter(visit=visit, test=t).order_by("-id").first()
+                    current_val = current_res.result_value if current_res else ""
+                    current_unit = current_res.unit if current_res else (t.unit or "")
+                    
+                    matched_tests.append({
+                        "test_code": t.test_code,
+                        "test_name": displayName,
+                        "current_result": current_val,
+                        "current_unit": current_unit,
+                        "prev_visit_date": str(prev_res.visit.visit_date),
+                        "prev_lab_no": prev_res.visit.lab_no,
+                        "prev_result": prev_res.result_value,
+                        "prev_unit": prev_res.unit or "",
+                        "prev_reference_range": prev_res.reference_range_text or "",
+                        "prev_remarks": prev_res.remarks or ""
+                    })
+                    
+        if matched_tests:
+            report_data.append({
+                "patient_id": patient.id,
+                "patient_name": patient.full_name,
+                "lab_no": visit.lab_no,
+                "visit_date": str(visit.visit_date),
+                "matched_tests": matched_tests
+            })
+            
+    return Response(report_data)
+
+
+
+

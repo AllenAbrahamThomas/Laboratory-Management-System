@@ -1,0 +1,84 @@
+<section class="report-window" aria-label="Pre-Test History Report">
+  <header class="window-title no-print">
+    <span class="app-icon">P</span>
+    Pre-Test History Console
+    <button type="button" (click)="closed.emit()" aria-label="Close Report">X</button>
+  </header>
+
+  <div class="report-shell">
+    <!-- Filter Strip (no-print) -->
+    <div class="filter-strip no-print">
+      <div class="filter-group">
+        <label>Target Date:
+          <input type="date" [(ngModel)]="reportDate" name="reportDate" (change)="loadReport()">
+        </label>
+        <button type="button" class="btn-primary" (click)="loadReport()" [disabled]="isLoading">Load Report</button>
+      </div>
+      <div class="action-group">
+        <button type="button" class="btn-print" (click)="printReport()" [disabled]="isLoading || reportData.length === 0">Print Report</button>
+        <button type="button" class="btn-exit" (click)="closed.emit()">Exit</button>
+      </div>
+    </div>
+
+    <!-- Print Header (print-only) -->
+    <div class="print-header print-only">
+      <h1>Pre-Test History Comparison Report</h1>
+      <p class="print-subtitle">Date of Visit: {{ reportDate | date:'dd-MMM-yyyy' }} | Generated at: {{ todayDate | date:'hh:mm a' }}</p>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="report-content">
+      <div class="loading-state" *ngIf="isLoading">
+        <span class="spinner"></span> Loading pre-test comparison data...
+      </div>
+      <div class="error-state" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+      <div class="empty-state" *ngIf="!isLoading && !errorMessage && reportData.length === 0">
+        No patients registered on this day have matching previous test histories.
+      </div>
+
+      <!-- Report Tables -->
+      <div class="report-scroll-container" *ngIf="!isLoading && !errorMessage && reportData.length > 0">
+        <div class="patient-report-card" *ngFor="let pat of reportData">
+          <header class="patient-card-header">
+            <h3 class="patient-name">{{ pat.patient_name }}</h3>
+            <div class="patient-meta">
+              <span>Lab No: <strong>{{ pat.lab_no }}</strong></span>
+              <span>Visit Date: <strong>{{ pat.visit_date | date:'dd-MMM-yyyy' }}</strong></span>
+            </div>
+          </header>
+
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th class="col-code">Code</th>
+                <th class="col-name">Test Name</th>
+                <th class="col-curr-val">Current Result</th>
+                <th class="col-prev-date">Prev. Visit Date</th>
+                <th class="col-prev-lab">Prev. Lab No</th>
+                <th class="col-prev-val">Prev. Result</th>
+                <th class="col-prev-range">Prev. Reference Range</th>
+                <th class="col-prev-rem">Prev. Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let test of pat.matched_tests">
+                <td>{{ test.test_code }}</td>
+                <td class="test-name-cell">
+                  <strong>{{ test.test_name }}</strong>
+                </td>
+                <td class="curr-val-cell">{{ test.current_result || 'Pending' }} {{ test.current_unit }}</td>
+                <td>{{ test.prev_visit_date | date:'dd-MMM-yyyy' }}</td>
+                <td>{{ test.prev_lab_no }}</td>
+                <td class="prev-val-cell">{{ test.prev_result }} {{ test.prev_unit }}</td>
+                <td>{{ test.prev_reference_range || '-' }}</td>
+                <td>{{ test.prev_remarks || '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

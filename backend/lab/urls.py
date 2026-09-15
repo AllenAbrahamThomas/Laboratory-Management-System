@@ -34,6 +34,8 @@ from .views import (
     LabCustomizationViewSet,
     TestReferenceRangeViewSet,
     TestGroupItemViewSet,
+    patient_previous_tests,
+    pre_test_history_report,
 )
 
 
@@ -76,5 +78,7 @@ urlpatterns = [
     path("reagents/transactions/", StockTransactionViewSet.as_view({'get': 'list', 'post': 'create'}), name="reagent-transaction-list"),
     path("reagents/transactions/<int:pk>/", StockTransactionViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name="reagent-transaction-detail"),
     path("reagents/report/", stock_report_view, name="reagent-report"),
+    path("patients/<int:patient_id>/previous-tests/", patient_previous_tests, name="patient-previous-tests"),
+    path("reports/pre-test-history/", pre_test_history_report, name="pre-test-history-report"),
     path("", include(router.urls)),
 ]

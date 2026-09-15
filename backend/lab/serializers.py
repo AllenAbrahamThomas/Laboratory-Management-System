@@ -4,6 +4,7 @@ from .models import Visit, VisitTest
 
 
 class VisitListSerializer(serializers.ModelSerializer):
+    patient_id = serializers.IntegerField(source="patient.id", read_only=True)
     patient = serializers.CharField(source="patient.full_name", read_only=True)
     gender = serializers.CharField(source="patient.get_gender_display", read_only=True)
     age_years = serializers.IntegerField(source="patient.age_years", read_only=True)
@@ -17,6 +18,7 @@ class VisitListSerializer(serializers.ModelSerializer):
         model = Visit
         fields = [
             "id",
+            "patient_id",
             "lab_no",
             "visit_date",
             "patient",
@@ -64,6 +66,7 @@ class VisitTestDetailSerializer(serializers.ModelSerializer):
 
 
 class VisitDetailSerializer(serializers.ModelSerializer):
+    patient_id = serializers.IntegerField(source="patient.id", read_only=True)
     patient_name = serializers.CharField(source="patient.full_name", read_only=True)
     gender = serializers.CharField(source="patient.get_gender_display", read_only=True)
     age_years = serializers.IntegerField(source="patient.age_years", read_only=True)
@@ -78,6 +81,7 @@ class VisitDetailSerializer(serializers.ModelSerializer):
         model = Visit
         fields = [
             "id",
+            "patient_id",
             "lab_no",
             "visit_date",
             "sample_on",

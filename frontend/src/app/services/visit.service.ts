@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 export interface VisitSummary {
   id: number;
+  patient_id?: number;
   lab_no: string;
   visit_date: string;
   patient: string;
@@ -57,6 +58,7 @@ export interface TestLookupItem {
 
 export interface VisitDetail {
   id: number;
+  patient_id?: number;
   lab_no: string;
   visit_date: string;
   sample_on: string;
@@ -301,4 +303,17 @@ export class VisitService {
   revokeCancelVisit(visitId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/visits/${visitId}/revoke-cancel/`, {});
   }
+
+  getPatientPreviousTests(patientId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/patients/${patientId}/previous-tests/`);
+  }
+
+  getPreTestHistoryReport(date?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (date?.trim()) {
+      params = params.set('date', date.trim());
+    }
+    return this.http.get<any[]>(`${this.apiUrl}/reports/pre-test-history/`, { params });
+  }
 }
+
